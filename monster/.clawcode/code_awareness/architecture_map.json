@@ -1,0 +1,177 @@
+{
+  "version": 2,
+  "project_root": "D:\\opensource_project\\opencode-main\\opencode-main\\test\\monster",
+  "updated_at": 1775986059.127283,
+  "source": "llm",
+  "model_info": {
+    "available": true,
+    "provider": "openai",
+    "provider_key": "openai_glm",
+    "model": "glm-5",
+    "last_attempt_at": 1775986059.127283,
+    "stage1_outline_stats": {
+      "truncated": false,
+      "notes": [],
+      "max_depth": 3,
+      "max_total_paths": 400,
+      "max_children_per_dir": 30,
+      "sampled_paths": 1
+    },
+    "two_stage": true
+  },
+  "layers": {
+    "Documentation": [
+      "docs"
+    ]
+  },
+  "dir_to_layer": {
+    "docs": "Documentation"
+  },
+  "layer_descriptions": {
+    "Entry Point": "HTML5 page (index.html) that loads assets, initializes Canvas, and bootstraps the game application",
+    "Presentation": "CSS styles (styles.css) handling game container layout, HUD positioning, responsive sizing, and visual theming",
+    "Game Engine": "Core engine in game.js managing the main game loop, Canvas rendering pipeline, gravity simulation, and AABB collision detection",
+    "Game Entities": "OOP classes for Player (movement, attack, invincibility), Monster subclasses with distinct AI behaviors (patrol, chase, jump), and collectible items (coins, keys)",
+    "Level System": "Level data and configuration defining platform layouts, monster spawns, item placement, and theme-specific styling for forest, cave, and sky stages",
+    "Effects & Audio": "Particle system for visual feedback (kills, pickups) and Web Audio API for synthesized sound effects without external audio files",
+    "UI Screens": "State-driven screen management for main menu, pause overlay, level completion, game over, and HUD displaying health, score, and key status",
+    "Documentation": "Project documentation including README.md with game instructions and the docs/ directory for additional references"
+  },
+  "layer_order": [
+    "Documentation"
+  ],
+  "file_events": [
+    {
+      "timestamp": 1774839559.0964334,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969222.2633123,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969486.6224356,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969526.1094172,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969596.5850234,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969667.340039,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969713.4509075,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969753.4468174,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969812.5253162,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775969930.7328382,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775970065.4186368,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775970146.414651,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775970221.3417404,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775970250.605337,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775970664.8824522,
+      "path": "README.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775973951.2456107,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775974118.7082865,
+      "path": "game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    }
+  ],
+  "file_symbol_outline": {
+    "game.js": [
+      "SoundManager",
+      "Player",
+      "Monster",
+      "PatrolMonster",
+      "ChaserMonster",
+      "JumperMonster",
+      "Game"
+    ]
+  },
+  "dir_role_hints": {},
+  "tech_map_updated_at": 1775986103.692734
+}

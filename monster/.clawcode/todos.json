@@ -1,0 +1,38 @@
+[
+  {
+    "content": "分析游戏完成度，识别缺失模块",
+    "id": "1",
+    "status": "completed",
+    "created_at": 1775974282
+  },
+  {
+    "content": "完成 draw() 方法（钥匙、旗帜、怪兽、玩家、粒子、关卡名绘制）",
+    "id": "2",
+    "status": "completed",
+    "created_at": 1775974282
+  },
+  {
+    "content": "实现缺失的 Game 类方法（pause/resume/restart/quitToMenu/nextLevel/levelComplete/gameOver/showScreen/updateHUD）",
+    "id": "3",
+    "status": "completed",
+    "created_at": 1775974282
+  },
+  {
+    "content": "实现 gameLoop 主循环和 Game 实例化",
+    "id": "4",
+    "status": "completed",
+    "created_at": 1775974282
+  },
+  {
+    "content": "增强游戏体验：背景装饰、动画效果、音效系统、胜利画面",
+    "id": "5",
+    "status": "completed",
+    "created_at": 1775974282
+  },
+  {
+    "content": "测试验证游戏完整性",
+    "id": "6",
+    "status": "completed",
+    "created_at": 1775974282
+  }
+]

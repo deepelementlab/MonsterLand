@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>怪兽冒险 Monster Quest</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen" class="screen">
+            <div class="title-container">
+                <h1 class="game-title">👾 怪兽冒险 👾</h1>
+                <p class="subtitle">Monster Quest</p>
+            </div>
+            <div class="menu-buttons">
+                <button id="start-btn" class="btn btn-primary">🎮 开始游戏</button>
+                <button id="instructions-btn" class="btn btn-secondary">📖 游戏说明</button>
+            </div>
+            <div id="instructions" class="instructions hidden">
+                <h3>操作说明</h3>
+                <div class="control-item">⬅️ ➡️ 方向键：移动</div>
+                <div class="control-item">⬆️ 上键 / 空格：跳跃</div>
+                <div class="control-item">X键：攻击</div>
+                <div class="control-item">P键：暂停</div>
+                <h3>游戏目标</h3>
+                <div class="goal-item">🔑 收集钥匙开启下一关</div>
+                <div class="goal-item">💰 收集金币获得分数</div>
+                <div class="goal-item">👾 躲避或击败怪兽</div>
+                <div class="goal-item">🏁 到达终点旗帜</div>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="game-hud">
+                <div class="hud-item">
+                    <span class="hud-label">关卡</span>
+                    <span id="level-display" class="hud-value">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">❤️</span>
+                    <span id="lives-display" class="hud-value">3</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">💰</span>
+                    <span id="score-display" class="hud-value">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">🔑</span>
+                    <span id="key-display" class="hud-value">0/1</span>
+                </div>
+            </div>
+            <canvas id="game-canvas"></canvas>
+            <button id="pause-btn" class="btn-pause">⏸️</button>
+        </div>
+
+        <div id="pause-screen" class="screen hidden overlay">
+            <div class="pause-menu">
+                <h2>⏸️ 游戏暂停</h2>
+                <button id="resume-btn" class="btn btn-primary">▶️ 继续游戏</button>
+                <button id="restart-btn" class="btn btn-secondary">🔄 重新开始</button>
+                <button id="quit-btn" class="btn btn-secondary">🏠 返回主菜单</button>
+            </div>
+        </div>
+
+        <div id="level-complete" class="screen hidden overlay">
+            <div class="complete-menu">
+                <h2>🎉 关卡完成！</h2>
+                <div class="stats">
+                    <p>得分: <span id="level-score">0</span></p>
+                    <p>金币: <span id="level-coins">0</span></p>
+                </div>
+                <button id="next-level-btn" class="btn btn-primary">➡️ 下一关</button>
+            </div>
+        </div>
+
+        <div id="game-over" class="screen hidden overlay">
+            <div class="gameover-menu">
+                <h2 id="gameover-title">💀 游戏结束</h2>
+                <div class="stats">
+                    <p>最终得分: <span id="final-score">0</span></p>
+                    <p>到达关卡: <span id="final-level">1</span></p>
+                </div>
+                <button id="retry-btn" class="btn btn-primary">🔄 再试一次</button>
+                <button id="menu-btn" class="btn btn-secondary">🏠 返回主菜单</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
