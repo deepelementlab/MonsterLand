@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试暂停按钮</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>调试暂停按钮问题</h1>
+    
+    <button id="startButton">开始游戏</button>
+    <button id="pauseButton">暂停</button>
+    <button id="restartButton">重新开始</button>
+    
+    <div class="debug-info">
+        <h3>按钮状态:</h3>
+        <p>开始按钮禁用状态: <span id="startStatus">false</span></p>
+        <p>暂停按钮禁用状态: <span id="pauseStatus">false</span></p>
+        <p>重新开始按钮禁用状态: <span id="restartStatus">false</span></p>
+        <p>当前游戏状态: <span id="gameState">初始</span></p>
+    </div>
+    
+    <script>
+        // 模拟游戏状态
+        let gameState = 'INITIAL'; // INITIAL, PLAYING, PAUSED, GAME_OVER
+        
+        const elements = {
+            startButton: document.getElementById('startButton'),
+            pauseButton: document.getElementById('pauseButton'),
+            restartButton: document.getElementById('restartButton')
+        };
+        
+        // 更新按钮状态
+        function updateButtonStates(state) {
+            const isInitial = state === 'INITIAL';
+            const isPlaying = state === 'PLAYING';
+            const isPaused = state === 'PAUSED';
+            const isGameOver = state === 'GAME_OVER';
+            
+            // 开始按钮
+            elements.startButton.disabled = isPlaying || isPaused;
+            elements.startButton.textContent = isPaused ? '继续' : '开始';
+            
+            // 暂停按钮
+            elements.pauseButton.disabled = !isPlaying && !isPaused;
+            elements.pauseButton.textContent = isPaused ? '继续' : '暂停';
+            
+            // 重新开始按钮
+            elements.restartButton.disabled = false;
+            
+            // 更新显示信息
+            document.getElementById('startStatus').textContent = elements.startButton.disabled;
+            document.getElementById('pauseStatus').textContent = elements.pauseButton.disabled;
+            document.getElementById('restartStatus').textContent = elements.restartButton.disabled;
+            document.getElementById('gameState').textContent = state;
+        }
+        
+        // 按钮点击事件
+        elements.startButton.addEventListener('click', () => {
+            if (gameState === 'INITIAL' || gameState === 'GAME_OVER') {
+                gameState = 'PLAYING';
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+            }
+            updateButtonStates(gameState);
+        });
+        
+        elements.pauseButton.addEventListener('click', () => {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+            }
+            updateButtonStates(gameState);
+        });
+        
+        elements.restartButton.addEventListener('click', () => {
+            gameState = 'INITIAL';
+            updateButtonStates(gameState);
+        });
+        
+        // 初始状态
+        updateButtonStates(gameState);
+        
+        // 日志
+        console.log('初始游戏状态:', gameState);
+        console.log('暂停按钮禁用:', elements.pauseButton.disabled);
+        
+        // 检查CSS是否影响显示
+        console.log('暂停按钮样式:', window.getComputedStyle(elements.pauseButton));
+        console.log('暂停按钮的类名:', elements.pauseButton.className);
+    </script>
+    
+    <h3>问题分析:</h3>
+    <p>根据UI控制器代码: <code>this.elements.pauseButton.disabled = !isPlaying && !isPaused;</code></p>
+    <p>这意味着:</p>
+    <ul>
+        <li>如果游戏是 PLAYING 状态: disabled = !true && !false = false</li>
+        <li>如果游戏是 PAUSED 状态: disabled = !false && !true = false</li>
+        <li>如果游戏是 INITIAL 状态: disabled = !false && !false = true</li>
+        <li>如果游戏是 GAME_OVER 状态: disabled = !false && !false = true</li>
+    </ul>
+    <p>所以，初始状态下暂停按钮应该是禁用的。</p>
+</body>
+</html>

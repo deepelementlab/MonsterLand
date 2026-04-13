@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试暂停按钮</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 10px;
+        }
+        
+        h1 {
+            color: #3b82f6;
+            margin-bottom: 20px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-pause {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .btn-restart {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status-info {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .log-container {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            font-family: monospace;
+            font-size: 12px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>暂停按钮调试测试</h1>
+        
+        <div class="button-group">
+            <button id="startButton" class="btn-start">开始游戏</button>
+            <button id="pauseButton" class="btn-pause">暂停</button>
+            <button id="restartButton" class="btn-restart">重新开始</button>
+        </div>
+        
+        <div class="status-info">
+            <h3>当前状态信息:</h3>
+            <div class="status-item">
+                <span>游戏状态:</span>
+                <span id="currentState">INITIAL</span>
+            </div>
+            <div class="status-item">
+                <span>开始按钮禁用:</span>
+                <span id="startDisabled">false</span>
+            </div>
+            <div class="status-item">
+                <span>暂停按钮禁用:</span>
+                <span id="pauseDisabled">true</span>
+            </div>
+            <div class="status-item">
+                <span>暂停按钮文字:</span>
+                <span id="pauseText">暂停</span>
+            </div>
+        </div>
+        
+        <div class="log-container">
+            <h3>日志:</h3>
+            <div id="logContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 游戏状态
+        const GameState = {
+            INITIAL: 'INITIAL',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED',
+            GAME_OVER: 'GAME_OVER'
+        };
+        
+        let currentState = GameState.INITIAL;
+        let logEntries = [];
+        
+        const elements = {
+            startButton: document.getElementById('startButton'),
+            pauseButton: document.getElementById('pauseButton'),
+            restartButton: document.getElementById('restartButton'),
+            currentState: document.getElementById('currentState'),
+            startDisabled: document.getElementById('startDisabled'),
+            pauseDisabled: document.getElementById('pauseDisabled'),
+            pauseText: document.getElementById('pauseText'),
+            logContent: document.getElementById('logContent')
+        };
+        
+        // 添加日志
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `${timestamp}: ${message}`;
+            logEntries.push(entry);
+            
+            // 保持最近20条日志
+            if (logEntries.length > 20) {
+                logEntries.shift();
+            }
+            
+            // 更新显示
+            elements.logContent.innerHTML = logEntries
+                .map(log => `<div class="log-entry">${log}</div>`)
+                .reverse()
+                .join('');
+            
+            console.log(message);
+        }
+        
+        // 更新按钮状态
+        function updateButtonStates(state) {
+            const isInitial = state === GameState.INITIAL;
+            const isPlaying = state === GameState.PLAYING;
+            const isPaused = state === GameState.PAUSED;
+            const isGameOver = state === GameState.GAME_OVER;
+            
+            addLog(`updateButtonStates 被调用，状态: ${state}`);
+            addLog(`isInitial: ${isInitial}, isPlaying: ${isPlaying}, isPaused: ${isPaused}, isGameOver: ${isGameOver}`);
+            
+            // 开始按钮
+            elements.startButton.disabled = isPlaying || isPaused;
+            elements.startButton.textContent = isPaused ? '继续' : '开始';
+            
+            // 暂停按钮
+            const pauseDisabled = !isPlaying && !isPaused;
+            elements.pauseButton.disabled = pauseDisabled;
+            elements.pauseButton.textContent = isPaused ? '继续' : '暂停';
+            
+            addLog(`暂停按钮: disabled=${pauseDisabled}, text="${elements.pauseButton.textContent}"`);
+            
+            // 重新开始按钮
+            elements.restartButton.disabled = false;
+            
+            // 更新状态显示
+            elements.currentState.textContent = state;
+            elements.startDisabled.textContent = elements.startButton.disabled;
+            elements.pauseDisabled.textContent = elements.pauseButton.disabled;
+            elements.pauseText.textContent = elements.pauseButton.textContent;
+        }
+        
+        // 按钮点击事件
+        elements.startButton.addEventListener('click', () => {
+            addLog(`点击开始按钮，当前状态: ${currentState}`);
+            
+            if (currentState === GameState.INITIAL || currentState === GameState.GAME_OVER) {
+                currentState = GameState.PLAYING;
+                addLog(`游戏开始 -> 状态变为 PLAYING`);
+            } else if (currentState === GameState.PAUSED) {
+                currentState = GameState.PLAYING;
+                addLog(`游戏继续 -> 状态变为 PLAYING`);
+            }
+            
+            updateButtonStates(currentState);
+        });
+        
+        elements.pauseButton.addEventListener('click', () => {
+            addLog(`点击暂停按钮，当前状态: ${currentState}`);
+            
+            if (currentState === GameState.PLAYING) {
+                currentState = GameState.PAUSED;
+                addLog(`游戏暂停 -> 状态变为 PAUSED`);
+            } else if (currentState === GameState.PAUSED) {
+                currentState = GameState.PLAYING;
+                addLog(`游戏继续 -> 状态变为 PLAYING`);
+            }
+            
+            updateButtonStates(currentState);
+        });
+        
+        elements.restartButton.addEventListener('click', () => {
+            addLog(`点击重新开始按钮`);
+            currentState = GameState.INITIAL;
+            updateButtonStates(currentState);
+        });
+        
+        // 初始状态
+        addLog('页面加载完成，初始化游戏状态');
+        updateButtonStates(currentState);
+        
+        // 调试信息
+        setTimeout(() => {
+            addLog('=== 调试信息 ===');
+            addLog(`开始按钮 DOM: ${elements.startButton ? '找到' : '未找到'}`);
+            addLog(`暂停按钮 DOM: ${elements.pauseButton ? '找到' : '未找到'}`);
+            addLog(`重新开始按钮 DOM: ${elements.restartButton ? '找到' : '未找到'}`);
+            
+            // 检查样式
+            const pauseStyle = window.getComputedStyle(elements.pauseButton);
+            addLog(`暂停按钮样式: opacity=${pauseStyle.opacity}, cursor=${pauseStyle.cursor}`);
+            addLog(`暂停按钮类名: ${elements.pauseButton.className}`);
+        }, 100);
+    </script>
+</body>
+</html>

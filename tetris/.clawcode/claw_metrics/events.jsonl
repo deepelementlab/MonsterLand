@@ -1,0 +1,1 @@
+{"ts": 1775025726, "event_type": "agent_closed_loop_metrics", "payload": {"session_id": "8012ecb6-4688-4ea9-828e-9771af5d63ed", "domain": "general", "source": "agent", "tool_name": "memory", "memory_nudge": 0, "skill_nudge": 0, "flush_success": 0, "flush_attempts": 15, "flush_budget_hit": 0, "flush_dup_skip": 0}, "trace_id": "", "cycle_id": "", "policy_hash": ""}

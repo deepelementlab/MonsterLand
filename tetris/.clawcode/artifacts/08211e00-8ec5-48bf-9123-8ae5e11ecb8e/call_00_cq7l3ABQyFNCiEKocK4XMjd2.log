@@ -1,0 +1,935 @@
+Sub-agent (clawteam-system-architect) Result:
+Content: # 俄罗斯方块游戏技术架构设计方案
+
+## 1. 技术栈选择
+
+### 1.1 渲染技术选择：HTML5 Canvas
+**选择理由：**
+- **性能优势**：Canvas提供直接的像素操作，适合高频率更新的游戏渲染
+- **简洁性**：相对于WebGL复杂度更低，维护成本小
+- **兼容性**：所有现代浏览器都支持Canvas API
+- **开发效率**：2D渲染API简单易用，调试方便
+- **游戏特性**：俄罗斯方块作为2D网格游戏，Canvas完全满足需求
+
+**排除方案：**
+- **DOM渲染**：性能差，更新频繁时会导致大量重排重绘
+- **WebGL**：过度复杂，对2D游戏不必要，增加开发难度
+
+### 1.2 编程语言选择：TypeScript
+**选择理由：**
+- **类型安全**：提供编译时类型检查，减少运行时错误
+- **代码可维护性**：面向对象特性，良好的模块化支持
+- **开发体验**：智能提示，重构支持，更好的协作性
+- **向后兼容**：编译为原生JavaScript，兼容所有浏览器
+
+## 2. 核心架构模块
+
+### 2.1 系统架构概览
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Presentation Layer                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │  Canvas  │  │  UI      │  │  Event Handler           │  │
+│  │  Renderer│  │  Renderer│  │  (Keyboard/Mouse)        │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                     Application Layer                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │ Game     │  │ Score    │  │ Level     │  │ Sound     │  │
+│  │ Controller│ │ Manager  │  │ Manager   │  │ Manager   │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                      Domain Layer                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Game     │  │ Block    │  │ Collision│  │ Line     │   │
+│  │ Engine   │  │ System   │  │ Detector │  │ Clearer  │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                   Infrastructure Layer                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │ Storage  │  │ Local    │  │ Browser                 │  │
+│  │ Service  │  │ Storage  │  │ Compatibility           │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 模块详细设计
+
+#### 2.2.1 游戏引擎（Game Engine）
+**职责**：
+- 管理游戏主循环（game loop）
+- 协调各模块的状态更新
+- 控制游戏时间流（帧率管理）
+- 状态切换管理（开始、暂停、结束）
+
+**核心算法**：
+```typescript
+// 游戏主循环伪代码
+function gameLoop(timestamp: number): void {
+  // 计算时间增量
+  const deltaTime = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+  
+  // 更新游戏状态
+  if (gameState === GameState.PLAYING) {
+    updateGame(deltaTime);
+  }
+  
+  // 渲染
+  render();
+  
+  // 请求下一帧
+  requestAnimationFrame(gameLoop);
+}
+```
+
+#### 2.2.2 方块系统（Block System）
+**设计要点**：
+- 7种经典俄罗斯方块：I、O、T、S、Z、J、L
+- 统一的方块数据结构
+- 旋转逻辑和方向管理
+- 方块生成算法
+
+**数据结构**：
+```typescript
+interface Block {
+  type: BlockType;           // 方块类型
+  shape: number[][];        // 形状矩阵
+  position: { x: number, y: number };  // 当前位置
+  rotation: number;         // 当前旋转角度（0-3）
+  color: string;            // 方块颜色
+}
+
+// 7种方块形状定义
+const BLOCK_SHAPES: Record<BlockType, number[][][]> = {
+  I: [[[1,1,1,1]], [[1],[1],[1],[1]]],
+  O: [[[1,1],[1,1]]],
+  T: [[[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]], ...],
+  // ... 其他方块
+};
+```
+
+#### 2.2.3 碰撞检测系统（Collision Detector）
+**检测类型**：
+1. **边界碰撞**：检查方块是否超出游戏区域边界
+2. **方块碰撞**：检查方块是否与已落下方块重叠
+3. **底部碰撞**：检查方块是否触底
+
+**算法**：
+```typescript
+class CollisionDetector {
+  // 检测移动是否合法
+  checkMove(board: number[][], block: Block, dx: number, dy: number): boolean {
+    for (let y = 0; y < block.shape.length; y++) {
+      for (let x = 0; x < block.shape[y].length; x++) {
+        if (block.shape[y][x]) {
+          const newX = block.position.x + x + dx;
+          const newY = block.position.y + y + dy;
+          
+          // 边界检查
+          if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+            return false;
+          }
+          
+          // 方块碰撞检查
+          if (newY >= 0 && board[newY][newX]) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+  
+  // 检测旋转是否合法
+  checkRotation(board: number[][], block: Block, newShape: number[][]): boolean {
+    // 类似移动检测的逻辑
+  }
+}
+```
+
+#### 2.2.4 消行和计分系统
+**消行算法**：
+```typescript
+class LineClearer {
+  clearLines(board: number[][]): { newBoard: number[][], clearedLines: number } {
+    let clearedLines = 0;
+    const newBoard: number[][] = [];
+    
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (this.isLineFull(board[y])) {
+        clearedLines++;
+        continue; // 跳过完整行
+      }
+      newBoard.unshift(board[y]);
+    }
+    
+    // 添加空行到顶部
+    while (newBoard.length < BOARD_HEIGHT) {
+      newBoard.unshift(new Array(BOARD_WIDTH).fill(0));
+    }
+    
+    return { newBoard, clearedLines };
+  }
+  
+  private isLineFull(line: number[]): boolean {
+    return line.every(cell => cell !== 0);
+  }
+}
+```
+
+**计分规则**：
+```typescript
+class ScoreManager {
+  private score: number = 0;
+  private level: number = 1;
+  private lines: number = 0;
+  
+  calculateScore(clearedLines: number): void {
+    const points = [0, 100, 300, 500, 800]; // 单消、双消、三消、四消
+    
+    // 基础得分
+    this.score += points[clearedLines] * this.level;
+    this.lines += clearedLines;
+    
+    // 等级提升（每10行升一级）
+    this.level = Math.floor(this.lines / 10) + 1;
+    
+    // 奖励分数（连续消行）
+    if (clearedLines === 4) {
+      this.score += 400; // 消除四行的额外奖励
+    }
+  }
+}
+```
+
+#### 2.2.5 用户输入处理
+**键盘映射**：
+```typescript
+class InputHandler {
+  private keyMap: Record<string, () => void> = {
+    'ArrowLeft': () => this.moveLeft(),
+    'ArrowRight': () => this.moveRight(),
+    'ArrowDown': () => this.moveDown(),
+    'ArrowUp': () => this.rotate(),
+    'Space': () => this.hardDrop(),
+    'p': () => this.togglePause(),
+    'r': () => this.restart()
+  };
+  
+  // 按键重复控制（防止过快移动）
+  private lastMoveTime: number = 0;
+  private moveDelay: number = 100; // 毫秒
+  
+  handleKeyDown(event: KeyboardEvent): void {
+    const action = this.keyMap[event.key];
+    if (action && Date.now() - this.lastMoveTime > this.moveDelay) {
+      action();
+      this.lastMoveTime = Date.now();
+    }
+  }
+}
+```
+
+#### 2.2.6 渲染系统
+**Canvas渲染器**：
+```typescript
+class CanvasRenderer {
+  private ctx: CanvasRenderingContext2D;
+  private blockSize: number;
+  
+  render(board: number[][], currentBlock: Block, nextBlock: Block): void {
+    // 1. 清除画布
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // 2. 绘制网格背景
+    this.drawGrid();
+    
+    // 3. 绘制已落下方块
+    this.drawBoard(board);
+    
+    // 4. 绘制当前方块
+    this.drawBlock(currentBlock);
+    
+    // 5. 绘制预览（ghost方块）
+    this.drawGhostBlock(currentBlock, board);
+    
+    // 6. 绘制UI（分数、等级、下一个方块）
+    this.drawUI(score, level, nextBlock);
+  }
+  
+  private drawBlock(block: Block): void {
+    block.shape.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell) {
+          const screenX = (block.position.x + x) * this.blockSize;
+          const screenY = (block.position.y + y) * this.blockSize;
+          
+          // 绘制方块，带3D效果
+          this.draw3DBlock(screenX, screenY, block.color);
+        }
+      });
+    });
+  }
+}
+```
+
+#### 2.2.7 游戏状态管理
+**状态机设计**：
+```typescript
+enum GameState {
+  MENU,      // 菜单界面
+  PLAYING,   // 游戏中
+  PAUSED,    // 暂停
+  GAME_OVER, // 游戏结束
+  SETTINGS   // 设置界面
+}
+
+class GameStateManager {
+  private currentState: GameState = GameState.MENU;
+  private previousState: GameState | null = null;
+  
+  transitionTo(newState: GameState): void {
+    this.previousState = this.currentState;
+    this.currentState = newState;
+    
+    // 触发状态变化事件
+    this.onStateChange.emit({
+      from: this.previousState,
+      to: this.currentState
+    });
+  }
+  
+  togglePause(): void {
+    if (this.currentState === GameState.PLAYING) {
+      this.transitionTo(GameState.PAUSED);
+    } else if (this.currentState === GameState.PAUSED) {
+      this.transitionTo(GameState.PLAYING);
+    }
+  }
+}
+```
+
+## 3. 代码结构设计
+
+### 3.1 项目目录结构
+```
+tetris-game/
+├── src/
+│   ├── core/                    # 核心游戏逻辑
+│   │   ├── engine/             # 游戏引擎
+│   │   │   ├── GameEngine.ts
+│   │   │   ├── GameLoop.ts
+│   │   │   └── TimeManager.ts
+│   │   ├── board/              # 游戏板逻辑
+│   │   │   ├── Board.ts
+│   │   │   ├── BoardRenderer.ts
+│   │   │   └── Grid.ts
+│   │   ├── blocks/             # 方块系统
+│   │   │   ├── Block.ts
+│   │   │   ├── BlockFactory.ts
+│   │   │   ├── BlockRotator.ts
+│   │   │   └── shapes/         # 方块形状定义
+│   │   ├── collision/          # 碰撞检测
+│   │   │   ├── CollisionDetector.ts
+│   │   │   └── CollisionResolver.ts
+│   │   ├── scoring/            # 计分系统
+│   │   │   ├── ScoreManager.ts
+│   │   │   ├── LevelManager.ts
+│   │   │   └── LineClearer.ts
+│   │   └── input/              # 输入处理
+│   │       ├── InputHandler.ts
+│   │       ├── KeyboardController.ts
+│   │       └── TouchController.ts
+│   ├── ui/                     # 用户界面
+│   │   ├── components/         # UI组件
+│   │   │   ├── GameCanvas.ts
+│   │   │   ├── ScoreBoard.ts
+│   │   │   ├── NextBlockPreview.ts
+│   │   │   ├── ControlPanel.ts
+│   │   │   └── GameMenu.ts
+│   │   └── themes/             # 主题/皮肤
+│   │       ├── ThemeManager.ts
+│   │       ├── ClassicTheme.ts
+│   │       └── ModernTheme.ts
+│   ├── audio/                  # 音效系统
+│   │   ├── AudioManager.ts
+│   │   ├── SoundEffects.ts
+│   │   └── BackgroundMusic.ts
+│   ├── storage/                # 数据存储
+│   │   ├── StorageService.ts
+│   │   ├── GameSaver.ts
+│   │   └── HighScoreManager.ts
+│   ├── utils/                  # 工具函数
+│   │   ├── math/              # 数学工具
+│   │   ├── animation/         # 动画工具
+│   │   └── performance/       # 性能工具
+│   └── config/                # 配置文件
+│       ├── constants.ts       # 游戏常量
+│       ├── gameConfig.ts      # 游戏配置
+│       └── keyBindings.ts     # 按键绑定
+├── public/                    # 静态资源
+│   ├── index.html
+│   ├── styles/
+│   │   └── main.css
+│   └── assets/
+│       ├── sounds/
+│       └── fonts/
+├── tests/                     # 测试文件
+│   ├── unit/
+│   └── integration/
+├── docs/                      # 文档
+├── package.json
+├── tsconfig.json
+├── webpack.config.js
+└── README.md
+```
+
+### 3.2 核心类设计
+
+#### 3.2.1 主游戏控制器
+```typescript
+class TetrisGame {
+  // 核心组件
+  private engine: GameEngine;
+  private board: Board;
+  private scoreManager: ScoreManager;
+  private inputHandler: InputHandler;
+  private renderer: CanvasRenderer;
+  private stateManager: GameStateManager;
+  
+  // 游戏状态
+  private currentBlock: Block | null;
+  private nextBlock: Block;
+  private isGameOver: boolean = false;
+  
+  constructor(config: GameConfig) {
+    this.initializeComponents(config);
+    this.setupEventListeners();
+  }
+  
+  start(): void {
+    this.engine.start();
+    this.stateManager.transitionTo(GameState.PLAYING);
+  }
+  
+  private gameLoop(): void {
+    // 1. 处理输入
+    this.inputHandler.processInput();
+    
+    // 2. 更新游戏状态
+    this.update();
+    
+    // 3. 碰撞检测
+    this.checkCollisions();
+    
+    // 4. 渲染
+    this.renderer.render(
+      this.board.getGrid(),
+      this.currentBlock!,
+      this.nextBlock,
+      this.scoreManager.getScore(),
+      this.scoreManager.getLevel()
+    );
+  }
+}
+```
+
+#### 3.2.2 方块工厂模式
+```typescript
+class BlockFactory {
+  private static readonly BLOCK_TYPES: BlockType[] = [
+    BlockType.I, BlockType.O, BlockType.T,
+    BlockType.S, BlockType.Z, BlockType.J, BlockType.L
+  ];
+  
+  // 使用7-bag随机算法（保证公平性）
+  private bag: BlockType[] = [];
+  
+  createRandomBlock(): Block {
+    if (this.bag.length === 0) {
+      this.refillBag();
+    }
+    
+    const type = this.bag.pop()!;
+    return this.createBlock(type);
+  }
+  
+  private refillBag(): void {
+    // 复制并打乱
+    this.bag = [...BlockFactory.BLOCK_TYPES];
+# 俄罗斯方块游戏技术架构设计方案
+
+## 1. 技术栈选择
+
+### 1.1 渲染技术选择：HTML5 Canvas
+**选择理由：**
+- **性能优势**：Canvas提供直接的像素操作，适合高频率更新的游戏渲染
+- **简洁性**：相对于WebGL复杂度更低，维护成本小
+- **兼容性**：所有现代浏览器都支持Canvas API
+- **开发效率**：2D渲染API简单易用，调试方便
+- **游戏特性**：俄罗斯方块作为2D网格游戏，Canvas完全满足需求
+
+**排除方案：**
+- **DOM渲染**：性能差，更新频繁时会导致大量重排重绘
+- **WebGL**：过度复杂，对2D游戏不必要，增加开发难度
+
+### 1.2 编程语言选择：TypeScript
+**选择理由：**
+- **类型安全**：提供编译时类型检查，减少运行时错误
+- **代码可维护性**：面向对象特性，良好的模块化支持
+- **开发体验**：智能提示，重构支持，更好的协作性
+- **向后兼容**：编译为原生JavaScript，兼容所有浏览器
+
+## 2. 核心架构模块
+
+### 2.1 系统架构概览
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Presentation Layer                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │  Canvas  │  │  UI      │  │  Event Handler           │  │
+│  │  Renderer│  │  Renderer│  │  (Keyboard/Mouse)        │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                     Application Layer                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │ Game     │  │ Score    │  │ Level     │  │ Sound     │  │
+│  │ Controller│ │ Manager  │  │ Manager   │  │ Manager   │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                      Domain Layer                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Game     │  │ Block    │  │ Collision│  │ Line     │   │
+│  │ Engine   │  │ System   │  │ Detector │  │ Clearer  │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                   Infrastructure Layer                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐  │
+│  │ Storage  │  │ Local    │  │ Browser                 │  │
+│  │ Service  │  │ Storage  │  │ Compatibility           │  │
+│  └──────────┘  └──────────┘  └──────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 模块详细设计
+
+#### 2.2.1 游戏引擎（Game Engine）
+**职责**：
+- 管理游戏主循环（game loop）
+- 协调各模块的状态更新
+- 控制游戏时间流（帧率管理）
+- 状态切换管理（开始、暂停、结束）
+
+**核心算法**：
+```typescript
+// 游戏主循环伪代码
+function gameLoop(timestamp: number): void {
+  // 计算时间增量
+  const deltaTime = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+  
+  // 更新游戏状态
+  if (gameState === GameState.PLAYING) {
+    updateGame(deltaTime);
+  }
+  
+  // 渲染
+  render();
+  
+  // 请求下一帧
+  requestAnimationFrame(gameLoop);
+}
+```
+
+#### 2.2.2 方块系统（Block System）
+**设计要点**：
+- 7种经典俄罗斯方块：I、O、T、S、Z、J、L
+- 统一的方块数据结构
+- 旋转逻辑和方向管理
+- 方块生成算法
+
+**数据结构**：
+```typescript
+interface Block {
+  type: BlockType;           // 方块类型
+  shape: number[][];        // 形状矩阵
+  position: { x: number, y: number };  // 当前位置
+  rotation: number;         // 当前旋转角度（0-3）
+  color: string;            // 方块颜色
+}
+
+// 7种方块形状定义
+const BLOCK_SHAPES: Record<BlockType, number[][][]> = {
+  I: [[[1,1,1,1]], [[1],[1],[1],[1]]],
+  O: [[[1,1],[1,1]]],
+  T: [[[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]], ...],
+  // ... 其他方块
+};
+```
+
+#### 2.2.3 碰撞检测系统（Collision Detector）
+**检测类型**：
+1. **边界碰撞**：检查方块是否超出游戏区域边界
+2. **方块碰撞**：检查方块是否与已落下方块重叠
+3. **底部碰撞**：检查方块是否触底
+
+**算法**：
+```typescript
+class CollisionDetector {
+  // 检测移动是否合法
+  checkMove(board: number[][], block: Block, dx: number, dy: number): boolean {
+    for (let y = 0; y < block.shape.length; y++) {
+      for (let x = 0; x < block.shape[y].length; x++) {
+        if (block.shape[y][x]) {
+          const newX = block.position.x + x + dx;
+          const newY = block.position.y + y + dy;
+          
+          // 边界检查
+          if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+            return false;
+          }
+          
+          // 方块碰撞检查
+          if (newY >= 0 && board[newY][newX]) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+  
+  // 检测旋转是否合法
+  checkRotation(board: number[][], block: Block, newShape: number[][]): boolean {
+    // 类似移动检测的逻辑
+  }
+}
+```
+
+#### 2.2.4 消行和计分系统
+**消行算法**：
+```typescript
+class LineClearer {
+  clearLines(board: number[][]): { newBoard: number[][], clearedLines: number } {
+    let clearedLines = 0;
+    const newBoard: number[][] = [];
+    
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (this.isLineFull(board[y])) {
+        clearedLines++;
+        continue; // 跳过完整行
+      }
+      newBoard.unshift(board[y]);
+    }
+    
+    // 添加空行到顶部
+    while (newBoard.length < BOARD_HEIGHT) {
+      newBoard.unshift(new Array(BOARD_WIDTH).fill(0));
+    }
+    
+    return { newBoard, clearedLines };
+  }
+  
+  private isLineFull(line: number[]): boolean {
+    return line.every(cell => cell !== 0);
+  }
+}
+```
+
+**计分规则**：
+```typescript
+class ScoreManager {
+  private score: number = 0;
+  private level: number = 1;
+  private lines: number = 0;
+  
+  calculateScore(clearedLines: number): void {
+    const points = [0, 100, 300, 500, 800]; // 单消、双消、三消、四消
+    
+    // 基础得分
+    this.score += points[clearedLines] * this.level;
+    this.lines += clearedLines;
+    
+    // 等级提升（每10行升一级）
+    this.level = Math.floor(this.lines / 10) + 1;
+    
+    // 奖励分数（连续消行）
+    if (clearedLines === 4) {
+      this.score += 400; // 消除四行的额外奖励
+    }
+  }
+}
+```
+
+#### 2.2.5 用户输入处理
+**键盘映射**：
+```typescript
+class InputHandler {
+  private keyMap: Record<string, () => void> = {
+    'ArrowLeft': () => this.moveLeft(),
+    'ArrowRight': () => this.moveRight(),
+    'ArrowDown': () => this.moveDown(),
+    'ArrowUp': () => this.rotate(),
+    'Space': () => this.hardDrop(),
+    'p': () => this.togglePause(),
+    'r': () => this.restart()
+  };
+  
+  // 按键重复控制（防止过快移动）
+  private lastMoveTime: number = 0;
+  private moveDelay: number = 100; // 毫秒
+  
+  handleKeyDown(event: KeyboardEvent): void {
+    const action = this.keyMap[event.key];
+    if (action && Date.now() - this.lastMoveTime > this.moveDelay) {
+      action();
+      this.lastMoveTime = Date.now();
+    }
+  }
+}
+```
+
+#### 2.2.6 渲染系统
+**Canvas渲染器**：
+```typescript
+class CanvasRenderer {
+  private ctx: CanvasRenderingContext2D;
+  private blockSize: number;
+  
+  render(board: number[][], currentBlock: Block, nextBlock: Block): void {
+    // 1. 清除画布
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // 2. 绘制网格背景
+    this.drawGrid();
+    
+    // 3. 绘制已落下方块
+    this.drawBoard(board);
+    
+    // 4. 绘制当前方块
+    this.drawBlock(currentBlock);
+    
+    // 5. 绘制预览（ghost方块）
+    this.drawGhostBlock(currentBlock, board);
+    
+    // 6. 绘制UI（分数、等级、下一个方块）
+    this.drawUI(score, level, nextBlock);
+  }
+  
+  private drawBlock(block: Block): void {
+    block.shape.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell) {
+          const screenX = (block.position.x + x) * this.blockSize;
+          const screenY = (block.position.y + y) * this.blockSize;
+          
+          // 绘制方块，带3D效果
+          this.draw3DBlock(screenX, screenY, block.color);
+        }
+      });
+    });
+  }
+}
+```
+
+#### 2.2.7 游戏状态管理
+**状态机设计**：
+```typescript
+enum GameState {
+  MENU,      // 菜单界面
+  PLAYING,   // 游戏中
+  PAUSED,    // 暂停
+  GAME_OVER, // 游戏结束
+  SETTINGS   // 设置界面
+}
+
+class GameStateManager {
+  private currentState: GameState = GameState.MENU;
+  private previousState: GameState | null = null;
+  
+  transitionTo(newState: GameState): void {
+    this.previousState = this.currentState;
+    this.currentState = newState;
+    
+    // 触发状态变化事件
+    this.onStateChange.emit({
+      from: this.previousState,
+      to: this.currentState
+    });
+  }
+  
+  togglePause(): void {
+    if (this.currentState === GameState.PLAYING) {
+      this.transitionTo(GameState.PAUSED);
+    } else if (this.currentState === GameState.PAUSED) {
+      this.transitionTo(GameState.PLAYING);
+    }
+  }
+}
+```
+
+## 3. 代码结构设计
+
+### 3.1 项目目录结构
+```
+tetris-game/
+├── src/
+│   ├── core/                    # 核心游戏逻辑
+│   │   ├── engine/             # 游戏引擎
+│   │   │   ├── GameEngine.ts
+│   │   │   ├── GameLoop.ts
+│   │   │   └── TimeManager.ts
+│   │   ├── board/              # 游戏板逻辑
+│   │   │   ├── Board.ts
+│   │   │   ├── BoardRenderer.ts
+│   │   │   └── Grid.ts
+│   │   ├── blocks/             # 方块系统
+│   │   │   ├── Block.ts
+│   │   │   ├── BlockFactory.ts
+│   │   │   ├── BlockRotator.ts
+│   │   │   └── shapes/         # 方块形状定义
+│   │   ├── collision/          # 碰撞检测
+│   │   │   ├── CollisionDetector.ts
+│   │   │   └── CollisionResolver.ts
+│   │   ├── scoring/            # 计分系统
+│   │   │   ├── ScoreManager.ts
+│   │   │   ├── LevelManager.ts
+│   │   │   └── LineClearer.ts
+│   │   └── input/              # 输入处理
+│   │       ├── InputHandler.ts
+│   │       ├── KeyboardController.ts
+│   │       └── TouchController.ts
+│   ├── ui/                     # 用户界面
+│   │   ├── components/         # UI组件
+│   │   │   ├── GameCanvas.ts
+│   │   │   ├── ScoreBoard.ts
+│   │   │   ├── NextBlockPreview.ts
+│   │   │   ├── ControlPanel.ts
+│   │   │   └── GameMenu.ts
+│   │   └── themes/             # 主题/皮肤
+│   │       ├── ThemeManager.ts
+│   │       ├── ClassicTheme.ts
+│   │       └── ModernTheme.ts
+│   ├── audio/                  # 音效系统
+│   │   ├── AudioManager.ts
+│   │   ├── SoundEffects.ts
+│   │   └── BackgroundMusic.ts
+│   ├── storage/                # 数据存储
+│   │   ├── StorageService.ts
+│   │   ├── GameSaver.ts
+│   │   └── HighScoreManager.ts
+│   ├── utils/                  # 工具函数
+│   │   ├── math/              # 数学工具
+│   │   ├── animation/         # 动画工具
+│   │   └── performance/       # 性能工具
+│   └── config/                # 配置文件
+│       ├── constants.ts       # 游戏常量
+│       ├── gameConfig.ts      # 游戏配置
+│       └── keyBindings.ts     # 按键绑定
+├── public/                    # 静态资源
+│   ├── index.html
+│   ├── styles/
+│   │   └── main.css
+│   └── assets/
+│       ├── sounds/
+│       └── fonts/
+├── tests/                     # 测试文件
+│   ├── unit/
+│   └── integration/
+├── docs/                      # 文档
+├── package.json
+├── tsconfig.json
+├── webpack.config.js
+└── README.md
+```
+
+### 3.2 核心类设计
+
+#### 3.2.1 主游戏控制器
+```typescript
+class TetrisGame {
+  // 核心组件
+  private engine: GameEngine;
+  private board: Board;
+  private scoreManager: ScoreManager;
+  private inputHandler: InputHandler;
+  private renderer: CanvasRenderer;
+  private stateManager: GameStateManager;
+  
+  // 游戏状态
+  private currentBlock: Block | null;
+  private nextBlock: Block;
+  private isGameOver: boolean = false;
+  
+  constructor(config: GameConfig) {
+    this.initializeComponents(config);
+    this.setupEventListeners();
+  }
+  
+  start(): void {
+    this.engine.start();
+    this.stateManager.transitionTo(GameState.PLAYING);
+  }
+  
+  private gameLoop(): void {
+    // 1. 处理输入
+    this.inputHandler.processInput();
+    
+    // 2. 更新游戏状态
+    this.update();
+    
+    // 3. 碰撞检测
+    this.checkCollisions();
+    
+    // 4. 渲染
+    this.renderer.render(
+      this.board.getGrid(),
+      this.currentBlock!,
+      this.nextBlock,
+      this.scoreManager.getScore(),
+      this.scoreManager.getLevel()
+    );
+  }
+}
+```
+
+#### 3.2.2 方块工厂模式
+```typescript
+class BlockFactory {
+  private static readonly BLOCK_TYPES: BlockType[] = [
+    BlockType.I, BlockType.O, BlockType.T,
+    BlockType.S, BlockType.Z, BlockType.J, BlockType.L
+  ];
+  
+  // 使用7-bag随机算法（保证公平性）
+  private bag: BlockType[] = [];
+  
+  createRandomBlock(): Block {
+    if (this.bag.length === 0) {
+      this.refillBag();
+    }
+    
+    const type = this.bag.pop()!;
+    return this.createBlock(type);
+  }
+  
+  private refillBag(): void {
+    // 复制并打乱
+    this.bag = [...BlockFactory.BLOCK_TYPES];
+
+Duration: 160770 ms
+Tool calls: 6
+Token usage: 19091

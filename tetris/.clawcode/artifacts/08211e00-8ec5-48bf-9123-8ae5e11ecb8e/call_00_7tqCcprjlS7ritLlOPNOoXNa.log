@@ -1,0 +1,303 @@
+Successfully wrote 62 lines (2508 bytes) to simple-test.html
+
+--- a/simple-test.html
++++ b/simple-test.html
+@@ -3,253 +3,60 @@
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>俄罗斯方块简单测试</title>
+-    <style>
+-        body {
+-            font-family: Arial, sans-serif;
+-            padding: 20px;
+-            background: #0f172a;
+-            color: white;
+-        }
+-        canvas {
+-            border: 2px solid #3b82f6;
+-            background: #1e293b;
+-        }
+-        .controls {
+-            margin: 20px 0;
+-        }
+-        button {
+-            background: #3b82f6;
+-            color: white;
+-            border: none;
+-            padding: 10px 20px;
+-            margin: 5px;
+-            border-radius: 5px;
+-            cursor: pointer;
+-        }
+-        button:hover {
+-            background: #2563eb;
+-        }
+-        #log {
+-            font-family: monospace;
+-            background: black;
+-            color: white;
+-            padding: 15px;
+-            margin-top: 20px;
+-            border-radius: 5px;
+-            min-height: 100px;
+-            overflow-y: auto;
+-        }
+-    </style>
++    <title>简单测试</title>
+ </head>
+ <body>
+     <h1>俄罗斯方块简单测试</h1>
+-    <p>这个测试直接加载游戏模块，不通过main.js入口</p>
+-    
+-    <canvas id="gameCanvas" width="400" height="800"></canvas>
+-    
+-    <div class="controls">
+-        <button onclick="startGame()">开始游戏</button>
+-        <button onclick="moveLeft()">← 左移</button>
+-        <button onclick="moveRight()">→ 右移</button>
+-        <button onclick="rotate()">↑ 旋转</button>
+-        <button onclick="drop()">↓ 下落</button>
+-        <button onclick="pause()">暂停</button>
+-        <button onclick="reset()">重置</button>
+-    </div>
+-    
+-    <div>
+-        <p>状态: <span id="state">准备开始</span></p>
+-        <p>分数: <span id="score">0</span></p>
+-        <p>等级: <span id="level">1</span></p>
+-        <p>消行: <span id="lines">0</span></p>
+-    </div>
+-    
+-    <div id="log">等待加载...</div>
++    <button onclick="testImport()">测试模块导入</button>
++    <div id="result"></div>
+     
+     <script type="module">
+-        // 全局变量
+-        let gameEngine = null;
+-        let renderer = null;
+-        const logElement = document.getElementById('log');
+-        
+-        // 日志函数
+-        function log(message) {
+-            const time = new Date().toLocaleTimeString();
+-            logElement.innerHTML += `[${time}] ${message}<br>`;
+-            logElement.scrollTop = logElement.scrollHeight;
+-        }
+-        
+-        // 更新UI显示
+-        function updateUI() {
+-            if (gameEngine) {
+-                const state = gameEngine.getGameState();
+-                document.getElementById('state').textContent = state.state;
+-                document.getElementById('score').textContent = state.score;
+-                document.getElementById('level').textContent = state.level;
+-                document.getElementById('lines').textContent = state.linesCleared;
++        async function testImport() {
++            const resultDiv = document.getElementById('result');
++            try {
++                resultDiv.innerHTML = '开始导入模块...<br>';
+                 
+-                // 渲染游戏
+-                if (renderer) {
+-                    renderer.render(state);
+-                }
++                // 测试配置模块
++                const config = await import('./src/config.js');
++                resultDiv.innerHTML += '✅ 配置模块导入成功<br>';
++                
++                // 测试方块模块
++                const blockModule = await import('./src/block/block.js');
++                resultDiv.innerHTML += '✅ 方块模块导入成功<br>';
++                
++                // 创建方块
++                const factory = new blockModule.BlockFactory();
++                const block = factory.createNextBlock();
++                resultDiv.innerHTML += `✅ 方块创建成功: ${block.type}<br>`;
++                
++                // 测试游戏模块
++                const gameModule = await import('./src/game/game.js');
++                resultDiv.innerHTML += '✅ 游戏模块导入成功<br>';
++                
++                const engine = new gameModule.GameEngine();
++                resultDiv.innerHTML += '✅ 游戏引擎创建成功<br>';
++                
++                // 测试渲染器模块
++                const renderModule = await import('./src/render/canvas-renderer.js');
++                resultDiv.innerHTML += '✅ 渲染器模块导入成功<br>';
++                
++                resultDiv.innerHTML += '<br><strong>✅ 所有模块导入成功！游戏应该可以正常工作。</strong>';
++                
++                console.log('所有模块导入成功！');
++                console.log('配置:', config);
++                console.log('方块:', block);
++                console.log('引擎:', engine);
++                
++            } catch (error) {
++                resultDiv.innerHTML += `<br><strong>❌ 导入失败: ${error.message}</strong>`;
++                console.error('导入错误:', error);
+             }
+         }
+         
+-        // 初始化游戏
+-        async function initGame() {
+-            log('开始初始化游戏...');
+-            
+-            try {
+-                // 1. 导入config.js - 确保路径正确
+-                log('导入 config.js...');
+-                const configModule = await import('./src/config.js');
+-                log('✅ config.js 导入成功');
+-                
+-                // 2. 导入block.js
+-                log('导入 block/block.js...');
+-                const blockModule = await import('./src/block/block.js');
+-                log('✅ block/block.js 导入成功');
+-                
+-                // 3. 导入game.js
+-                log('导入 game/game.js...');
+-                const gameModule = await import('./src/game/game.js');
+-                log('✅ game/game.js 导入成功');
+-                
+-                // 4. 导入renderer.js
+-                log('导入 render/canvas-renderer.js...');
+-                const renderModule = await import('./src/render/canvas-renderer.js');
+-                log('✅ canvas-renderer.js 导入成功');
+-                
+-                // 5. 创建游戏实例
+-                log('创建游戏引擎实例...');
+-                gameEngine = new gameModule.GameEngine();
+-                log('✅ 游戏引擎创建成功');
+-                
+-                // 6. 创建渲染器
+-                log('创建Canvas渲染器...');
+-                const canvas = document.getElementById('gameCanvas');
+-                renderer = new renderModule.CanvasRenderer(canvas);
+-                log('✅ 渲染器创建成功');
+-                
+-                // 7. 设置回调
+-                gameEngine.setOnStateChange((state) => {
+-                    log(`游戏状态改变: ${state}`);
+-                    updateUI();
+-                });
+-                
+-                gameEngine.setOnScoreUpdate((score, highScore) => {
+-                    log(`分数更新: ${score} (最高: ${highScore})`);
+-                    updateUI();
+-                });
+-                
+-                // 8. 初始渲染
+-                updateUI();
+-                log('🎉 游戏初始化完成！');
+-                log('点击"开始游戏"按钮测试');
+-                
+-            } catch (error) {
+-                log(`❌ 初始化失败: ${error.message}`);
+-                log(`错误详情: ${error.stack}`);
+-                console.error('详细错误:', error);
+-            }
+-        }
+-        
+-        // 游戏控制函数
+-        window.startGame = function() {
+-            if (!gameEngine) {
+-                log('❌ 游戏未初始化');
+-                return;
+-            }
+-            log('开始游戏...');
+-            gameEngine.start();
+-            updateUI();
+-        };
+-        
+-        window.moveLeft = function() {
+-            if (!gameEngine) return;
+-            gameEngine.moveCurrentBlock(-1, 0);
+-            updateUI();
+-        };
+-        
+-        window.moveRight = function() {
+-            if (!gameEngine) return;
+-            gameEngine.moveCurrentBlock(1, 0);
+-            updateUI();
+-        };
+-        
+-        window.rotate = function() {
+-            if (!gameEngine) return;
+-            gameEngine.rotateCurrentBlock(1);
+-            updateUI();
+-        };
+-        
+-        window.drop = function() {
+-            if (!gameEngine) return;
+-            gameEngine.softDrop();
+-            updateUI();
+-        };
+-        
+-        window.pause = function() {
+-            if (!gameEngine) return;
+-            gameEngine.togglePause();
+-            updateUI();
+-        };
+-        
+-        window.reset = function() {
+-            if (!gameEngine) return;
+-            gameEngine.reset();
+-            updateUI();
+-        };
+-        
+-        // 页面加载完成后初始化
+-        document.addEventListener('DOMContentLoaded', () => {
+-            log('页面加载完成，开始初始化游戏...');
+-            initGame();
+-        });
+-        
+-        // 键盘控制
+-        document.addEventListener('keydown', (event) => {
+-            if (!gameEngine) return;
+-            
+-            switch(event.key) {
+-                case 'ArrowLeft':
+-                    gameEngine.moveCurrentBlock(-1, 0);
+-                    updateUI();
+-                    break;
+-                case 'ArrowRight':
+-                    gameEngine.moveCurrentBlock(1, 0);
+-                    updateUI();
+-                    break;
+-                case 'ArrowUp':
+-                    gameEngine.rotateCurrentBlock(1);
+-                    updateUI();
+-                    break;
+-                case 'ArrowDown':
+-                    gameEngine.softDrop();
+-                    updateUI();
+-                    break;
+-                case ' ':
+-                    gameEngine.hardDrop();
+-                    updateUI();
+-                    break;
+-                case 'p':
+-                case 'P':
+-                    gameEngine.togglePause();
+-                    updateUI();
+-                    break;
+-                case 'r':
+-                case 'R':
+-                    gameEngine.reset();
+-                    updateUI();
+-                    break;
+-                case 'Enter':
+-                    gameEngine.start();
+-                    updateUI();
+-                    break;
+-            }
+-        });
+-        
++        // 页面加载后自动测试
++        setTimeout(() => {
++            testImport();
++        }, 1000);
+     </script>
+ </body>
+ </html>

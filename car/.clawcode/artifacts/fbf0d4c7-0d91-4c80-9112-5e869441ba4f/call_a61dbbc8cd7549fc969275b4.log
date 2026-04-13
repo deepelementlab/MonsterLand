@@ -1,0 +1,326 @@
+Successfully wrote 1 lines (0 bytes) to racing-game.html
+
+--- a/racing-game.html
++++ b/racing-game.html
+@@ -1,321 +0,0 @@
+-<!DOCTYPE html>
+-<html lang="zh-CN">
+-<head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>🏎️ 极速狂飙</title>
+-    <style>
+-        * { margin: 0; padding: 0; box-sizing: border-box; }
+-        body {
+-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+-            min-height: 100vh;
+-            display: flex;
+-            justify-content: center;
+-            align-items: center;
+-            font-family: Arial, sans-serif;
+-            overflow: hidden;
+-        }
+-        .container { position: relative; border-radius: 10px; overflow: hidden; box-shadow: 0 0 50px rgba(0,212,255,0.3); }
+-        canvas { display: block; }
+-        .hud {
+-            position: absolute; top: 10px; left: 10px; right: 10px;
+-            display: flex; justify-content: space-between;
+-            color: white; font-size: 16px; font-weight: bold;
+-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+-            pointer-events: none; z-index: 10;
+-        }
+-        .hud-item { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 20px; }
+-        .score { color: #ffd700; }
+-        .speed { color: #00d4ff; }
+-        .lives { color: #ff6b6b; }
+-        .overlay {
+-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+-            background: rgba(0,0,0,0.85);
+-            display: flex; flex-direction: column;
+-            justify-content: center; align-items: center;
+-            z-index: 20; transition: opacity 0.3s;
+-        }
+-        .overlay.hidden { opacity: 0; pointer-events: none; }
+-        .overlay h1 { font-size: 42px; color: #00d4ff; text-shadow: 0 0 20px #00d4ff; margin-bottom: 20px; }
+-        .overlay p { color: #ccc; font-size: 14px; margin-bottom: 25px; text-align: center; line-height: 1.8; }
+-        .btn {
+-            background: linear-gradient(135deg, #00d4ff, #0099cc);
+-            color: white; border: none; padding: 12px 40px; font-size: 18px;
+-            font-weight: bold; border-radius: 25px; cursor: pointer;
+-            box-shadow: 0 5px 20px rgba(0,212,255,0.4);
+-            transition: transform 0.3s, box-shadow 0.3s;
+-        }
+-        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,212,255,0.6); }
+-        .final-score { font-size: 32px; color: #ffd700; margin: 15px 0; text-shadow: 0 0 10px #ffd700; }
+-    </style>
+-</head>
+-<body>
+-    <div class="container">
+-        <canvas id="canvas" width="800" height="600"></canvas>
+-        <div class="hud">
+-            <div class="hud-item score">🏆 分数: <span id="score">0</span></div>
+-            <div class="hud-item speed">⚡ 速度: <span id="speed">1.0</span>x</div>
+-            <div class="hud-item lives">❤️ 生命: <span id="lives">3</span></div>
+-        </div>
+-        <div class="overlay" id="startScreen">
+-            <h1>🏎️ 极速狂飙</h1>
+-            <p>控制赛车躲避障碍！<br>⬅️➡️/AD 移动 | ⬆️⬇️/WS 加减速 | ESC 暂停</p>
+-            <button class="btn" onclick="startGame()">开始游戏</button>
+-        </div>
+-        <div class="overlay hidden" id="endScreen">
+-            <h1>💥 游戏结束</h1>
+-            <div class="final-score">🏆 <span id="finalScore">0</span> 分</div>
+-            <button class="btn" onclick="startGame()">再来一局</button>
+-        </div>
+-    </div>
+-<script>
+-var W=800, H=600, LANES=5, ROAD_W=640;
+-var canvas = document.getElementById('canvas');
+-var ctx = canvas.getContext('2d');
+-
+-var state = { running: false, paused: false, score: 0, speed: 5, lives: 3, invincible: 0 };
+-var player = { lane: 2, x: 0, y: H-120, w: 50, h: 80, cooldown: 0 };
+-var obstacles = [];
+-var roadLines = [];
+-var particles = [];
+-var keys = {};
+-
+-document.addEventListener('keydown', function(e) {
+-    keys[e.key] = true;
+-    if (e.key === 'Escape') togglePause();
+-    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+-});
+-document.addEventListener('keyup', function(e) { keys[e.key] = false; });
+-
+-function getLaneX(lane) {
+-    var roadX = (W - ROAD_W) / 2;
+-    var laneW = ROAD_W / LANES;
+-    return roadX + lane * laneW + (laneW - player.w) / 2;
+-}
+-
+-function togglePause() {
+-    if (!state.running) return;
+-    state.paused = !state.paused;
+-    if (!state.paused) gameLoop();
+-}
+-
+-function startGame() {
+-    state = { running: true, paused: false, score: 0, speed: 5, lives: 3, invincible: 0 };
+-    player = { lane: 2, x: getLaneX(2), y: H-120, w: 50, h: 80, cooldown: 0 };
+-    obstacles = [];
+-    particles = [];
+-    roadLines = [];
+-    for (var i = 0; i < 12; i++) roadLines.push({ y: i * 60 });
+-    document.getElementById('startScreen').classList.add('hidden');
+-    document.getElementById('endScreen').classList.add('hidden');
+-    gameLoop();
+-}
+-
+-function endGame() {
+-    state.running = false;
+-    document.getElementById('finalScore').textContent = state.score;
+-    document.getElementById('endScreen').classList.remove('hidden');
+-}
+-
+-function spawnParticles(x, y, color, n) {
+-    for (var i = 0; i < n; i++) {
+-        particles.push({ x: x, y: y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 1, color: color, size: 3+Math.random()*4 });
+-    }
+-}
+-
+-function update() {
+-    // Player movement
+-    if (player.cooldown > 0) player.cooldown--;
+-    if (player.cooldown === 0) {
+-        if ((keys['ArrowLeft'] || keys['a']) && player.lane > 0) { player.lane--; player.cooldown = 8; }
+-        if ((keys['ArrowRight'] || keys['d']) && player.lane < LANES-1) { player.lane++; player.cooldown = 8; }
+-    }
+-    var targetX = getLaneX(player.lane);
+-    player.x += (targetX - player.x) * 0.2;
+-    
+-    // Speed control
+-    if (keys['ArrowUp'] || keys['w']) state.speed = Math.min(15, state.speed + 0.05);
+-    if (keys['ArrowDown'] || keys['s']) state.speed = Math.max(2.5, state.speed - 0.05);
+-    
+-    // Gradual speed increase
+-    state.speed = Math.min(15, state.speed + 0.001);
+-    
+-    // Update road lines
+-    for (var i = 0; i < roadLines.length; i++) {
+-        roadLines[i].y += state.speed;
+-        if (roadLines[i].y > H) roadLines[i].y = -20;
+-    }
+-    
+-    // Spawn obstacles
+-    if (obstacles.length < 6 && Math.random() < 0.02) {
+-        var lane = Math.floor(Math.random() * LANES);
+-        obstacles.push({ lane: lane, x: getLaneX(lane), y: -80, w: 50, h: 80, color: ['#ff6b6b','#ffa502','#e74c3c','#9b59b6'][Math.floor(Math.random()*4)] });
+-    }
+-    
+-    // Update obstacles
+-    for (var i = obstacles.length - 1; i >= 0; i--) {
+-        obstacles[i].y += state.speed;
+-        if (obstacles[i].y > H) { obstacles.splice(i, 1); state.score += 10; }
+-    }
+-    
+-    // Collision detection
+-    if (state.invincible > 0) state.invincible--;
+-    if (state.invincible === 0) {
+-        var px = player.x + 5, py = player.y + 5, pw = player.w - 10, ph = player.h - 10;
+-        for (var i = obstacles.length - 1; i >= 0; i--) {
+-            var o = obstacles[i];
+-            if (px < o.x + o.w - 10 && px + pw > o.x + 10 && py < o.y + o.h - 10 && py + ph > o.y + 10) {
+-                spawnParticles(player.x + player.w/2, player.y, '#ff6b6b', 20);
+-                state.lives--;
+-                state.invincible = 120;
+-                obstacles.splice(i, 1);
+-                if (state.lives <= 0) { endGame(); return; }
+-            }
+-        }
+-    }
+-    
+-    // Update particles
+-    for (var i = particles.length - 1; i >= 0; i--) {
+-        var p = particles[i];
+-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+-        if (p.life <= 0) particles.splice(i, 1);
+-    }
+-    
+-    // Score
+-    state.score++;
+-    
+-    // Update HUD
+-    document.getElementById('score').textContent = state.score;
+-    document.getElementById('speed').textContent = (state.speed / 5).toFixed(1);
+-    document.getElementById('lives').textContent = state.lives;
+-}
+-
+-function draw() {
+-    // Grass
+-    ctx.fillStyle = '#1e5128';
+-    ctx.fillRect(0, 0, W, H);
+-    
+-    // Road
+-    var roadX = (W - ROAD_W) / 2;
+-    ctx.fillStyle = '#2d2d44';
+-    ctx.fillRect(roadX, 0, ROAD_W, H);
+-    
+-    // Road edges
+-    ctx.fillStyle = '#ffcc00';
+-    ctx.fillRect(roadX - 5, 0, 5, H);
+-    ctx.fillRect(roadX + ROAD_W, 0, 5, H);
+-    
+-    // Lane lines
+-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+-    ctx.lineWidth = 2;
+-    ctx.setLineDash([30, 20]);
+-    var laneW = ROAD_W / LANES;
+-    for (var i = 1; i < LANES; i++) {
+-        ctx.beginPath();
+-        ctx.moveTo(roadX + i * laneW, 0);
+-        ctx.lineTo(roadX + i * laneW, H);
+-        ctx.stroke();
+-    }
+-    ctx.setLineDash([]);
+-    
+-    // Road markers
+-    ctx.fillStyle = '#fff';
+-    for (var i = 0; i < roadLines.length; i++) {
+-        for (var j = 1; j < LANES; j++) {
+-            ctx.fillRect(roadX + j * laneW - 2, roadLines[i].y, 4, 30);
+-        }
+-    }
+-    
+-    // Draw obstacles
+-    for (var i = 0; i < obstacles.length; i++) {
+-        var o = obstacles[i];
+-        ctx.fillStyle = o.color;
+-        ctx.beginPath();
+-        ctx.moveTo(o.x + 8, o.y);
+-        ctx.lineTo(o.x + o.w - 8, o.y);
+-        ctx.lineTo(o.x + o.w, o.y + o.h - 15);
+-        ctx.lineTo(o.x, o.y + o.h - 15);
+-        ctx.closePath();
+-        ctx.fill();
+-        ctx.fillStyle = '#333';
+-        ctx.beginPath();
+-        ctx.moveTo(o.x + 10, o.y + o.h - 15);
+-        ctx.lineTo(o.x + o.w/2, o.y + o.h);
+-        ctx.lineTo(o.x + o.w - 10, o.y + o.h - 15);
+-        ctx.closePath();
+-        ctx.fill();
+-        ctx.fillStyle = '#001a33';
+-        ctx.fillRect(o.x + 10, o.y + o.h - 45, o.w - 20, 20);
+-        ctx.fillStyle = '#222';
+-        ctx.fillRect(o.x - 4, o.y + 5, 6, 15);
+-        ctx.fillRect(o.x + o.w - 2, o.y + 5, 6, 15);
+-        ctx.fillRect(o.x - 4, o.y + o.h - 30, 6, 15);
+-        ctx.fillRect(o.x + o.w - 2, o.y + o.h - 30, 6, 15);
+-    }
+-    
+-    // Draw player
+-    if (state.invincible === 0 || Math.floor(Date.now() / 100) % 2) {
+-        ctx.fillStyle = '#00d4ff';
+-        ctx.beginPath();
+-        ctx.moveTo(player.x + 8, player.y + 15);
+-        ctx.lineTo(player.x + player.w - 8, player.y + 15);
+-        ctx.lineTo(player.x + player.w, player.y + player.h);
+-        ctx.lineTo(player.x, player.y + player.h);
+-        ctx.closePath();
+-        ctx.fill();
+-        ctx.fillStyle = '#0099cc';
+-        ctx.beginPath();
+-        ctx.moveTo(player.x + 10, player.y + 15);
+-        ctx.lineTo(player.x + player.w/2, player.y);
+-        ctx.lineTo(player.x + player.w - 10, player.y + 15);
+-        ctx.closePath();
+-        ctx.fill();
+-        ctx.fillStyle = '#001a33';
+-        ctx.fillRect(player.x + 10, player.y + 20, player.w - 20, 20);
+-        ctx.fillStyle = '#222';
+-        ctx.fillRect(player.x - 4, player.y + 20, 6, 15);
+-        ctx.fillRect(player.x + player.w - 2, player.y + 20, 6, 15);
+-        ctx.fillRect(player.x - 4, player.y + player.h - 20, 6, 15);
+-        ctx.fillRect(player.x + player.w - 2, player.y + player.h - 20, 6, 15);
+-        ctx.fillStyle = '#ff3333';
+-        ctx.fillRect(player.x + 5, player.y + player.h - 5, 10, 4);
+-        ctx.fillRect(player.x + player.w - 15, player.y + player.h - 5, 10, 4);
+-    }
+-    
+-    // Draw particles
+-    for (var i = 0; i < particles.length; i++) {
+-        var p = particles[i];
+-        ctx.globalAlpha = p.life;
+-        ctx.fillStyle = p.color;
+-        ctx.beginPath();
+-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+-        ctx.fill();
+-    }
+-    ctx.globalAlpha = 1;
+-    
+-    // Pause overlay
+-    if (state.paused) {
+-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+-        ctx.fillRect(0, 0, W, H);
+-        ctx.fillStyle = '#00d4ff';
+-        ctx.font = 'bold 36px Arial';
+-        ctx.textAlign = 'center';
+-        ctx.fillText('⏸️ 已暂停', W/2, H/2);
+-        ctx.font = '18px Arial';
+-        ctx.fillStyle = '#ccc';
+-        ctx.fillText('按 ESC 继续', W/2, H/2 + 40);
+-    }
+-}
+-
+-function gameLoop() {
+-    if (!state.running || state.paused) return;
+-    update();
+-    draw();
+-    requestAnimationFrame(gameLoop);
+-}
+-
+-// Initial draw
+-draw();
+-</script>
+-</body>
+-</html>

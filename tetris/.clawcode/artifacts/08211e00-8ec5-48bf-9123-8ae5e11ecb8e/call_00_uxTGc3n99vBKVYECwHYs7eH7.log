@@ -1,0 +1,327 @@
+Successfully wrote 216 lines (8248 bytes) to direct-test.html
+
+--- a/direct-test.html
++++ b/direct-test.html
+@@ -1,125 +1,216 @@
+ <!DOCTYPE html>
+-<html>
++<html lang="zh-CN">
+ <head>
+-    <title>直接测试俄罗斯方块启动问题</title>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>俄罗斯方块直接测试</title>
+     <style>
+-        body { font-family: monospace; padding: 20px; }
+-        #log { background: #f0f0f0; padding: 20px; border: 1px solid #ccc; }
+-        button { padding: 10px; margin: 5px; }
+-        canvas { border: 1px solid black; margin-top: 20px; }
++        body {
++            font-family: Arial, sans-serif;
++            padding: 20px;
++            background: #1a1a2e;
++            color: white;
++        }
++        .test-area {
++            margin: 20px 0;
++            padding: 20px;
++            background: rgba(30, 41, 59, 0.9);
++            border-radius: 10px;
++        }
++        button {
++            background: #3b82f6;
++            color: white;
++            border: none;
++            padding: 10px 20px;
++            border-radius: 5px;
++            cursor: pointer;
++            margin: 5px;
++        }
++        button:hover {
++            background: #2563eb;
++        }
++        #output {
++            font-family: monospace;
++            background: black;
++            color: white;
++            padding: 15px;
++            border-radius: 5px;
++            margin-top: 20px;
++            min-height: 200px;
++            overflow-y: auto;
++        }
++        .success { color: #10b981; }
++        .error { color: #ef4444; }
+     </style>
+ </head>
+ <body>
+-    <h1>直接测试俄罗斯方块启动问题</h1>
++    <h1>俄罗斯方块直接测试</h1>
+     
+-    <div>
+-        <button onclick="testDirect()">直接测试游戏启动</button>
+-        <button onclick="openGame()">打开主游戏</button>
++    <div class="test-area">
++        <h3>测试步骤：</h3>
++        <button onclick="testImport()">1. 测试模块导入</button>
++        <button onclick="createGame()">2. 创建游戏实例</button>
++        <button onclick="startGame()">3. 开始游戏</button>
++        <button onclick="testControls()">4. 测试控制</button>
++        <button onclick="clearOutput()">清空输出</button>
+     </div>
+     
+-    <canvas id="testCanvas" width="400" height="800"></canvas>
+-    
+-    <div id="log">点击按钮开始测试...</div>
++    <div id="output">等待测试...</div>
+     
+     <script type="module">
+-        const log = document.getElementById('log');
+-        
+-        function addLog(msg) {
+-            log.innerHTML += `<div>${msg}</div>`;
+-            log.scrollTop = log.scrollHeight;
+-        }
+-        
+-        // 直接测试游戏启动
+-        window.testDirect = async function() {
+-            addLog('=== 直接测试游戏启动 ===');
+-            
+-            try {
+-                // 1. 测试方块创建
+-                addLog('1. 测试方块创建...');
+-                const { Block, BlockFactory } = await import('./src/block/block.js');
+-                const factory = new BlockFactory();
+-                const block = factory.createNextBlock();
+-                addLog(`✅ 方块创建成功: ${block.type} (${block.x}, ${block.y})`);
+-                
+-                // 2. 测试游戏引擎
+-                addLog('2. 测试游戏引擎...');
++        const output = document.getElementById('output');
++        let gameEngine = null;
++        let renderer = null;
++        
++        function log(message, className = '') {
++            const time = new Date().toLocaleTimeString();
++            output.innerHTML += `<div class="${className}">[${time}] ${message}</div>`;
++            output.scrollTop = output.scrollHeight;
++        }
++        
++        function clearOutput() {
++            output.innerHTML = '输出已清空...';
++        }
++        
++        async function testImport() {
++            log('开始测试模块导入...');
++            
++            try {
++                // 测试config.js
++                log('导入 config.js...');
++                const config = await import('./src/config.js');
++                log('✅ config.js 导入成功', 'success');
++                log(`游戏配置: ${config.GameConfig.GRID_WIDTH}x${config.GameConfig.GRID_HEIGHT}`, 'success');
++                
++                // 测试block.js
++                log('导入 block/block.js...');
++                const block = await import('./src/block/block.js');
++                log('✅ block.js 导入成功', 'success');
++                
++                // 测试game.js
++                log('导入 game/game.js...');
++                const game = await import('./src/game/game.js');
++                log('✅ game.js 导入成功', 'success');
++                
++                // 测试grid.js
++                log('导入 game/grid.js...');
++                const grid = await import('./src/game/grid.js');
++                log('✅ grid.js 导入成功', 'success');
++                
++                // 测试score.js
++                log('导入 game/score.js...');
++                const score = await import('./src/game/score.js');
++                log('✅ score.js 导入成功', 'success');
++                
++                // 测试renderer.js
++                log('导入 render/canvas-renderer.js...');
++                const render = await import('./src/render/canvas-renderer.js');
++                log('✅ canvas-renderer.js 导入成功', 'success');
++                
++                // 测试ui-controller.js
++                log('导入 ui/ui-controller.js...');
++                const ui = await import('./src/ui/ui-controller.js');
++                log('✅ ui-controller.js 导入成功', 'success');
++                
++                log('🎉 所有模块导入成功！', 'success');
++                
++            } catch (error) {
++                log(`❌ 模块导入失败: ${error.message}`, 'error');
++                log(`错误详情: ${error.stack}`, 'error');
++            }
++        }
++        
++        async function createGame() {
++            log('创建游戏实例...');
++            
++            try {
++                // 导入所需模块
+                 const { GameEngine } = await import('./src/game/game.js');
+-                const engine = new GameEngine();
+-                addLog('✅ 游戏引擎创建成功');
+-                
+-                // 检查初始状态
+-                const initialState = engine.getGameState();
+-                addLog(`初始状态: ${initialState.state}`);
+-                addLog(`当前方块: ${initialState.currentBlock ? '存在' : '不存在'}`);
+-                addLog(`下一个方块: ${initialState.nextBlock ? '存在(' + initialState.nextBlock.type + ')' : '不存在'}`);
+-                
+-                // 3. 直接调用 spawnNewBlock
+-                addLog('3. 直接调用 spawnNewBlock()...');
+-                engine.spawnNewBlock();
+-                
+-                const stateAfterSpawn = engine.getGameState();
+-                addLog(`spawnNewBlock 后当前方块: ${stateAfterSpawn.currentBlock ? '存在(' + stateAfterSpawn.currentBlock.type + ')' : '不存在'}`);
+-                
+-                if (stateAfterSpawn.currentBlock) {
+-                    addLog(`✅ 方块生成成功: ${stateAfterSpawn.currentBlock.type} (${stateAfterSpawn.currentBlock.x}, ${stateAfterSpawn.currentBlock.y})`);
+-                    
+-                    // 4. 启动游戏
+-                    addLog('4. 启动游戏...');
+-                    engine.start();
+-                    
+-                    const stateAfterStart = engine.getGameState();
+-                    addLog(`游戏启动后状态: ${stateAfterStart.state}`);
+-                    addLog(`游戏启动后当前方块: ${stateAfterStart.currentBlock ? '存在(' + stateAfterStart.currentBlock.type + ')' : '不存在'}`);
+-                    
+-                    // 5. 测试渲染
+-                    addLog('5. 测试渲染...');
+-                    const { CanvasRenderer } = await import('./src/render/canvas-renderer.js');
+-                    const canvas = document.getElementById('testCanvas');
+-                    const renderer = new CanvasRenderer(canvas);
+-                    
+-                    renderer.render(stateAfterStart);
+-                    addLog('✅ 渲染成功');
+-                    
+-                    // 6. 测试移动
+-                    setTimeout(() => {
+-                        addLog('6. 测试方块移动...');
+-                        const moved = engine.moveCurrentBlock(0, 1);
+-                        addLog(`向下移动: ${moved ? '成功' : '失败'}`);
+-                        
+-                        if (moved) {
+-                            const newState = engine.getGameState();
+-                            renderer.render(newState);
+-                            addLog('✅ 移动和重新渲染成功');
+-                        }
+-                    }, 500);
+-                    
++                const { CanvasRenderer } = await import('./src/render/canvas-renderer.js');
++                
++                // 创建Canvas元素（因为测试页面没有canvas）
++                const canvas = document.createElement('canvas');
++                canvas.width = 400;
++                canvas.height = 800;
++                canvas.style.border = '1px solid white';
++                document.body.appendChild(canvas);
++                
++                // 创建游戏实例
++                gameEngine = new GameEngine();
++                renderer = new CanvasRenderer(canvas);
++                
++                log('✅ 游戏引擎创建成功', 'success');
++                log(`初始状态: ${gameEngine.state}`, 'success');
++                log(`当前方块: ${gameEngine.currentBlock ? gameEngine.currentBlock.type : '无'}`, 'success');
++                log(`下一个方块: ${gameEngine.nextBlock ? gameEngine.nextBlock.type : '无'}`, 'success');
++                
++                // 渲染初始状态
++                const gameState = gameEngine.getGameState();
++                renderer.render(gameState);
++                log('✅ 初始渲染完成', 'success');
++                
++            } catch (error) {
++                log(`❌ 创建游戏失败: ${error.message}`, 'error');
++                log(`错误详情: ${error.stack}`, 'error');
++            }
++        }
++        
++        function startGame() {
++            if (!gameEngine) {
++                log('❌ 请先创建游戏实例', 'error');
++                return;
++            }
++            
++            log('开始游戏...');
++            
++            try {
++                gameEngine.start();
++                log('✅ 游戏启动命令发送', 'success');
++                log(`游戏状态: ${gameEngine.state}`, 'success');
++                
++                // 检查是否有当前方块
++                if (gameEngine.currentBlock) {
++                    log(`当前方块类型: ${gameEngine.currentBlock.type}`, 'success');
++                    log(`位置: (${gameEngine.currentBlock.x}, ${gameEngine.currentBlock.y})`, 'success');
+                 } else {
+-                    addLog('❌ 问题: spawnNewBlock() 没有生成当前方块');
+-                    
+-                    // 检查 nextBlock
+-                    if (stateAfterSpawn.nextBlock) {
+-                        addLog(`但 nextBlock 存在: ${stateAfterSpawn.nextBlock.type}`);
+-                        addLog('可能问题: spawnNewBlock() 逻辑错误');
+-                        
+-                        // 检查 spawnNewBlock 方法
+-                        addLog('检查 spawnNewBlock 方法逻辑:');
+-                        addLog('this.currentBlock = this.nextBlock;');
+-                        addLog('this.nextBlock = this.blockFactory.createNextBlock();');
+-                    }
++                    log('⚠️ 当前方块为空，可能生成失败', 'error');
+                 }
+                 
+             } catch (error) {
+-                addLog(`❌ 错误: ${error.message}`);
+-                console.error(error);
+-            }
+-        };
+-        
+-        window.openGame = function() {
+-            window.open('index.html', '_blank');
+-            addLog('游戏页面已打开');
+-        };
+-        
+-        addLog('测试工具已就绪');
++                log(`❌ 启动游戏失败: ${error.message}`, 'error');
++                log(`错误详情: ${error.stack}`, 'error');
++            }
++        }
++        
++        function testControls() {
++            if (!gameEngine) {
++                log('❌ 请先创建游戏实例', 'error');
++                return;
++            }
++            
++            log('测试游戏控制...');
++            
++            try {
++                // 测试移动
++                const moved = gameEngine.moveCurrentBlock(1, 0);
++                log(`向右移动: ${moved ? '成功' : '失败'}`, moved ? 'success' : 'error');
++                
++                // 测试旋转
++                const rotated = gameEngine.rotateCurrentBlock(1);
++                log(`旋转: ${rotated ? '成功' : '失败'}`, rotated ? 'success' : 'error');
++                
++                // 测试软降
++                const dropped = gameEngine.softDrop();
++                log(`软降: ${dropped ? '成功' : '失败'}`, dropped ? 'success' : 'error');
++                
++            } catch (error) {
++                log(`❌ 控制测试失败: ${error.message}`, 'error');
++                log(`错误详情: ${error.stack}`, 'error');
++            }
++        }
++        
++        // 初始日志
++        log('页面加载完成，点击按钮开始测试。');
+     </script>
+ </body>
+ </html>

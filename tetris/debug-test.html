@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .console {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            min-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .warning { color: #ffd43b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>俄罗斯方块调试测试</h1>
+        <p>点击按钮测试各个模块，查看控制台输出：</p>
+        
+        <div>
+            <button class="btn" onclick="testConfig()">测试配置文件</button>
+            <button class="btn" onclick="testBlock()">测试方块模块</button>
+            <button class="btn" onclick="testGame()">测试游戏引擎</button>
+            <button class="btn" onclick="testAll()">测试所有模块</button>
+            <button class="btn" onclick="clearConsole()">清空控制台</button>
+        </div>
+        
+        <div id="console" class="console">等待测试...</div>
+    </div>
+
+    <script type="module">
+        const consoleDiv = document.getElementById('console');
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            const logEntry = `<div class="${colorClass}">[${time}] ${prefix} ${message}</div>`;
+            
+            logs.push(logEntry);
+            consoleDiv.innerHTML = logs.join('');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function clearConsole() {
+            logs = [];
+            consoleDiv.innerHTML = '控制台已清空...';
+        }
+        
+        async function testConfig() {
+            log('开始测试配置文件...');
+            try {
+                const config = await import('./src/config.js');
+                log(`导入配置: ${Object.keys(config).join(', ')}`, 'success');
+                
+                if (config.GameConfig) {
+                    log(`网格尺寸: ${config.GameConfig.GRID_WIDTH}x${config.GameConfig.GRID_HEIGHT}`, 'success');
+                    log(`方块类型: ${Object.keys(config.BlockType).join(', ')}`, 'success');
+                } else {
+                    log('GameConfig未定义', 'error');
+                }
+            } catch (error) {
+                log(`配置文件错误: ${error.message}`, 'error');
+                console.error('详细错误:', error);
+            }
+        }
+        
+        async function testBlock() {
+            log('开始测试方块模块...');
+            try {
+                const blockModule = await import('./src/block/block.js');
+                log(`导入方块模块: ${Object.keys(blockModule).join(', ')}`, 'success');
+                
+                if (blockModule.BlockFactory) {
+                    const factory = new blockModule.BlockFactory();
+                    const block = factory.createNextBlock();
+                    log(`生成方块: ${block.type}, 位置: (${block.x}, ${block.y})`, 'success');
+                    
+                    // 测试移动
+                    block.move(1, 0);
+                    log(`向右移动: (${block.x}, ${block.y})`, 'success');
+                    
+                    // 测试旋转
+                    const initialRotation = block.rotation;
+                    block.rotate(1);
+                    log(`旋转: ${initialRotation} → ${block.rotation}`, 'success');
+                }
+            } catch (error) {
+                log(`方块模块错误: ${error.message}`, 'error');
+                console.error('详细错误:', error);
+            }
+        }
+        
+        async function testGame() {
+            log('开始测试游戏引擎...');
+            try {
+                const gameModule = await import('./src/game/game.js');
+                log(`导入游戏模块: ${Object.keys(gameModule).join(', ')}`, 'success');
+                
+                if (gameModule.GameEngine) {
+                    const engine = new gameModule.GameEngine();
+                    const state = engine.getGameState();
+                    log(`游戏引擎初始化: ${state.state}`, 'success');
+                    log(`当前分数: ${state.score}`, 'success');
+                }
+            } catch (error) {
+                log(`游戏引擎错误: ${error.message}`, 'error');
+                console.error('详细错误:', error);
+            }
+        }
+        
+        async function testAll() {
+            log('开始测试所有模块...');
+            await testConfig();
+            await testBlock();
+            await testGame();
+            log('所有模块测试完成！', 'success');
+        }
+        
+        // 页面加载后自动运行简单测试
+        setTimeout(() => {
+            log('页面加载完成，点击按钮开始测试。', 'warning');
+        }, 500);
+    </script>
+</body>
+</html>

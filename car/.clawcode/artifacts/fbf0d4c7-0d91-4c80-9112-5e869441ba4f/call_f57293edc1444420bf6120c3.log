@@ -1,0 +1,1092 @@
+Sub-agent (clawteam-system-architect) Result:
+Content: # 赛车小游戏技术架构设计文档
+
+## 1. 技术栈选择
+
+### 1.1 核心技术确认
+- **渲染引擎**: HTML5 Canvas 2D Context
+- **编程语言**: 原生 JavaScript (ES6+)
+- **音频**: Web Audio API
+- **存储**: localStorage (用于保存分数)
+
+### 1.2 技术决策理由
+```
+选择原生技术栈的原因：
+✓ 零依赖 - 单文件即可运行
+✓ 加载快速 - 无需下载第三方库
+✓ 兼容性好 - 现代浏览器全支持
+✓ 调试方便 - 浏览器内置开发者工具
+```
+
+---
+
+## 2. 模块架构设计
+
+### 2.1 系统架构图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Game Engine                               │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    Game Loop (60fps)                        │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │ │
+│  │  │   Update()   │→ │  Collide()   │→ │   Render()   │      │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │   Input     │  │   Physics   │  │   Render    │              │
+│  │   Handler   │  │   Engine    │  │   System    │              │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
+│         │                │                │                      │
+│  ┌──────┴────────────────┴────────────────┴──────┐              │
+│  │              Entity Manager                    │              │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐    │              │
+│  │  │  Player  │  │  Enemy   │  │  Track   │    │              │
+│  │  │  Car     │  │  Cars[]  │  │  Segments│    │              │
+│  │  └──────────┘  └──────────┘  └──────────┘    │              │
+│  └───────────────────────────────────────────────┘              │
+│                                                                  │
+│  ┌─────────────────────────────────────────────┐                │
+│  │              Game State Manager              │                │
+│  │  MENU → PLAYING → PAUSED → GAME_OVER        │                │
+│  └─────────────────────────────────────────────┘                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 模块职责划分
+
+| 模块 | 职责 | 依赖 |
+|------|------|------|
+| **GameLoop** | 主循环控制、帧率管理 | 无 |
+| **InputHandler** | 键盘/触摸事件监听与状态管理 | 无 |
+| **PhysicsEngine** | 位置更新、碰撞检测 | Entity数据 |
+| **RenderSystem** | Canvas绘制、视觉渲染 | Entity数据 |
+| **EntityManager** | 实体创建、销毁、查询 | 无 |
+| **GameState** | 游戏状态机、分数管理 | 无 |
+| **TrackGenerator** | 赛道生成、滚动逻辑 | 无 |
+| **DifficultyManager** | 难度曲线、敌车生成 | GameState |
+
+---
+
+## 3. 数据结构设计
+
+### 3.1 核心类定义
+
+```javascript
+// ==================== 基础向量类 ====================
+class Vector2D {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    add(v) { return new Vector2D(this.x + v.x, this.y + v.y); }
+    subtract(v) { return new Vector2D(this.x - v.x, this.y - v.y); }
+    multiply(scalar) { return new Vector2D(this.x * scalar, this.y * scalar); }
+    magnitude() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+    normalize() { 
+        const mag = this.magnitude();
+        return mag > 0 ? this.multiply(1/mag) : new Vector2D();
+    }
+}
+
+// ==================== 矩形碰撞体 ====================
+class Rectangle {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    
+    intersects(other) {
+        return !(this.x + this.width < other.x ||
+                 other.x + other.width < this.x ||
+                 this.y + this.height < other.y ||
+                 other.y + other.height < this.y);
+    }
+}
+
+// ==================== 基础实体类 ====================
+class Entity {
+    constructor(x, y, width, height) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.width = width;
+        this.height = height;
+        this.active = true;
+    }
+    
+    getBounds() {
+        return new Rectangle(
+            this.position.x, 
+            this.position.y, 
+            this.width, 
+            this.height
+        );
+    }
+    
+    update(deltaTime) {
+        this.position = this.position.add(
+            this.velocity.multiply(deltaTime)
+        );
+    }
+}
+```
+
+### 3.2 玩家车辆
+
+```javascript
+class PlayerCar extends Entity {
+    constructor(x, y) {
+        super(x, y, 40, 70); // 车辆尺寸
+        this.lane = 1;        // 当前车道 (0, 1, 2)
+        this.targetLane = 1;
+        this.speed = 0;
+        this.maxSpeed = 300;
+        this.acceleration = 200;
+        this.laneSwitchSpeed = 400;
+        this.lives = 3;
+        this.invincible = false;
+        this.invincibleTimer = 0;
+    }
+    
+    // 左移车道
+    moveLeft() {
+        if (this.targetLane > 0) {
+            this.targetLane--;
+        }
+    }
+    
+    // 右移车道
+    moveRight() {
+        if (this.targetLane < 2) {
+            this.targetLane++;
+        }
+    }
+    
+    update(deltaTime) {
+        // 加速逻辑
+        if (this.speed < this.maxSpeed) {
+            this.speed += this.acceleration * deltaTime;
+        }
+        
+        // 平滑切换车道
+        const laneWidth = 100; // 车道宽度
+        const targetX = 150 + this.targetLane * laneWidth;
+        const diff = targetX - this.position.x;
+        
+        if (Math.abs(diff) > 5) {
+            this.position.x += Math.sign(diff) * this.laneSwitchSpeed * deltaTime;
+        } else {
+            this.lane = this.targetLane;
+        }
+        
+        // 无敌时间倒计时
+        if (this.invincible) {
+            this.invincibleTimer -= deltaTime;
+            if (this.invincibleTimer <= 0) {
+                this.invincible = false;
+            }
+        }
+    }
+    
+    takeDamage() {
+        if (!this.invincible) {
+            this.lives--;
+            this.invincible = true;
+            this.invincibleTimer = 2.0; // 2秒无敌
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+### 3.3 敌车
+
+```javascript
+class EnemyCar extends Entity {
+    constructor(x, y, lane, type = 'normal') {
+        super(x, y, 40, 70);
+        this.lane = lane;
+        this.type = type;
+        this.speed = this.getSpeedByType(type);
+        this.color = this.getColorByType(type);
+    }
+    
+    getSpeedByType(type) {
+        const speeds = {
+            'slow': 100,
+            'normal': 150,
+            'fast': 200,
+            'zigzag': 120
+        };
+        return speeds[type] || 150;
+    }
+    
+    getColorByType(type) {
+        const colors = {
+            'slow': '#FF6B6B',
+            'normal': '#4ECDC4',
+            'fast': '#FFE66D',
+            'zigzag': '#95E1D3'
+        };
+        return colors[type] || '#4ECDC4';
+    }
+    
+    update(deltaTime, gameSpeed) {
+        // 敌车相对移动（向下滚动效果）
+        this.position.y += (gameSpeed - this.speed) * deltaTime;
+        
+        // Z型车会横向移动
+        if (this.type === 'zigzag') {
+            this.position.x += Math.sin(this.position.y * 0.02) * 2;
+        }
+    }
+    
+    isOffScreen(screenHeight) {
+        return this.position.y > screenHeight + 100;
+    }
+}
+```
+
+### 3.4 赛道系统
+
+```javascript
+class Track {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.laneCount = 3;
+        this.laneWidth = 100;
+        this.roadWidth = this.laneWidth * this.laneCount;
+        this.roadLeftX = 150; // 路面左边X坐标
+        
+        // 滚动装饰元素
+        this.decorations = [];
+        this.roadMarkings = [];
+        this.scrollOffset = 0;
+        this.markingSpacing = 80;
+    }
+    
+    init() {
+        // 初始化道路标线
+        for (let y = 0; y < this.height + this.markingSpacing; y += this.markingSpacing) {
+            this.roadMarkings.push({ y: y });
+        }
+        
+        // 初始化路边装饰
+        this.generateDecorations();
+    }
+    
+    generateDecorations() {
+        const decorations = ['tree', 'bush', 'rock', 'sign'];
+        for (let i = 0; i < 20; i++) {
+            this.decorations.push({
+                type: decorations[Math.floor(Math.random() * decorations.length)],
+                x: Math.random() < 0.5 ? 
+                   Math.random() * 100 : 
+                   500 + Math.random() * 100,
+                y: Math.random() * this.height,
+                scale: 0.8 + Math.random() * 0.4
+            });
+        }
+    }
+    
+    update(deltaTime, speed) {
+        this.scrollOffset += speed * deltaTime;
+        
+        // 更新标线位置
+        for (let marking of this.roadMarkings) {
+            marking.y += speed * deltaTime;
+            if (marking.y > this.height) {
+                marking.y -= this.height + this.markingSpacing;
+            }
+        }
+        
+        // 更新装饰位置
+        for (let deco of this.decorations) {
+            deco.y += speed * deltaTime;
+            if (deco.y > this.height + 50) {
+                deco.y = -50;
+                deco.x = Math.random() < 0.5 ? 
+                        Math.random() * 100 : 
+                        500 + Math.random() * 100;
+            }
+        }
+    }
+    
+    // 获取车道中心X坐标
+    getLaneCenterX(lane) {
+        return this.roadLeftX + this.laneWidth * lane + this.laneWidth / 2 - 20;
+    }
+}
+```
+
+### 3.5 游戏状态管理
+
+```javascript
+const GameState = {
+    MENU: 'menu',
+    PLAYING: 'playing',
+    PAUSED: 'paused',
+    GAME_OVER: 'game_over'
+};
+
+class GameManager {
+    constructor() {
+        this.state = GameState.MENU;
+        this.score = 0;
+        this.highScore = this.loadHighScore();
+        this.distance = 0;
+        this.level = 1;
+        this.combo = 0;
+        this.comboTimer = 0;
+    }
+    
+    startGame() {
+        this.state = GameState.PLAYING;
+        this.score = 0;
+        this.distance = 0;
+        this.level = 1;
+        this.combo = 0;
+    }
+    
+    addScore(points) {
+        this.score += points * (1 + this.combo * 0.1);
+        this.combo++;
+        this.comboTimer = 3.0;
+    }
+    
+    update(deltaTime, speed) {
+        if (this.state === GameState.PLAYING) {
+            // 距离增加
+            this.distance += speed * deltaTime;
+            
+            // 分数随距离增加
+            this.score += Math.floor(speed * deltaTime * 0.1);
+            
+            // 难度递进
+            this.level = Math.floor(this.distance / 1000) + 1;
+            
+            // 连击计时
+            if (this.comboTimer > 0) {
+                this.comboTimer -= deltaTime;
+                if (this.comboTimer <= 0) {
+                    this.combo = 0;
+                }
+            }
+        }
+    }
+    
+    gameOver() {
+        this.state = GameState.GAME_OVER;
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            this.saveHighScore();
+        }
+    }
+    
+    loadHighScore() {
+        return parseInt(localStorage.getItem('raceHighScore') || '0');
+    }
+    
+    saveHighScore() {
+        localStorage.setItem('raceHighScore', this.highScore.toString());
+    }
+}
+```
+
+---
+
+## 4. 核心算法设计
+
+### 4.1 游戏主循环
+
+```javascript
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.lastTime = 0;
+        
+        // 初始化各模块
+        this.input = new InputHandler();
+        this.track = new Track(this.canvas.width, this.canvas.height);
+        this.player = new PlayerCar(this.canvas.width / 2 - 20, this.canvas.height - 120);
+        this.enemies = [];
+        this.gameManager = new GameManager();
+        this.difficulty = new DifficultyManager();
+        this.renderer = new RenderSystem(this.ctx);
+        
+        this.track.init();
+    }
+    
+    // 主循环
+    gameLoop(currentTime) {
+        const deltaTime = (currentTime - this.lastTime) / 1000;
+        this.lastTime = currentTime;
+        
+        // 限制deltaTime防止卡顿后的大跳跃
+        const clampedDelta = Math.min(deltaTime, 0.1);
+        
+        // 处理输入
+        this.handleInput();
+        
+        // 根据游戏状态更新
+        switch(this.gameManager.state) {
+            case GameState.PLAYING:
+                this.update(clampedDelta);
+                this.checkCollisions();
+                break;
+        }
+        
+        // 渲染
+        this.renderer.render(this);
+        
+        requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    update(deltaTime) {
+        const gameSpeed = this.player.speed;
+        
+        // 更新游戏状态
+        this.gameManager.update(deltaTime, gameSpeed);
+        
+        // 更新赛道
+        this.track.update(deltaTime, gameSpeed);
+        
+        // 更新玩家
+        this.player.update(deltaTime);
+        
+        // 更新敌车
+        for (let enemy of this.enemies) {
+            enemy.update(deltaTime, gameSpeed);
+        }
+        
+        // 清理离开屏幕的敌车
+        this.enemies = this.enemies.filter(e => !e.isOffScreen(this.canvas.height));
+        
+        // 生成新敌车
+        this.difficulty.update(deltaTime, this.gameManager.level);
+        if (this.difficulty.shouldSpawn()) {
+            this.spawnEnemy();
+        }
+    }
+}
+```
+
+### 4.2 碰撞检测算法
+
+```javascript
+class CollisionSystem {
+    // AABB碰撞检测
+    static checkAABB(rect1, rect2) {
+        return rect1.intersects(rect2);
+    }
+    
+    // 带缩小的碰撞检测（更宽容的碰撞判定）
+    static checkForgivingAABB(entity1, entity2, shrinkFactor = 0.8) {
+        const b1 = entity1.getBounds();
+        const b2 = entity2.getBounds();
+        
+        // 缩小碰撞框
+        const shrink1 = (1 - shrinkFactor) / 2;
+        const shrink2 = (1 - shrinkFactor) / 2;
+        
+        const forgiving1 = new Rectangle(
+            b1.x + b1.width * shrink1,
+            b1.y + b1.height * shrink1,
+            b1.width * shrinkFactor,
+            b1.height * shrinkFactor
+        );
+        
+        const forgiving2 = new Rectangle(
+            b2.x + b2.width * shrink2,
+            b2.y + b2.height * shrink2,
+            b2.width * shrinkFactor,
+            b2.height * shrinkFactor
+        );
+        
+        return forgiving1.intersects(forgiving2);
+    }
+    
+    // 批量碰撞检测
+    static checkPlayerEnemies(player, enemies) {
+        const collisions = [];
+        
+        for (let enemy of enemies) {
+            if (this.checkForgivingAABB(player, enemy, 0.75)) {
+                collisions.push(enemy);
+            }
+        }
+        
+        return collisions;
+    }
+    
+    // SAT碰撞检测（用于更精确的多边形碰撞，可选实现）
+    static checkSAT(polygon1, polygon2) {
+        // 实现分离轴定理
+        // 对于简单矩形碰撞，AABB已足够
+    }
+}
+
+// 在Game类中使用
+checkCollisions() {
+    const collisions = CollisionSystem.checkPlayerEnemies(
+        this.player, 
+        this.enemies
+    );
+    
+    for (let enemy of collisions) {
+        if (this.player.takeDamage()) {
+            // 碰撞效果
+            this.createCollisionEffect(enemy# 赛车小游戏技术架构设计文档
+
+## 1. 技术栈选择
+
+### 1.1 核心技术确认
+- **渲染引擎**: HTML5 Canvas 2D Context
+- **编程语言**: 原生 JavaScript (ES6+)
+- **音频**: Web Audio API
+- **存储**: localStorage (用于保存分数)
+
+### 1.2 技术决策理由
+```
+选择原生技术栈的原因：
+✓ 零依赖 - 单文件即可运行
+✓ 加载快速 - 无需下载第三方库
+✓ 兼容性好 - 现代浏览器全支持
+✓ 调试方便 - 浏览器内置开发者工具
+```
+
+---
+
+## 2. 模块架构设计
+
+### 2.1 系统架构图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Game Engine                               │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    Game Loop (60fps)                        │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │ │
+│  │  │   Update()   │→ │  Collide()   │→ │   Render()   │      │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │   Input     │  │   Physics   │  │   Render    │              │
+│  │   Handler   │  │   Engine    │  │   System    │              │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
+│         │                │                │                      │
+│  ┌──────┴────────────────┴────────────────┴──────┐              │
+│  │              Entity Manager                    │              │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐    │              │
+│  │  │  Player  │  │  Enemy   │  │  Track   │    │              │
+│  │  │  Car     │  │  Cars[]  │  │  Segments│    │              │
+│  │  └──────────┘  └──────────┘  └──────────┘    │              │
+│  └───────────────────────────────────────────────┘              │
+│                                                                  │
+│  ┌─────────────────────────────────────────────┐                │
+│  │              Game State Manager              │                │
+│  │  MENU → PLAYING → PAUSED → GAME_OVER        │                │
+│  └─────────────────────────────────────────────┘                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 模块职责划分
+
+| 模块 | 职责 | 依赖 |
+|------|------|------|
+| **GameLoop** | 主循环控制、帧率管理 | 无 |
+| **InputHandler** | 键盘/触摸事件监听与状态管理 | 无 |
+| **PhysicsEngine** | 位置更新、碰撞检测 | Entity数据 |
+| **RenderSystem** | Canvas绘制、视觉渲染 | Entity数据 |
+| **EntityManager** | 实体创建、销毁、查询 | 无 |
+| **GameState** | 游戏状态机、分数管理 | 无 |
+| **TrackGenerator** | 赛道生成、滚动逻辑 | 无 |
+| **DifficultyManager** | 难度曲线、敌车生成 | GameState |
+
+---
+
+## 3. 数据结构设计
+
+### 3.1 核心类定义
+
+```javascript
+// ==================== 基础向量类 ====================
+class Vector2D {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    add(v) { return new Vector2D(this.x + v.x, this.y + v.y); }
+    subtract(v) { return new Vector2D(this.x - v.x, this.y - v.y); }
+    multiply(scalar) { return new Vector2D(this.x * scalar, this.y * scalar); }
+    magnitude() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+    normalize() { 
+        const mag = this.magnitude();
+        return mag > 0 ? this.multiply(1/mag) : new Vector2D();
+    }
+}
+
+// ==================== 矩形碰撞体 ====================
+class Rectangle {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    
+    intersects(other) {
+        return !(this.x + this.width < other.x ||
+                 other.x + other.width < this.x ||
+                 this.y + this.height < other.y ||
+                 other.y + other.height < this.y);
+    }
+}
+
+// ==================== 基础实体类 ====================
+class Entity {
+    constructor(x, y, width, height) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.width = width;
+        this.height = height;
+        this.active = true;
+    }
+    
+    getBounds() {
+        return new Rectangle(
+            this.position.x, 
+            this.position.y, 
+            this.width, 
+            this.height
+        );
+    }
+    
+    update(deltaTime) {
+        this.position = this.position.add(
+            this.velocity.multiply(deltaTime)
+        );
+    }
+}
+```
+
+### 3.2 玩家车辆
+
+```javascript
+class PlayerCar extends Entity {
+    constructor(x, y) {
+        super(x, y, 40, 70); // 车辆尺寸
+        this.lane = 1;        // 当前车道 (0, 1, 2)
+        this.targetLane = 1;
+        this.speed = 0;
+        this.maxSpeed = 300;
+        this.acceleration = 200;
+        this.laneSwitchSpeed = 400;
+        this.lives = 3;
+        this.invincible = false;
+        this.invincibleTimer = 0;
+    }
+    
+    // 左移车道
+    moveLeft() {
+        if (this.targetLane > 0) {
+            this.targetLane--;
+        }
+    }
+    
+    // 右移车道
+    moveRight() {
+        if (this.targetLane < 2) {
+            this.targetLane++;
+        }
+    }
+    
+    update(deltaTime) {
+        // 加速逻辑
+        if (this.speed < this.maxSpeed) {
+            this.speed += this.acceleration * deltaTime;
+        }
+        
+        // 平滑切换车道
+        const laneWidth = 100; // 车道宽度
+        const targetX = 150 + this.targetLane * laneWidth;
+        const diff = targetX - this.position.x;
+        
+        if (Math.abs(diff) > 5) {
+            this.position.x += Math.sign(diff) * this.laneSwitchSpeed * deltaTime;
+        } else {
+            this.lane = this.targetLane;
+        }
+        
+        // 无敌时间倒计时
+        if (this.invincible) {
+            this.invincibleTimer -= deltaTime;
+            if (this.invincibleTimer <= 0) {
+                this.invincible = false;
+            }
+        }
+    }
+    
+    takeDamage() {
+        if (!this.invincible) {
+            this.lives--;
+            this.invincible = true;
+            this.invincibleTimer = 2.0; // 2秒无敌
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+### 3.3 敌车
+
+```javascript
+class EnemyCar extends Entity {
+    constructor(x, y, lane, type = 'normal') {
+        super(x, y, 40, 70);
+        this.lane = lane;
+        this.type = type;
+        this.speed = this.getSpeedByType(type);
+        this.color = this.getColorByType(type);
+    }
+    
+    getSpeedByType(type) {
+        const speeds = {
+            'slow': 100,
+            'normal': 150,
+            'fast': 200,
+            'zigzag': 120
+        };
+        return speeds[type] || 150;
+    }
+    
+    getColorByType(type) {
+        const colors = {
+            'slow': '#FF6B6B',
+            'normal': '#4ECDC4',
+            'fast': '#FFE66D',
+            'zigzag': '#95E1D3'
+        };
+        return colors[type] || '#4ECDC4';
+    }
+    
+    update(deltaTime, gameSpeed) {
+        // 敌车相对移动（向下滚动效果）
+        this.position.y += (gameSpeed - this.speed) * deltaTime;
+        
+        // Z型车会横向移动
+        if (this.type === 'zigzag') {
+            this.position.x += Math.sin(this.position.y * 0.02) * 2;
+        }
+    }
+    
+    isOffScreen(screenHeight) {
+        return this.position.y > screenHeight + 100;
+    }
+}
+```
+
+### 3.4 赛道系统
+
+```javascript
+class Track {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.laneCount = 3;
+        this.laneWidth = 100;
+        this.roadWidth = this.laneWidth * this.laneCount;
+        this.roadLeftX = 150; // 路面左边X坐标
+        
+        // 滚动装饰元素
+        this.decorations = [];
+        this.roadMarkings = [];
+        this.scrollOffset = 0;
+        this.markingSpacing = 80;
+    }
+    
+    init() {
+        // 初始化道路标线
+        for (let y = 0; y < this.height + this.markingSpacing; y += this.markingSpacing) {
+            this.roadMarkings.push({ y: y });
+        }
+        
+        // 初始化路边装饰
+        this.generateDecorations();
+    }
+    
+    generateDecorations() {
+        const decorations = ['tree', 'bush', 'rock', 'sign'];
+        for (let i = 0; i < 20; i++) {
+            this.decorations.push({
+                type: decorations[Math.floor(Math.random() * decorations.length)],
+                x: Math.random() < 0.5 ? 
+                   Math.random() * 100 : 
+                   500 + Math.random() * 100,
+                y: Math.random() * this.height,
+                scale: 0.8 + Math.random() * 0.4
+            });
+        }
+    }
+    
+    update(deltaTime, speed) {
+        this.scrollOffset += speed * deltaTime;
+        
+        // 更新标线位置
+        for (let marking of this.roadMarkings) {
+            marking.y += speed * deltaTime;
+            if (marking.y > this.height) {
+                marking.y -= this.height + this.markingSpacing;
+            }
+        }
+        
+        // 更新装饰位置
+        for (let deco of this.decorations) {
+            deco.y += speed * deltaTime;
+            if (deco.y > this.height + 50) {
+                deco.y = -50;
+                deco.x = Math.random() < 0.5 ? 
+                        Math.random() * 100 : 
+                        500 + Math.random() * 100;
+            }
+        }
+    }
+    
+    // 获取车道中心X坐标
+    getLaneCenterX(lane) {
+        return this.roadLeftX + this.laneWidth * lane + this.laneWidth / 2 - 20;
+    }
+}
+```
+
+### 3.5 游戏状态管理
+
+```javascript
+const GameState = {
+    MENU: 'menu',
+    PLAYING: 'playing',
+    PAUSED: 'paused',
+    GAME_OVER: 'game_over'
+};
+
+class GameManager {
+    constructor() {
+        this.state = GameState.MENU;
+        this.score = 0;
+        this.highScore = this.loadHighScore();
+        this.distance = 0;
+        this.level = 1;
+        this.combo = 0;
+        this.comboTimer = 0;
+    }
+    
+    startGame() {
+        this.state = GameState.PLAYING;
+        this.score = 0;
+        this.distance = 0;
+        this.level = 1;
+        this.combo = 0;
+    }
+    
+    addScore(points) {
+        this.score += points * (1 + this.combo * 0.1);
+        this.combo++;
+        this.comboTimer = 3.0;
+    }
+    
+    update(deltaTime, speed) {
+        if (this.state === GameState.PLAYING) {
+            // 距离增加
+            this.distance += speed * deltaTime;
+            
+            // 分数随距离增加
+            this.score += Math.floor(speed * deltaTime * 0.1);
+            
+            // 难度递进
+            this.level = Math.floor(this.distance / 1000) + 1;
+            
+            // 连击计时
+            if (this.comboTimer > 0) {
+                this.comboTimer -= deltaTime;
+                if (this.comboTimer <= 0) {
+                    this.combo = 0;
+                }
+            }
+        }
+    }
+    
+    gameOver() {
+        this.state = GameState.GAME_OVER;
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            this.saveHighScore();
+        }
+    }
+    
+    loadHighScore() {
+        return parseInt(localStorage.getItem('raceHighScore') || '0');
+    }
+    
+    saveHighScore() {
+        localStorage.setItem('raceHighScore', this.highScore.toString());
+    }
+}
+```
+
+---
+
+## 4. 核心算法设计
+
+### 4.1 游戏主循环
+
+```javascript
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.lastTime = 0;
+        
+        // 初始化各模块
+        this.input = new InputHandler();
+        this.track = new Track(this.canvas.width, this.canvas.height);
+        this.player = new PlayerCar(this.canvas.width / 2 - 20, this.canvas.height - 120);
+        this.enemies = [];
+        this.gameManager = new GameManager();
+        this.difficulty = new DifficultyManager();
+        this.renderer = new RenderSystem(this.ctx);
+        
+        this.track.init();
+    }
+    
+    // 主循环
+    gameLoop(currentTime) {
+        const deltaTime = (currentTime - this.lastTime) / 1000;
+        this.lastTime = currentTime;
+        
+        // 限制deltaTime防止卡顿后的大跳跃
+        const clampedDelta = Math.min(deltaTime, 0.1);
+        
+        // 处理输入
+        this.handleInput();
+        
+        // 根据游戏状态更新
+        switch(this.gameManager.state) {
+            case GameState.PLAYING:
+                this.update(clampedDelta);
+                this.checkCollisions();
+                break;
+        }
+        
+        // 渲染
+        this.renderer.render(this);
+        
+        requestAnimationFrame((t) => this.gameLoop(t));
+    }
+    
+    update(deltaTime) {
+        const gameSpeed = this.player.speed;
+        
+        // 更新游戏状态
+        this.gameManager.update(deltaTime, gameSpeed);
+        
+        // 更新赛道
+        this.track.update(deltaTime, gameSpeed);
+        
+        // 更新玩家
+        this.player.update(deltaTime);
+        
+        // 更新敌车
+        for (let enemy of this.enemies) {
+            enemy.update(deltaTime, gameSpeed);
+        }
+        
+        // 清理离开屏幕的敌车
+        this.enemies = this.enemies.filter(e => !e.isOffScreen(this.canvas.height));
+        
+        // 生成新敌车
+        this.difficulty.update(deltaTime, this.gameManager.level);
+        if (this.difficulty.shouldSpawn()) {
+            this.spawnEnemy();
+        }
+    }
+}
+```
+
+### 4.2 碰撞检测算法
+
+```javascript
+class CollisionSystem {
+    // AABB碰撞检测
+    static checkAABB(rect1, rect2) {
+        return rect1.intersects(rect2);
+    }
+    
+    // 带缩小的碰撞检测（更宽容的碰撞判定）
+    static checkForgivingAABB(entity1, entity2, shrinkFactor = 0.8) {
+        const b1 = entity1.getBounds();
+        const b2 = entity2.getBounds();
+        
+        // 缩小碰撞框
+        const shrink1 = (1 - shrinkFactor) / 2;
+        const shrink2 = (1 - shrinkFactor) / 2;
+        
+        const forgiving1 = new Rectangle(
+            b1.x + b1.width * shrink1,
+            b1.y + b1.height * shrink1,
+            b1.width * shrinkFactor,
+            b1.height * shrinkFactor
+        );
+        
+        const forgiving2 = new Rectangle(
+            b2.x + b2.width * shrink2,
+            b2.y + b2.height * shrink2,
+            b2.width * shrinkFactor,
+            b2.height * shrinkFactor
+        );
+        
+        return forgiving1.intersects(forgiving2);
+    }
+    
+    // 批量碰撞检测
+    static checkPlayerEnemies(player, enemies) {
+        const collisions = [];
+        
+        for (let enemy of enemies) {
+            if (this.checkForgivingAABB(player, enemy, 0.75)) {
+                collisions.push(enemy);
+            }
+        }
+        
+        return collisions;
+    }
+    
+    // SAT碰撞检测（用于更精确的多边形碰撞，可选实现）
+    static checkSAT(polygon1, polygon2) {
+        // 实现分离轴定理
+        // 对于简单矩形碰撞，AABB已足够
+    }
+}
+
+// 在Game类中使用
+checkCollisions() {
+    const collisions = CollisionSystem.checkPlayerEnemies(
+        this.player, 
+        this.enemies
+    );
+    
+    for (let enemy of collisions) {
+        if (this.player.takeDamage()) {
+            // 碰撞效果
+            this.createCollisionEffect(enemy
+Duration: 88593 ms
+Token usage: 5532

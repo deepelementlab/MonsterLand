@@ -1,0 +1,291 @@
+Successfully wrote 88 lines (3448 bytes) to debug-test.js
+
+--- a/debug-test.js
++++ b/debug-test.js
+@@ -1,204 +1,88 @@
+ /**
+- * 调试脚本 - 用于诊断游戏启动问题
++ * 调试测试文件 - 直接运行以检查模块问题
+  */
+ 
+-// 在控制台运行这个脚本来诊断问题
+ console.log('开始调试俄罗斯方块游戏...');
+ 
+-// 检查DOM元素是否存在
+-function checkDomElements() {
+-    console.log('检查DOM元素...');
+-    
+-    const elements = {
+-        gameCanvas: document.getElementById('gameCanvas'),
+-        startButton: document.getElementById('startButton'),
+-        pauseButton: document.getElementById('pauseButton'),
+-        restartButton: document.getElementById('restartButton'),
+-        nextBlockPreview: document.getElementById('nextBlockPreview'),
+-        scoreValue: document.getElementById('scoreValue'),
+-        gameStateText: document.getElementById('gameStateText')
+-    };
+-    
+-    for (const [name, element] of Object.entries(elements)) {
+-        if (element) {
+-            console.log(`✅ ${name}: 存在`, element);
+-        } else {
+-            console.error(`❌ ${name}: 不存在`);
+-        }
+-    }
++try {
++  // 测试导入模块
++  console.log('尝试导入 config.js...');
++  const configModule = await import('./src/config.js');
++  console.log('✅ config.js 导入成功');
++  console.log('GameConfig:', configModule.GameConfig);
++  console.log('GameState:', configModule.GameState);
++  
++  console.log('尝试导入 block/block.js...');
++  const blockModule = await import('./src/block/block.js');
++  console.log('✅ block/block.js 导入成功');
++  console.log('Block:', blockModule.Block);
++  console.log('BlockFactory:', blockModule.BlockFactory);
++  
++  console.log('尝试导入 game/game.js...');
++  const gameModule = await import('./src/game/game.js');
++  console.log('✅ game/game.js 导入成功');
++  console.log('GameEngine:', gameModule.GameEngine);
++  
++  console.log('尝试导入 game/grid.js...');
++  const gridModule = await import('./src/game/grid.js');
++  console.log('✅ game/grid.js 导入成功');
++  console.log('GameGrid:', gridModule.GameGrid);
++  
++  console.log('尝试导入 game/score.js...');
++  const scoreModule = await import('./src/game/score.js');
++  console.log('✅ game/score.js 导入成功');
++  console.log('ScoreManager:', scoreModule.ScoreManager);
++  
++  console.log('尝试导入 render/canvas-renderer.js...');
++  const renderModule = await import('./src/render/canvas-renderer.js');
++  console.log('✅ render/canvas-renderer.js 导入成功');
++  console.log('CanvasRenderer:', renderModule.CanvasRenderer);
++  
++  console.log('尝试导入 ui/ui-controller.js...');
++  const uiModule = await import('./src/ui/ui-controller.js');
++  console.log('✅ ui/ui-controller.js 导入成功');
++  console.log('UIController:', uiModule.UIController);
++  
++  console.log('所有模块导入成功！');
++  
++  // 测试实例化
++  console.log('\n测试实例化游戏引擎...');
++  const gameEngine = new gameModule.GameEngine();
++  console.log('✅ GameEngine 实例化成功');
++  console.log('初始状态:', gameEngine.state);
++  
++  // 测试方块工厂
++  console.log('\n测试方块工厂...');
++  const blockFactory = new blockModule.BlockFactory();
++  const block = blockFactory.createNextBlock();
++  console.log('✅ 方块创建成功');
++  console.log('方块类型:', block.type);
++  console.log('方块位置:', block.x, block.y);
++  
++  // 测试游戏网格
++  console.log('\n测试游戏网格...');
++  const gameGrid = new gridModule.GameGrid();
++  console.log('✅ GameGrid 实例化成功');
++  console.log('网格尺寸:', gameGrid.width, 'x', gameGrid.height);
++  
++  // 测试分数管理器
++  console.log('\n测试分数管理器...');
++  const scoreManager = new scoreModule.ScoreManager();
++  console.log('✅ ScoreManager 实例化成功');
++  console.log('初始分数:', scoreManager.getCurrentScore());
++  
++  console.log('\n🎉 所有核心模块测试通过！游戏应该可以正常运行。');
++  
++} catch (error) {
++  console.error('❌ 调试过程中出错:', error);
++  console.error('错误堆栈:', error.stack);
++  
++  // 提供更详细的错误信息
++  if (error.message.includes('Cannot find module') || error.message.includes('Failed to fetch')) {
++    console.error('\n可能的原因:');
++    console.error('1. 文件路径不正确');
++    console.error('2. 文件不存在');
++    console.error('3. 服务器不允许加载本地文件');
++    console.error('4. ES模块导入语句有错误');
++  }
+ }
+-
+-// 检查JavaScript模块加载
+-async function checkModules() {
+-    console.log('检查JavaScript模块加载...');
+-    
+-    const modules = [
+-        'src/config.js',
+-        'src/main.js',
+-        'src/block/block.js',
+-        'src/game/game.js',
+-        'src/game/grid.js',
+-        'src/game/score.js',
+-        'src/render/canvas-renderer.js',
+-        'src/ui/ui-controller.js'
+-    ];
+-    
+-    for (const module of modules) {
+-        try {
+-            const response = await fetch(module);
+-            if (response.ok) {
+-                console.log(`✅ ${module}: 加载成功`);
+-            } else {
+-                console.error(`❌ ${module}: 加载失败 (${response.status})`);
+-            }
+-        } catch (error) {
+-            console.error(`❌ ${module}: 加载错误`, error.message);
+-        }
+-    }
+-}
+-
+-// 测试游戏引擎功能
+-async function testGameEngine() {
+-    console.log('测试游戏引擎...');
+-    
+-    try {
+-        // 动态导入游戏模块
+-        const gameModule = await import('./src/game/game.js');
+-        console.log('✅ 游戏引擎模块导入成功');
+-        
+-        const engine = new gameModule.GameEngine();
+-        console.log('✅ 游戏引擎实例创建成功');
+-        
+-        // 获取初始状态
+-        const initialState = engine.getGameState();
+-        console.log('初始游戏状态:', initialState);
+-        
+-        // 检查游戏状态
+-        console.log(`当前状态: ${initialState.state}`);
+-        console.log(`当前方块: ${initialState.currentBlock ? '存在' : '不存在'}`);
+-        console.log(`下一个方块: ${initialState.nextBlock ? '存在' : '不存在'}`);
+-        
+-        return engine;
+-    } catch (error) {
+-        console.error('❌ 游戏引擎测试失败:', error);
+-        return null;
+-    }
+-}
+-
+-// 测试方块工厂
+-async function testBlockFactory() {
+-    console.log('测试方块工厂...');
+-    
+-    try {
+-        const blockModule = await import('./src/block/block.js');
+-        console.log('✅ 方块模块导入成功');
+-        
+-        const factory = new blockModule.BlockFactory();
+-        console.log('✅ 方块工厂实例创建成功');
+-        
+-        const block = factory.createNextBlock();
+-        console.log(`✅ 方块创建成功: 类型=${block.type}, 位置=(${block.x}, ${block.y})`);
+-        
+-        return factory;
+-    } catch (error) {
+-        console.error('❌ 方块工厂测试失败:', error);
+-        return null;
+-    }
+-}
+-
+-// 测试事件绑定
+-function testEventBindings() {
+-    console.log('测试事件绑定...');
+-    
+-    const startButton = document.getElementById('startButton');
+-    if (startButton) {
+-        console.log('✅ 开始按钮找到');
+-        
+-        // 添加临时点击监听器来测试
+-        const originalClickHandler = startButton.onclick;
+-        
+-        // 添加测试监听器
+-        startButton.addEventListener('click', function testHandler(e) {
+-            console.log('🟡 测试监听器: 开始按钮被点击');
+-            console.log('事件对象:', e);
+-        });
+-        
+-        // 模拟点击
+-        console.log('🟡 模拟点击开始按钮...');
+-        startButton.click();
+-        
+-        console.log('点击测试完成');
+-    } else {
+-        console.error('❌ 开始按钮未找到');
+-    }
+-}
+-
+-// 检查Canvas渲染器
+-async function testCanvasRenderer() {
+-    console.log('测试Canvas渲染器...');
+-    
+-    const canvas = document.getElementById('gameCanvas');
+-    if (!canvas) {
+-        console.error('❌ Canvas元素未找到');
+-        return;
+-    }
+-    
+-    console.log(`✅ Canvas元素找到: ${canvas.width}x${canvas.height}`);
+-    
+-    const ctx = canvas.getContext('2d');
+-    if (ctx) {
+-        console.log('✅ Canvas 2D上下文获取成功');
+-        
+-        // 测试简单绘图
+-        ctx.fillStyle = '#ff0000';
+-        ctx.fillRect(10, 10, 50, 50);
+-        console.log('✅ Canvas绘图测试完成');
+-    } else {
+-        console.error('❌ Canvas 2D上下文获取失败');
+-    }
+-}
+-
+-// 主调试函数
+-async function runDebug() {
+-    console.log('====== 开始调试俄罗斯方块游戏 ======');
+-    
+-    // 1. 检查DOM元素
+-    checkDomElements();
+-    
+-    // 2. 测试事件绑定
+-    testEventBindings();
+-    
+-    // 3. 检查Canvas
+-    testCanvasRenderer();
+-    
+-    // 4. 检查模块加载
+-    await checkModules();
+-    
+-    // 5. 测试游戏引擎
+-    const engine = await testGameEngine();
+-    
+-    // 6. 测试方块工厂
+-    await testBlockFactory();
+-    
+-    console.log('====== 调试完成 ======');
+-    
+-    // 提供诊断结果
+-    if (engine) {
+-        const state = engine.getGameState();
+-        console.log('\n📊 诊断总结:');
+-        console.log('1. 当前游戏状态:', state.state);
+-        console.log('2. 当前方块:', state.currentBlock ? '已生成' : '未生成');
+-        console.log('3. 下一个方块:', state.nextBlock ? '已准备' : '未准备');
+-        console.log('4. 游戏网格:', state.grid ? `${state.grid.length}x${state.grid[0].length}` : '未初始化');
+-        
+-        if (!state.currentBlock && state.state === 'initial') {
+-            console.log('\n🔍 问题分析:');
+-            console.log('游戏处于初始状态，但当前方块未生成。');
+-            console.log('可能原因: spawnNewBlock() 方法没有被调用');
+-        }
+-    }
+-}
+-
+-// 导出调试函数到全局作用域
+-window.runTetrisDebug = runDebug;
+-console.log('调试脚本已加载，在控制台输入 runTetrisDebug() 开始调试');

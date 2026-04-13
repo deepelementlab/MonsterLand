@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "project_root": "D:\\opensource_project\\opencode-main\\opencode-main\\test\\car",
+  "updated_at": 1775641570.1548278,
+  "source": "fallback_rules",
+  "model_info": {
+    "available": false,
+    "last_attempt_at": 1775641570.1548278
+  },
+  "layers": {},
+  "dir_to_layer": {},
+  "layer_descriptions": {},
+  "layer_order": [],
+  "file_events": [
+    {
+      "timestamp": 1774879302.1007068,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774879472.9442644,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774880047.190606,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775636183.4003859,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775636374.8910804,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775637342.9492147,
+      "path": "racing-game-fixed.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775638911.4146764,
+      "path": "racing-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    }
+  ],
+  "file_symbol_outline": {
+    "sound-boost.js": [
+      "initAudio",
+      "playSound",
+      "playLaneChange",
+      "playCollision",
+      "playScore",
+      "playGameOver"
+    ]
+  },
+  "dir_role_hints": {},
+  "tech_map_updated_at": 1775641570.1823082
+}

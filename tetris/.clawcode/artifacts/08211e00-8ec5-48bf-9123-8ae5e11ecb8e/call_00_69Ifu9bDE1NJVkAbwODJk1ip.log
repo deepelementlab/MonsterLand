@@ -1,0 +1,233 @@
+Successfully wrote 158 lines (5960 bytes) to diagnose.js
+
+--- a/diagnose.js
++++ b/diagnose.js
+@@ -1,80 +1,158 @@
+-// 诊断脚本
+-console.log('=== 俄罗斯方块问题诊断 ===');
++/**
++ * 诊断俄罗斯方块游戏问题
++ * 在浏览器控制台运行此脚本
++ */
+ 
+-async function diagnose() {
++console.log('=== 俄罗斯方块游戏诊断工具 ===');
++
++// 检查基本环境
++console.log('\n1. 检查基本环境:');
++console.log('User Agent:', navigator.userAgent);
++console.log('在线状态:', navigator.onLine);
++console.log('Cookie 启用:', navigator.cookieEnabled);
++
++// 检查DOM元素
++console.log('\n2. 检查DOM元素:');
++const elements = {
++    gameCanvas: document.getElementById('gameCanvas'),
++    startButton: document.getElementById('startButton'),
++    pauseButton: document.getElementById('pauseButton'),
++    restartButton: document.getElementById('restartButton'),
++    scoreValue: document.getElementById('scoreValue'),
++    gameStateText: document.getElementById('gameStateText')
++};
++
++console.log('Canvas 元素:', elements.gameCanvas ? '✅ 存在' : '❌ 不存在');
++console.log('开始按钮:', elements.startButton ? '✅ 存在' : '❌ 不存在');
++console.log('暂停按钮:', elements.pauseButton ? '✅ 存在' : '❌ 不存在');
++console.log('分数显示:', elements.scoreValue ? '✅ 存在' : '❌ 不存在');
++console.log('状态显示:', elements.gameStateText ? '✅ 存在' : '❌ 不存在');
++
++// 检查脚本加载
++console.log('\n3. 检查脚本加载:');
++const scripts = document.getElementsByTagName('script');
++console.log('页面中共有', scripts.length, '个脚本标签');
++
++let mainJsLoaded = false;
++for (let script of scripts) {
++    if (script.src && script.src.includes('main.js')) {
++        mainJsLoaded = true;
++        console.log('✅ main.js 脚本标签存在:', script.src);
++        break;
++    }
++}
++if (!mainJsLoaded) {
++    console.log('❌ main.js 脚本标签未找到');
++}
++
++// 检查全局变量
++console.log('\n4. 检查全局变量:');
++console.log('window.tetris:', window.tetris ? '✅ 存在' : '❌ 不存在');
++if (window.tetris) {
++    console.log('tetris 对象详情:', window.tetris);
++}
++
++// 检查控制台错误
++console.log('\n5. 已知问题检查:');
++console.log('如果看到以下错误，请对应解决:');
++
++console.log('\n可能错误1: CORS policy (跨域问题)');
++console.log('解决方法: 通过本地服务器运行（如Live Server），或修改浏览器安全设置');
++
++console.log('\n可能错误2: Failed to load module (模块加载失败)');
++console.log('解决方法: 检查文件路径是否正确，确保所有.js文件存在');
++
++console.log('\n可能错误3: SyntaxError (语法错误)');
++console.log('解决方法: 检查JavaScript代码语法');
++
++// 尝试直接导入模块测试
++console.log('\n6. 直接测试模块导入:');
++async function testImports() {
+     try {
+-        // 1. 导入模块
++        console.log('测试导入 config.js...');
+         const config = await import('./src/config.js');
+-        console.log('✅ Config loaded:', Object.keys(config));
++        console.log('✅ config.js 导入成功');
+         
+-        // 2. 测试方块
+-        const blockModule = await import('./src/block/block.js');
+-        console.log('✅ Block module loaded');
++        console.log('测试导入 game.js...');
++        const game = await import('./src/game/game.js');
++        console.log('✅ game.js 导入成功');
+         
+-        const factory = new blockModule.BlockFactory();
+-        const block = factory.createNextBlock();
+-        console.log(`Block created: type=${block.type}, x=${block.x}, y=${block.y}`);
++        console.log('测试导入 block.js...');
++        const block = await import('./src/block/block.js');
++        console.log('✅ block.js 导入成功');
+         
+-        // 3. 检查方块位置
+-        console.log('Block cells:', block.getCells());
+-        console.log('Is valid position?', block.isValidPosition());
+-        
+-        // 4. 测试游戏网格
+-        const gridModule = await import('./src/game/grid.js');
+-        const grid = new gridModule.GameGrid();
+-        
+-        console.log('Grid dimensions:', grid.width, 'x', grid.height);
+-        console.log('Can place block?', grid.canPlaceBlock(block));
+-        
+-        // 5. 检查方块默认位置
+-        const centerX = Math.floor(config.GameConfig.GRID_WIDTH / 2) - 2;
+-        console.log('Default block x position:', centerX);
+-        
+-        // 6. 测试游戏引擎
+-        const gameModule = await import('./src/game/game.js');
+-        const engine = new gameModule.GameEngine();
+-        
+-        console.log('Initial state:', engine.getGameState().state);
+-        console.log('Current block exists?', !!engine.getGameState().currentBlock);
+-        console.log('Next block exists?', !!engine.getGameState().nextBlock);
+-        
+-        if (engine.getGameState().nextBlock) {
+-            const nextBlock = engine.getGameState().nextBlock;
+-            console.log('Next block type:', nextBlock.type);
+-            console.log('Next block position:', nextBlock.x, nextBlock.y);
+-            console.log('Next block cells:', nextBlock.getCells());
+-        }
+-        
+-        // 7. 测试启动游戏
+-        console.log('\n--- Testing game start ---');
+-        engine.start();
+-        
+-        const stateAfterStart = engine.getGameState();
+-        console.log('State after start:', stateAfterStart.state);
+-        console.log('Current block after start:', stateAfterStart.currentBlock ? stateAfterStart.currentBlock.type : 'null');
+-        
+-        if (stateAfterStart.currentBlock) {
+-            const currentBlock = stateAfterStart.currentBlock;
+-            console.log('Current block cells:', currentBlock.getCells());
+-            console.log('Can place current block?', grid.canPlaceBlock(currentBlock));
+-        }
+-        
+-        // 8. 检查具体问题
+-        console.log('\n--- Problem analysis ---');
+-        
+-        // 检查所有方块类型的默认位置
+-        console.log('\nTesting all block types at default position:');
+-        const blockTypes = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+-        for (const type of blockTypes) {
+-            const testBlock = new blockModule.Block(type);
+-            console.log(`${type}: x=${testBlock.x}, y=${testBlock.y}, isValid=${testBlock.isValidPosition()}, canPlace=${grid.canPlaceBlock(testBlock)}`);
+-            console.log(`  Cells:`, testBlock.getCells().map(c => `(${c.row},${c.col})`).join(', '));
+-        }
+-        
++        console.log('✅ 所有模块导入测试通过！');
+     } catch (error) {
+-        console.error('❌ Diagnosis failed:', error);
++        console.error('❌ 模块导入失败:', error);
++        console.error('错误详情:', error.message);
+     }
+ }
+ 
+-// 运行诊断
+-diagnose();
++// 运行测试
++testImports().then(() => {
++    console.log('\n=== 诊断完成 ===');
++    console.log('\n如果游戏仍然不工作，请检查浏览器控制台的完整错误信息');
++});
++
++// 提供手动修复按钮
++console.log('\n7. 手动修复选项:');
++console.log('复制以下代码到控制台尝试手动修复:');
++
++const fixCode = `
++// 尝试手动初始化游戏
++async function manualInit() {
++    try {
++        // 导入模块
++        const { GameEngine } = await import('./src/game/game.js');
++        const { CanvasRenderer } = await import('./src/render/canvas-renderer.js');
++        const { UIController } = await import('./src/ui/ui-controller.js');
++        
++        // 获取元素
++        const elements = {
++            gameCanvas: document.getElementById('gameCanvas'),
++            startButton: document.getElementById('startButton'),
++            pauseButton: document.getElementById('pauseButton'),
++            restartButton: document.getElementById('restartButton'),
++            nextBlockPreview: document.getElementById('nextBlockPreview'),
++            scoreValue: document.getElementById('scoreValue'),
++            highScoreValue: document.getElementById('highScoreValue'),
++            linesValue: document.getElementById('linesValue'),
++            levelValue: document.getElementById('levelValue'),
++            gameStateText: document.getElementById('gameStateText'),
++            speedValue: document.getElementById('speedValue'),
++            timeValue: document.getElementById('timeValue'),
++            instructions: document.getElementById('instructions'),
++            messageElement: document.getElementById('messagePopup'),
++            gameOverlay: document.getElementById('gameOverlay'),
++            statusMessage: document.getElementById('statusMessage')
++        };
++        
++        // 初始化组件
++        const gameEngine = new GameEngine();
++        const renderer = new CanvasRenderer(elements.gameCanvas);
++        const uiController = new UIController(elements, gameEngine, renderer);
++        
++        // 启动游戏循环
++        uiController.startGameLoop();
++        
++        // 更新UI
++        uiController.updateUI();
++        
++        console.log('✅ 手动初始化成功！');
++        console.log('游戏状态:', gameEngine.getGameState());
++        
++        // 设置到全局变量便于调试
++        window.tetris = { gameEngine, renderer, uiController };
++        
++        return true;
++    } catch (error) {
++        console.error('❌ 手动初始化失败:', error);
++        return false;
++    }
++}
++
++// 运行手动初始化
++manualInit();
++`;
++
++console.log(fixCode);

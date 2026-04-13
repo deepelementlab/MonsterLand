@@ -1,0 +1,999 @@
+Sub-agent (clawteam-ui-ux-designer) Result:
+Content: # 俄罗斯方块游戏UI/UX设计方案
+
+## 1. 视觉设计概念
+
+### 色彩方案
+- **主色调**: 深空蓝 `#0f172a` - 营造深邃的游戏背景
+- **辅助色**: 
+  - 霓虹蓝 `#3b82f6` - 游戏区域边框和重要元素
+  - 霓虹青 `#06b6d4` - 活跃元素和交互状态
+  - 霓虹紫 `#8b5cf6` - 特殊效果和得分显示
+- **方块颜色**:
+  - I型方块: 青色 `#00ffff` (Cyan)
+  - J型方块: 蓝色 `#0000ff` (Blue)
+  - L型方块: 橙色 `#ff7f00` (Orange)
+  - O型方块: 黄色 `#ffff00` (Yellow)
+  - S型方块: 绿色 `#00ff00` (Green)
+  - T型方块: 紫色 `#800080` (Purple)
+  - Z型方块: 红色 `#ff0000` (Red)
+- **文本颜色**: 
+  - 标题: 白色 `#ffffff`
+  - 内容: 浅灰色 `#e2e8f0`
+  - 重要信息: 霓虹色
+
+### 游戏区域视觉风格
+- **游戏区域**: 20x10网格，深色背景 `#1e293b`，半透明网格线 `#475569 0.3`
+- **边框**: 霓虹蓝发光边框，2px厚，`box-shadow: 0 0 10px #3b82f6`
+- **网格线**: 细网格线，强调游戏的结构化布局
+- **背景**: 微妙的科技感纹理，不干扰游戏内容
+
+### 方块设计
+- **基础方块**: 4x4单位，圆角设计（2px圆角）
+- **方块效果**:
+  - 普通方块: 实色填充，轻微内阴影
+  - 当前方块: 发光边缘，脉冲动画
+  - 固定方块: 降低透明度，轻微阴影
+  - 预览方块: 半透明显示
+- **方块网格**: 清晰分割，便于玩家判断位置
+
+## 2. 界面布局
+
+### 整体布局结构
+```
+┌─────────────────────────────────────────────────────────┐
+│                   俄罗斯方块 TETRIS                       │
+├─────────────┬──────────────────┬─────────────────────┤
+│             │                  │                     │
+│  控制面板   │   游戏区域       │     信息面板        │
+│   (左侧)    │   (主区域)       │     (右侧)          │
+│             │  20行×10列       │                     │
+│             │                  │                     │
+├─────────────┴──────────────────┴─────────────────────┤
+│              状态栏和分数显示                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 详细布局
+
+#### 左侧控制面板 (宽度: 200px)
+```
+┌─────────────────┐
+│   下一个方块    │
+│     预览       │
+├─────────────────┤
+│    游戏控制     │
+│  ┌─────────┐   │
+│  │  START  │   │
+│  └─────────┘   │
+│  ┌─────────┐   │
+│  │  PAUSE  │   │
+│  └─────────┘   │
+│  ┌─────────┐   │
+│  │ RESTART │   │
+│  └─────────┘   │
+├─────────────────┤
+│    难度选择     │
+│ ● 简单  ○ 普通 │
+│ ○ 困难  ○ 专家 │
+└─────────────────┘
+```
+
+#### 中间游戏区域 (主区域)
+- **尺寸**: 400px × 800px (20行 × 10列，每格40px)
+- **网格**: 清晰可见的网格线
+- **边界**: 明显的边框，防止方块越界
+- **当前方块**: 高亮显示
+
+#### 右侧信息面板 (宽度: 250px)
+```
+┌─────────────────┐
+│   分数统计      │
+├─────────────────┤
+│ 当前分数: 0000  │
+│ 最高分数: 0000  │
+│ 已消行数: 00    │
+│ 当前等级: 01    │
+├─────────────────┤
+│   游戏状态      │
+├─────────────────┤
+│ 状态: 准备开始   │
+│ 速度: 1级       │
+│ 时间: 00:00     │
+├─────────────────┤
+│   操作说明      │
+├─────────────────┤
+│ ← → : 左右移动  │
+│ ↑   : 旋转      │
+│ ↓   : 加速下落  │
+│ 空格: 立即下落  │
+│ P   : 暂停/继续 │
+└─────────────────┘
+```
+
+## 3. 用户体验流程
+
+### 游戏启动体验
+1. **加载页面**:
+   - 显示游戏logo和标题动画
+   - 渐入显示主界面
+   - 播放轻微音效
+
+2. **初始状态**:
+   - 游戏区域显示网格，无方块
+   - 控制面板显示"开始游戏"高亮按钮
+   - 信息面板显示基本操作说明
+   - 下一个方块预览区域为空
+
+3. **开始游戏流程**:
+   - 点击"开始"或按Enter键
+   - 播放开始音效
+   - 第一个方块从顶部缓缓出现
+   - 游戏状态变为"进行中"
+
+### 游戏过程中的交互反馈
+1. **键盘操作反馈**:
+   - 移动: 方块瞬时响应，有轻微移动动画
+   - 旋转: 方块旋转时显示旋转轨迹
+   - 加速下落: 方块快速下降，有加速视觉效果
+   - 立即下落: 方块直接到底，有冲击效果
+
+2. **视觉反馈**:
+   - 方块移动时显示预测位置（半透明）
+   - 方块碰撞时轻微震动
+   - 成功放置方块时显示放置效果
+
+3. **听觉反馈**:
+   - 移动: 轻微点击声
+   - 旋转: 旋转声
+   - 放置: 放置声
+   - 消行: 消行音效
+
+### 游戏状态转换
+1. **开始 → 进行中**:
+   - UI: "开始"按钮变为"暂停"
+   - 状态显示更新为"进行中"
+   - 开始计时器
+   - 显示当前方块和下一个方块
+
+2. **进行中 → 暂停**:
+   - UI: "暂停"按钮变为"继续"
+   - 游戏区域半透明遮罩
+   - 显示"暂停"提示
+   - 方块停止下落
+
+3. **暂停 → 进行中**:
+   - 移除遮罩
+   - 按钮变回"暂停"
+   - 恢复计时器
+   - 继续游戏
+
+4. **游戏结束**:
+   - 游戏区域闪烁红色边框
+   - 显示"游戏结束"动画
+   - 分数统计高亮显示
+   - 提供"重新开始"选项
+
+### 重新开始流程
+1. **触发重新开始**:
+   - 点击"重新开始"按钮
+   - 或游戏结束后自动显示选项
+
+2. **重置过程**:
+   - 清除游戏区域
+   - 重置分数和等级
+   - 播放重新开始动画
+   - 准备新的方块
+
+3. **重新开始后的状态**:
+   - 回到初始状态
+   - "开始"按钮可用
+   - 游戏状态显示"准备开始"
+
+## 4. 响应式设计
+
+### 桌面端 (≥1024px)
+- **布局**: 三栏布局
+- **游戏区域**: 400px × 800px
+- **控制面板**: 左右两侧固定宽度
+- **字体大小**: 16px基础字体
+
+### 平板端 (768px - 1023px)
+- **布局**: 两栏布局（控制面板移至底部）
+- **游戏区域**: 320px × 640px（缩放0.8）
+- **控制面板**: 底部水平排列
+- **字体大小**: 14px基础字体
+
+### 移动端 (<768px)
+- **布局**: 单栏垂直布局
+- **游戏区域**: 280px × 560px（缩放0.7）
+- **控制面板**: 底部展开式面板
+- **操作方式**: 增加触摸控制按钮
+- **字体大小**: 12px基础字体
+
+## 5. 交互细节
+
+### 方块移动的视觉反馈
+1. **水平移动**:
+   - 方块平滑移动，有缓动效果
+   - 移动方向显示轨迹预览
+   - 到达边界时轻微反弹效果
+
+2. **旋转动画**:
+   - 90度旋转，旋转中心明确
+   - 旋转时有光影效果
+   - 旋转成功后有确认反馈
+
+3. **下落效果**:
+   - 正常下落: 匀速，每格有轻微间隔
+   - 加速下落: 速度快，有动态模糊效果
+   - 立即下落: 直线到底，有冲击波效果
+
+### 消行动画效果
+1. **消行识别**:
+   - 完整行高亮闪烁（0.3秒）
+   - 播放消行音效
+   - 行内方块轻微上浮
+
+2. **消除动画**:
+   - 方块从中间向两侧消失
+   - 消失时有粒子效果
+   - 上方的方块逐行下落
+
+3. **连锁反应**:
+   - 多行同时消除时，从上到下依次动画
+   - 每行消行间隔0.1秒
+   - 显示"双行"、"三行"等提示
+
+### 分数变化的视觉效果
+1. **加分动画**:
+   - 分数数字向上跳动
+   - 显示加分提示（+100, +200等）
+   - 分数数字轻微放大再恢复
+
+2. **等级提升**:
+   - 等级数字闪烁
+   - 显示"等级提升"提示
+   - 游戏速度渐变加快
+
+3. **破纪录**:
+   - 最高分数闪烁金色光芒
+   - 显示"新纪录"动画
+   - 播放庆祝音效
+
+### 游戏状态变化的UI反馈
+1. **状态转换**:
+   - 状态文字平滑过渡
+   - 背景色轻微变化
+   - 按钮状态同步更新
+
+2. **游戏结束**:
+   - 整个界面变暗
+   - 显示结束对话框
+   - 重要数据高亮显示
+
+3. **暂停状态**:
+   - 游戏区域半透明覆盖
+   - 显示暂停图标
+   - 控制按钮高亮显示
+
+## 6. 设计交付物
+
+### 界面线框图/布局图
+
+创建一个简单的HTML结构来展示布局：
+
+```html
+<!-- design/wireframe.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块 - UI线框图</title>
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --game-bg: #1e293b;
+            --neon-blue: #3b82f6;
+            --neon-cyan: #06b6d4;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 200px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* 游戏区域 */
+        .game-area {
+            flex: 1;
+            background: var(--game-bg);
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            min-height: 800px;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            gap: 1px;
+            padding: 1px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        .grid-cell {
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 2px;
+        }
+        
+        /* 右侧信息面板 */
+        .info-panel {
+            width: 250px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        
+        /* 标题栏 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: linear-gradient(135deg, var(--neon-blue), #1d4ed8);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* 方块预览 */
+        .preview-area {
+            height: 120px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 6px;
+            margin: 15px 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            padding: 5px;
+        }
+        
+        /* 信息部分 */
+        .info-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid var(--neon-blue);
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .control-panel, .info-panel {
+                width: 100%;
+            }
+            
+            .game-area {
+                min-height: 400px;
+            }
+            
+            .header {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">俄罗斯方块 TETRIS</div>
+    
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <h3>下一个方块</h3>
+            <div class="preview-area">
+                <!-- 预览方块网格 -->
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <!-- 更多网格单元 -->
+            </div>
+            
+            <h3>游戏控制</h3>
+            <button class="btn">开始游戏</button>
+            <button class="btn" disabled>暂停游戏</button>
+            <button class="btn">重新开始</button>
+            
+            <h3>难度选择</h3>
+            <div style="margin: 10px 0;">
+                <label><input type="radio" name="difficulty" checked> 简单</label><br>
+                <label><input type="radio" name="difficulty"> 普通</label><br>
+                <label><input type="radio" name="difficulty"> 困难</label><br>
+                <label><input type="radio" name="difficulty"> 专家</label>
+            </div>
+        </div>
+        
+        <!-- 中间游戏区域 -->
+        <div class="game-area">
+            <!-- 20x10网格 -->
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <!-- 更多网格单元 -->
+        </div>
+        
+        <!-- 右侧信息面板 -->
+        <div class="info-panel">
+            <div class="info-section">
+                <h3>分数统计</h3>
+                <div class="info-item">
+                    <span>当前分数:</span>
+                    <span>0000</span>
+                </div>
+                <div class="info-item">
+                    <span>最高分数:</span>
+                    <span>0000</span>
+                </div>
+                <div class="info-item">
+                    <span>已消行数:</span>
+                    <span>00</span>
+               # 俄罗斯方块游戏UI/UX设计方案
+
+## 1. 视觉设计概念
+
+### 色彩方案
+- **主色调**: 深空蓝 `#0f172a` - 营造深邃的游戏背景
+- **辅助色**: 
+  - 霓虹蓝 `#3b82f6` - 游戏区域边框和重要元素
+  - 霓虹青 `#06b6d4` - 活跃元素和交互状态
+  - 霓虹紫 `#8b5cf6` - 特殊效果和得分显示
+- **方块颜色**:
+  - I型方块: 青色 `#00ffff` (Cyan)
+  - J型方块: 蓝色 `#0000ff` (Blue)
+  - L型方块: 橙色 `#ff7f00` (Orange)
+  - O型方块: 黄色 `#ffff00` (Yellow)
+  - S型方块: 绿色 `#00ff00` (Green)
+  - T型方块: 紫色 `#800080` (Purple)
+  - Z型方块: 红色 `#ff0000` (Red)
+- **文本颜色**: 
+  - 标题: 白色 `#ffffff`
+  - 内容: 浅灰色 `#e2e8f0`
+  - 重要信息: 霓虹色
+
+### 游戏区域视觉风格
+- **游戏区域**: 20x10网格，深色背景 `#1e293b`，半透明网格线 `#475569 0.3`
+- **边框**: 霓虹蓝发光边框，2px厚，`box-shadow: 0 0 10px #3b82f6`
+- **网格线**: 细网格线，强调游戏的结构化布局
+- **背景**: 微妙的科技感纹理，不干扰游戏内容
+
+### 方块设计
+- **基础方块**: 4x4单位，圆角设计（2px圆角）
+- **方块效果**:
+  - 普通方块: 实色填充，轻微内阴影
+  - 当前方块: 发光边缘，脉冲动画
+  - 固定方块: 降低透明度，轻微阴影
+  - 预览方块: 半透明显示
+- **方块网格**: 清晰分割，便于玩家判断位置
+
+## 2. 界面布局
+
+### 整体布局结构
+```
+┌─────────────────────────────────────────────────────────┐
+│                   俄罗斯方块 TETRIS                       │
+├─────────────┬──────────────────┬─────────────────────┤
+│             │                  │                     │
+│  控制面板   │   游戏区域       │     信息面板        │
+│   (左侧)    │   (主区域)       │     (右侧)          │
+│             │  20行×10列       │                     │
+│             │                  │                     │
+├─────────────┴──────────────────┴─────────────────────┤
+│              状态栏和分数显示                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 详细布局
+
+#### 左侧控制面板 (宽度: 200px)
+```
+┌─────────────────┐
+│   下一个方块    │
+│     预览       │
+├─────────────────┤
+│    游戏控制     │
+│  ┌─────────┐   │
+│  │  START  │   │
+│  └─────────┘   │
+│  ┌─────────┐   │
+│  │  PAUSE  │   │
+│  └─────────┘   │
+│  ┌─────────┐   │
+│  │ RESTART │   │
+│  └─────────┘   │
+├─────────────────┤
+│    难度选择     │
+│ ● 简单  ○ 普通 │
+│ ○ 困难  ○ 专家 │
+└─────────────────┘
+```
+
+#### 中间游戏区域 (主区域)
+- **尺寸**: 400px × 800px (20行 × 10列，每格40px)
+- **网格**: 清晰可见的网格线
+- **边界**: 明显的边框，防止方块越界
+- **当前方块**: 高亮显示
+
+#### 右侧信息面板 (宽度: 250px)
+```
+┌─────────────────┐
+│   分数统计      │
+├─────────────────┤
+│ 当前分数: 0000  │
+│ 最高分数: 0000  │
+│ 已消行数: 00    │
+│ 当前等级: 01    │
+├─────────────────┤
+│   游戏状态      │
+├─────────────────┤
+│ 状态: 准备开始   │
+│ 速度: 1级       │
+│ 时间: 00:00     │
+├─────────────────┤
+│   操作说明      │
+├─────────────────┤
+│ ← → : 左右移动  │
+│ ↑   : 旋转      │
+│ ↓   : 加速下落  │
+│ 空格: 立即下落  │
+│ P   : 暂停/继续 │
+└─────────────────┘
+```
+
+## 3. 用户体验流程
+
+### 游戏启动体验
+1. **加载页面**:
+   - 显示游戏logo和标题动画
+   - 渐入显示主界面
+   - 播放轻微音效
+
+2. **初始状态**:
+   - 游戏区域显示网格，无方块
+   - 控制面板显示"开始游戏"高亮按钮
+   - 信息面板显示基本操作说明
+   - 下一个方块预览区域为空
+
+3. **开始游戏流程**:
+   - 点击"开始"或按Enter键
+   - 播放开始音效
+   - 第一个方块从顶部缓缓出现
+   - 游戏状态变为"进行中"
+
+### 游戏过程中的交互反馈
+1. **键盘操作反馈**:
+   - 移动: 方块瞬时响应，有轻微移动动画
+   - 旋转: 方块旋转时显示旋转轨迹
+   - 加速下落: 方块快速下降，有加速视觉效果
+   - 立即下落: 方块直接到底，有冲击效果
+
+2. **视觉反馈**:
+   - 方块移动时显示预测位置（半透明）
+   - 方块碰撞时轻微震动
+   - 成功放置方块时显示放置效果
+
+3. **听觉反馈**:
+   - 移动: 轻微点击声
+   - 旋转: 旋转声
+   - 放置: 放置声
+   - 消行: 消行音效
+
+### 游戏状态转换
+1. **开始 → 进行中**:
+   - UI: "开始"按钮变为"暂停"
+   - 状态显示更新为"进行中"
+   - 开始计时器
+   - 显示当前方块和下一个方块
+
+2. **进行中 → 暂停**:
+   - UI: "暂停"按钮变为"继续"
+   - 游戏区域半透明遮罩
+   - 显示"暂停"提示
+   - 方块停止下落
+
+3. **暂停 → 进行中**:
+   - 移除遮罩
+   - 按钮变回"暂停"
+   - 恢复计时器
+   - 继续游戏
+
+4. **游戏结束**:
+   - 游戏区域闪烁红色边框
+   - 显示"游戏结束"动画
+   - 分数统计高亮显示
+   - 提供"重新开始"选项
+
+### 重新开始流程
+1. **触发重新开始**:
+   - 点击"重新开始"按钮
+   - 或游戏结束后自动显示选项
+
+2. **重置过程**:
+   - 清除游戏区域
+   - 重置分数和等级
+   - 播放重新开始动画
+   - 准备新的方块
+
+3. **重新开始后的状态**:
+   - 回到初始状态
+   - "开始"按钮可用
+   - 游戏状态显示"准备开始"
+
+## 4. 响应式设计
+
+### 桌面端 (≥1024px)
+- **布局**: 三栏布局
+- **游戏区域**: 400px × 800px
+- **控制面板**: 左右两侧固定宽度
+- **字体大小**: 16px基础字体
+
+### 平板端 (768px - 1023px)
+- **布局**: 两栏布局（控制面板移至底部）
+- **游戏区域**: 320px × 640px（缩放0.8）
+- **控制面板**: 底部水平排列
+- **字体大小**: 14px基础字体
+
+### 移动端 (<768px)
+- **布局**: 单栏垂直布局
+- **游戏区域**: 280px × 560px（缩放0.7）
+- **控制面板**: 底部展开式面板
+- **操作方式**: 增加触摸控制按钮
+- **字体大小**: 12px基础字体
+
+## 5. 交互细节
+
+### 方块移动的视觉反馈
+1. **水平移动**:
+   - 方块平滑移动，有缓动效果
+   - 移动方向显示轨迹预览
+   - 到达边界时轻微反弹效果
+
+2. **旋转动画**:
+   - 90度旋转，旋转中心明确
+   - 旋转时有光影效果
+   - 旋转成功后有确认反馈
+
+3. **下落效果**:
+   - 正常下落: 匀速，每格有轻微间隔
+   - 加速下落: 速度快，有动态模糊效果
+   - 立即下落: 直线到底，有冲击波效果
+
+### 消行动画效果
+1. **消行识别**:
+   - 完整行高亮闪烁（0.3秒）
+   - 播放消行音效
+   - 行内方块轻微上浮
+
+2. **消除动画**:
+   - 方块从中间向两侧消失
+   - 消失时有粒子效果
+   - 上方的方块逐行下落
+
+3. **连锁反应**:
+   - 多行同时消除时，从上到下依次动画
+   - 每行消行间隔0.1秒
+   - 显示"双行"、"三行"等提示
+
+### 分数变化的视觉效果
+1. **加分动画**:
+   - 分数数字向上跳动
+   - 显示加分提示（+100, +200等）
+   - 分数数字轻微放大再恢复
+
+2. **等级提升**:
+   - 等级数字闪烁
+   - 显示"等级提升"提示
+   - 游戏速度渐变加快
+
+3. **破纪录**:
+   - 最高分数闪烁金色光芒
+   - 显示"新纪录"动画
+   - 播放庆祝音效
+
+### 游戏状态变化的UI反馈
+1. **状态转换**:
+   - 状态文字平滑过渡
+   - 背景色轻微变化
+   - 按钮状态同步更新
+
+2. **游戏结束**:
+   - 整个界面变暗
+   - 显示结束对话框
+   - 重要数据高亮显示
+
+3. **暂停状态**:
+   - 游戏区域半透明覆盖
+   - 显示暂停图标
+   - 控制按钮高亮显示
+
+## 6. 设计交付物
+
+### 界面线框图/布局图
+
+创建一个简单的HTML结构来展示布局：
+
+```html
+<!-- design/wireframe.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块 - UI线框图</title>
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --game-bg: #1e293b;
+            --neon-blue: #3b82f6;
+            --neon-cyan: #06b6d4;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 200px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* 游戏区域 */
+        .game-area {
+            flex: 1;
+            background: var(--game-bg);
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            min-height: 800px;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            gap: 1px;
+            padding: 1px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        .grid-cell {
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 2px;
+        }
+        
+        /* 右侧信息面板 */
+        .info-panel {
+            width: 250px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        
+        /* 标题栏 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: linear-gradient(135deg, var(--neon-blue), #1d4ed8);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* 方块预览 */
+        .preview-area {
+            height: 120px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 6px;
+            margin: 15px 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            padding: 5px;
+        }
+        
+        /* 信息部分 */
+        .info-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid var(--neon-blue);
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .control-panel, .info-panel {
+                width: 100%;
+            }
+            
+            .game-area {
+                min-height: 400px;
+            }
+            
+            .header {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">俄罗斯方块 TETRIS</div>
+    
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <h3>下一个方块</h3>
+            <div class="preview-area">
+                <!-- 预览方块网格 -->
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <!-- 更多网格单元 -->
+            </div>
+            
+            <h3>游戏控制</h3>
+            <button class="btn">开始游戏</button>
+            <button class="btn" disabled>暂停游戏</button>
+            <button class="btn">重新开始</button>
+            
+            <h3>难度选择</h3>
+            <div style="margin: 10px 0;">
+                <label><input type="radio" name="difficulty" checked> 简单</label><br>
+                <label><input type="radio" name="difficulty"> 普通</label><br>
+                <label><input type="radio" name="difficulty"> 困难</label><br>
+                <label><input type="radio" name="difficulty"> 专家</label>
+            </div>
+        </div>
+        
+        <!-- 中间游戏区域 -->
+        <div class="game-area">
+            <!-- 20x10网格 -->
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <!-- 更多网格单元 -->
+        </div>
+        
+        <!-- 右侧信息面板 -->
+        <div class="info-panel">
+            <div class="info-section">
+                <h3>分数统计</h3>
+                <div class="info-item">
+                    <span>当前分数:</span>
+                    <span>0000</span>
+                </div>
+                <div class="info-item">
+                    <span>最高分数:</span>
+                    <span>0000</span>
+                </div>
+                <div class="info-item">
+                    <span>已消行数:</span>
+                    <span>00</span>
+               
+Duration: 214001 ms
+Tool calls: 13
+Token usage: 49034

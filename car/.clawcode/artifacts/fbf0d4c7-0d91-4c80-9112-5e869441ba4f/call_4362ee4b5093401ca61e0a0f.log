@@ -1,0 +1,103 @@
+Successfully wrote 99 lines (8175 bytes) to racing-game.html
+
+--- a/racing-game.html
++++ b/racing-game.html
+@@ -0,0 +1,98 @@
++<!DOCTYPE html>
++<html lang="zh-CN">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
++<title>🏎️ 极速狂飙</title>
++<style>
++*{margin:0;padding:0;box-sizing:border-box}
++body{background:linear-gradient(135deg,#0f0f23,#1a1a2e);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial,sans-serif;overflow:hidden;touch-action:none}
++.c{position:relative;border-radius:10px;overflow:hidden;box-shadow:0 0 50px rgba(0,212,255,.3)}
++canvas{display:block}
++.hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#fff;font-size:14px;font-weight:bold;text-shadow:2px 2px 4px rgba(0,0,0,.8);pointer-events:none;z-index:10}
++.hud>div{background:rgba(0,0,0,.5);padding:6px 12px;border-radius:15px}
++.ov{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:20;transition:opacity .3s}
++.ov.h{opacity:0;pointer-events:none}
++.ov h1{font-size:36px;color:#00d4ff;text-shadow:0 0 20px #00d4ff;margin-bottom:15px}
++.ov p{color:#ccc;font-size:13px;margin-bottom:20px;text-align:center;line-height:1.8}
++.btn{background:linear-gradient(135deg,#00d4ff,#0099cc);color:#fff;border:none;padding:12px 40px;font-size:18px;font-weight:bold;border-radius:25px;cursor:pointer;box-shadow:0 5px 20px rgba(0,212,255,.4);transition:transform .3s,box-shadow .3s}
++.btn:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,212,255,.6)}
++.fs{font-size:28px;color:#ffd700;margin:10px 0;text-shadow:0 0 10px #ffd700}
++.nr{color:#ff6b6b;font-size:16px;margin-bottom:10px}
++.sc{color:#ffd700}.sp{color:#00d4ff}.lv{color:#ff6b6b}.hi{color:#aaa;font-size:12px}
++</style>
++</head>
++<body>
++<div class="c">
++<canvas id="cv" width="800" height="600"></canvas>
++<div class="hud">
++<div class="sc">🏆 <span id="s">0</span></div>
++<div class="sp">⚡ <span id="sp">1.0</span>x</div>
++<div class="lv">❤️ <span id="l">3</span></div>
++<div class="hi">👑 <span id="h">0</span></div>
++</div>
++<div class="ov" id="st"><h1>🏎️ 极速狂飙</h1><p>控制赛车躲避障碍！<br>⬅️➡️/AD 移动 | ⬆️⬇️/WS 加减速 | ESC 暂停<br>📱 支持触摸滑动</p><button class="btn" onclick="start()">开始游戏</button></div>
++<div class="ov h" id="go"><h1>💥 游戏结束</h1><div class="fs">🏆 <span id="fs">0</span> 分</div><div class="nr h" id="nr">🎉 新纪录！</div><button class="btn" onclick="start()">再来一局</button></div>
++</div>
++<script>
++var C={W:800,H:600,L:5,RW:640,PW:50,PH:80,OW:50,OH:80,BS:5,MS:15,LC:8,IF:120,MO:6,SR:.025,SD:180},
++W=C.W,H=C.H,LN=C.L,RW=C.RW,cv=document.getElementById('cv'),cx=cv.getContext('2d'),
++S={run:0,pa:0,sc:0,sp:C.BS,lv:3,inv:0,hs:0,fc:0},
++P={ln:2,x:0,y:H-120,w:C.PW,h:C.PH,cd:0},
++O=[],RL=[],PT=[],K={},tX=0,tY=0;
++try{S.hs=parseInt(localStorage.getItem('rH'))||0}catch(e){}document.getElementById('h').textContent=S.hs;
++document.addEventListener('keydown',function(e){K[e.key]=1;if(e.key==='Escape')tgP();if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault()});
++document.addEventListener('keyup',function(e){K[e.key]=0});
++document.addEventListener('touchstart',function(e){tX=e.touches[0].clientX;tY=e.touches[0].clientY},{passive:1});
++document.addEventListener('touchend',function(e){
++if(!S.run||S.pa)return;
++var dx=e.changedTouches[0].clientX-tX,dy=e.changedTouches[0].clientY-tY;
++if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>30){if(dx>0&&P.ln<LN-1&&P.cd===0){P.ln++;P.cd=C.LC}else if(dx<0&&P.ln>0&&P.cd===0){P.ln--;P.cd=C.LC}}
++else if(Math.abs(dy)>30){if(dy<0)S.sp=Math.min(C.MS,S.sp+2);else S.sp=Math.max(C.BS*.5,S.sp-2)}
++},{passive:1});
++function gX(l){var rX=(W-RW)/2,lW=RW/LN;return rX+l*lW+(lW-P.w)/2}
++function tgP(){if(!S.run)return;S.pa=!S.pa;if(!S.pa)gl()}
++function start(){
++S={run:1,pa:0,sc:0,sp:C.BS,lv:3,inv:0,hs:S.hs,fc:0};
++P={ln:2,x:gX(2),y:H-120,w:C.PW,h:C.PH,cd:0};O=[];PT=[];RL=[];
++for(var i=0;i<12;i++)RL.push({y:i*60});
++document.getElementById('st').classList.add('h');document.getElementById('go').classList.add('h');document.getElementById('nr').classList.add('h');gl()
++}
++function end(){
++S.run=0;if(S.sc>S.hs){S.hs=S.sc;try{localStorage.setItem('rH',S.hs)}catch(e){}document.getElementById('nr').classList.remove('h');document.getElementById('h').textContent=S.hs}
++document.getElementById('fs').textContent=S.sc;document.getElementById('go').classList.remove('h')
++}
++function spPT(x,y,c,n){for(var i=0;i<n;i++)PT.push({x:x,y:y,vx:(Math.random()-.5)*12,vy:(Math.random()-.5)*12,life:1,c:c,s:3+Math.random()*4})}
++function cSL(l){for(var i=0;i<O.length;i++)if(O[i].ln===l&&O[i].y<C.SD)return 0;return 1}
++function upd(){
++S.fc++;if(P.cd>0)P.cd--;
++if(P.cd===0){if((K['ArrowLeft']||K['a'||'A'])&&P.ln>0){P.ln--;P.cd=C.LC}if((K['ArrowRight']||K['d'||'D'])&&P.ln<LN-1){P.ln++;P.cd=C.LC}}
++P.x+=(gX(P.ln)-P.x)*.2;
++if(K['ArrowUp']||K['w'||'W'])S.sp=Math.min(C.MS,S.sp+.05);if(K['ArrowDown']||K['s'||'S'])S.sp=Math.max(C.BS*.5,S.sp-.05);
++S.sp=Math.min(C.MS,S.sp+.001);
++for(var i=0;i<RL.length;i++){RL[i].y+=S.sp;if(RL[i].y>H)RL[i].y=-20}
++if(O.length<C.MO&&Math.random()<C.SR){var aL=[];for(var l=0;l<LN;l++)if(cSL(l))aL.push(l);if(aL.length>0){var ln=aL[Math.floor(Math.random()*aL.length)];O.push({ln:ln,x:gX(ln),y:-C.OH,w:C.OW,h:C.OH,c:['#ff6b6b','#ffa502','#e74c3c','#9b59b6','#3498db'][Math.floor(Math.random()*5)]})}}
++for(var i=O.length-1;i>=0;i--){O[i].y+=S.sp;if(O[i].y>H){O.splice(i,1);S.sc+=10}}
++if(S.inv>0)S.inv--;
++if(S.inv===0){var px=P.x+5,py=P.y+5,pw=P.w-10,ph=P.h-10;for(var i=O.length-1;i>=0;i--){var o=O[i];if(px<o.x+o.w-10&&px+pw>o.x+10&&py<o.y+o.h-10&&py+ph>o.y+10){spPT(P.x+P.w/2,P.y,'#ff6b6b',20);S.lv--;S.inv=C.IF;O.splice(i,1);if(S.lv<=0){end();return}}}}
++if(PT.length>100)PT.splice(0,PT.length-100);
++for(var i=PT.length-1;i>=0;i--){var p=PT[i];p.x+=p.vx;p.y+=p.vy;p.life-=.02;if(p.life<=0)PT.splice(i,1)}
++S.sc++;
++document.getElementById('s').textContent=S.sc;document.getElementById('sp').textContent=(S.sp/C.BS).toFixed(1);document.getElementById('l').textContent=S.lv
++}
++function dr(){
++cx.fillStyle='#1e5128';cx.fillRect(0,0,W,H);var rX=(W-RW)/2;
++cx.fillStyle='#2d2d44';cx.fillRect(rX,0,RW,H);
++cx.fillStyle='#ffcc00';cx.fillRect(rX-5,0,5,H);cx.fillRect(rX+RW,0,5,H);
++cx.fillStyle='#fff';var lW=RW/LN;for(var i=0;i<RL.length;i++)for(var j=1;j<LN;j++)cx.fillRect(rX+j*lW-2,RL[i].y,4,30);
++for(var i=0;i<O.length;i++){var o=O[i];cx.fillStyle=o.c;cx.beginPath();cx.moveTo(o.x+8,o.y);cx.lineTo(o.x+o.w-8,o.y);cx.lineTo(o.x+o.w,o.y+o.h-15);cx.lineTo(o.x,o.y+o.h-15);cx.closePath();cx.fill();cx.fillStyle='#333';cx.beginPath();cx.moveTo(o.x+10,o.y+o.h-15);cx.lineTo(o.x+o.w/2,o.y+o.h);cx.lineTo(o.x+o.w-10,o.y+o.h-15);cx.closePath();cx.fill();cx.fillStyle='#001a33';cx.fillRect(o.x+10,o.y+o.h-45,o.w-20,20);cx.fillStyle='#222';cx.fillRect(o.x-4,o.y+5,6,15);cx.fillRect(o.x+o.w-2,o.y+5,6,15);cx.fillRect(o.x-4,o.y+o.h-30,6,15);cx.fillRect(o.x+o.w-2,o.y+o.h-30,6,15)}
++if(S.inv===0||Math.floor(S.fc/5)%2){cx.fillStyle='#00d4ff';cx.beginPath();cx.moveTo(P.x+8,P.y+15);cx.lineTo(P.x+P.w-8,P.y+15);cx.lineTo(P.x+P.w,P.y+P.h);cx.lineTo(P.x,P.y+P.h);cx.closePath();cx.fill();cx.fillStyle='#0099cc';cx.beginPath();cx.moveTo(P.x+10,P.y+15);cx.lineTo(P.x+P.w/2,P.y);cx.lineTo(P.x+P.w-10,P.y+15);cx.closePath();cx.fill();cx.fillStyle='#001a33';cx.fillRect(P.x+10,P.y+20,P.w-20,20);cx.fillStyle='#222';cx.fillRect(P.x-4,P.y+20,6,15);cx.fillRect(P.x+P.w-2,P.y+20,6,15);cx.fillRect(P.x-4,P.y+P.h-20,6,15);cx.fillRect(P.x+P.w-2,P.y+P.h-20,6,15);cx.fillStyle='#ff3333';cx.fillRect(P.x+5,P.y+P.h-5,10,4);cx.fillRect(P.x+P.w-15,P.y+P.h-5,10,4)}
++for(var i=0;i<PT.length;i++){var p=PT[i];cx.globalAlpha=p.life;cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.s,0,Math.PI*2);cx.fill()}
++cx.globalAlpha=1;
++if(S.pa){cx.fillStyle='rgba(0,0,0,.5)';cx.fillRect(0,0,W,H);cx.fillStyle='#00d4ff';cx.font='bold 36px Arial';cx.textAlign='center';cx.fillText('⏸️ 已暂停',W/2,H/2);cx.font='18px Arial';cx.fillStyle='#ccc';cx.fillText('按 ESC 继续',W/2,H/2+40)}
++}
++function gl(){if(!S.run||S.pa)return;upd();dr();requestAnimationFrame(gl)}
++dr();
++</script>
++</body>
++</html>

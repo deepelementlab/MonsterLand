@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单测试</title>
+</head>
+<body>
+    <h1>俄罗斯方块简单测试</h1>
+    <button onclick="testImport()">测试模块导入</button>
+    <div id="result"></div>
+    
+    <script type="module">
+        async function testImport() {
+            const resultDiv = document.getElementById('result');
+            try {
+                resultDiv.innerHTML = '开始导入模块...<br>';
+                
+                // 测试配置模块
+                const config = await import('./src/config.js');
+                resultDiv.innerHTML += '✅ 配置模块导入成功<br>';
+                
+                // 测试方块模块
+                const blockModule = await import('./src/block/block.js');
+                resultDiv.innerHTML += '✅ 方块模块导入成功<br>';
+                
+                // 创建方块
+                const factory = new blockModule.BlockFactory();
+                const block = factory.createNextBlock();
+                resultDiv.innerHTML += `✅ 方块创建成功: ${block.type}<br>`;
+                
+                // 测试游戏模块
+                const gameModule = await import('./src/game/game.js');
+                resultDiv.innerHTML += '✅ 游戏模块导入成功<br>';
+                
+                const engine = new gameModule.GameEngine();
+                resultDiv.innerHTML += '✅ 游戏引擎创建成功<br>';
+                
+                // 测试渲染器模块
+                const renderModule = await import('./src/render/canvas-renderer.js');
+                resultDiv.innerHTML += '✅ 渲染器模块导入成功<br>';
+                
+                resultDiv.innerHTML += '<br><strong>✅ 所有模块导入成功！游戏应该可以正常工作。</strong>';
+                
+                console.log('所有模块导入成功！');
+                console.log('配置:', config);
+                console.log('方块:', block);
+                console.log('引擎:', engine);
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<br><strong>❌ 导入失败: ${error.message}</strong>`;
+                console.error('导入错误:', error);
+            }
+        }
+        
+        // 页面加载后自动测试
+        setTimeout(() => {
+            testImport();
+        }, 1000);
+    </script>
+</body>
+</html>

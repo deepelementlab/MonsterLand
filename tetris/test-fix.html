@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        #output {
+            font-family: monospace;
+            background: black;
+            color: white;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            min-height: 200px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>俄罗斯方块模块导入测试</h1>
+    <button onclick="testImports()">测试导入</button>
+    <button onclick="loadGame()">加载游戏</button>
+    <div id="output">点击按钮开始测试...</div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6';
+            output.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        async function testImports() {
+            log('开始测试模块导入...');
+            
+            const modules = [
+                { name: 'config.js', path: './src/config.js' },
+                { name: 'main.js', path: './src/main.js' },
+                { name: 'game/game.js', path: './src/game/game.js' },
+                { name: 'game/grid.js', path: './src/game/grid.js' },
+                { name: 'game/score.js', path: './src/game/score.js' },
+                { name: 'block/block.js', path: './src/block/block.js' },
+                { name: 'render/canvas-renderer.js', path: './src/render/canvas-renderer.js' },
+                { name: 'ui/ui-controller.js', path: './src/ui/ui-controller.js' }
+            ];
+            
+            for (const module of modules) {
+                try {
+                    log(`尝试导入 ${module.name}...`);
+                    const response = await fetch(module.path);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    log(`✅ ${module.name} 文件存在`, 'success');
+                } catch (error) {
+                    log(`❌ ${module.name} 文件读取失败: ${error.message}`, 'error');
+                }
+            }
+            
+            log('文件存在性检查完成');
+        }
+        
+        async function loadGame() {
+            log('开始加载游戏模块...');
+            
+            try {
+                // 检查浏览器是否支持ES模块
+                if (typeof import === 'undefined') {
+                    throw new Error('浏览器不支持ES模块');
+                }
+                
+                // 测试导入config.js
+                log('导入 config.js...');
+                const configModule = await import('./src/config.js');
+                log('✅ config.js 导入成功', 'success');
+                
+                // 测试创建简单游戏
+                log('创建简单游戏实例...');
+                
+                // 导入game.js
+                const gameModule = await import('./src/game/game.js');
+                const gameEngine = new gameModule.GameEngine();
+                log('✅ 游戏引擎创建成功', 'success');
+                
+                // 检查游戏状态
+                const gameState = gameEngine.getGameState();
+                log(`游戏状态: ${gameState.state}`, 'success');
+                log(`分数: ${gameState.score}`, 'success');
+                log(`等级: ${gameState.level}`, 'success');
+                
+                // 测试方块生成
+                if (gameState.nextBlock) {
+                    log(`下一个方块: ${gameState.nextBlock.type}`, 'success');
+                }
+                
+                log('🎉 游戏模块加载成功！', 'success');
+                log('现在可以打开 index.html 测试完整游戏。', 'info');
+                
+            } catch (error) {
+                log(`❌ 游戏加载失败: ${error.message}`, 'error');
+                log(`详细错误: ${error.stack}`, 'error');
+                
+                // 提供可能的解决方案
+                log('\n可能的解决方案:', 'info');
+                log('1. 通过本地服务器运行（如Live Server、http-server等）', 'info');
+                log('2. 检查文件路径是否正确', 'info');
+                log('3. 检查浏览器控制台的完整错误信息', 'info');
+                log('4. 确保所有.js文件都存在', 'info');
+            }
+        }
+    </script>
+</body>
+</html>

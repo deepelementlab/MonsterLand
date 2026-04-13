@@ -1,0 +1,312 @@
+Successfully wrote 163 lines (6238 bytes) to diagnose.js
+
+--- a/diagnose.js
++++ b/diagnose.js
+@@ -1,158 +1,163 @@
+ /**
+- * 诊断俄罗斯方块游戏问题
+- * 在浏览器控制台运行此脚本
++ * 俄罗斯方块游戏诊断脚本
++ * 用于定位和解决问题
+  */
+ 
+-console.log('=== 俄罗斯方块游戏诊断工具 ===');
+-
+-// 检查基本环境
+-console.log('\n1. 检查基本环境:');
+-console.log('User Agent:', navigator.userAgent);
+-console.log('在线状态:', navigator.onLine);
+-console.log('Cookie 启用:', navigator.cookieEnabled);
+-
+-// 检查DOM元素
+-console.log('\n2. 检查DOM元素:');
+-const elements = {
+-    gameCanvas: document.getElementById('gameCanvas'),
+-    startButton: document.getElementById('startButton'),
+-    pauseButton: document.getElementById('pauseButton'),
+-    restartButton: document.getElementById('restartButton'),
+-    scoreValue: document.getElementById('scoreValue'),
+-    gameStateText: document.getElementById('gameStateText')
+-};
+-
+-console.log('Canvas 元素:', elements.gameCanvas ? '✅ 存在' : '❌ 不存在');
+-console.log('开始按钮:', elements.startButton ? '✅ 存在' : '❌ 不存在');
+-console.log('暂停按钮:', elements.pauseButton ? '✅ 存在' : '❌ 不存在');
+-console.log('分数显示:', elements.scoreValue ? '✅ 存在' : '❌ 不存在');
+-console.log('状态显示:', elements.gameStateText ? '✅ 存在' : '❌ 不存在');
+-
+-// 检查脚本加载
+-console.log('\n3. 检查脚本加载:');
+-const scripts = document.getElementsByTagName('script');
+-console.log('页面中共有', scripts.length, '个脚本标签');
+-
+-let mainJsLoaded = false;
+-for (let script of scripts) {
+-    if (script.src && script.src.includes('main.js')) {
+-        mainJsLoaded = true;
+-        console.log('✅ main.js 脚本标签存在:', script.src);
+-        break;
+-    }
+-}
+-if (!mainJsLoaded) {
+-    console.log('❌ main.js 脚本标签未找到');
+-}
+-
+-// 检查全局变量
+-console.log('\n4. 检查全局变量:');
+-console.log('window.tetris:', window.tetris ? '✅ 存在' : '❌ 不存在');
+-if (window.tetris) {
+-    console.log('tetris 对象详情:', window.tetris);
+-}
+-
+-// 检查控制台错误
+-console.log('\n5. 已知问题检查:');
+-console.log('如果看到以下错误，请对应解决:');
+-
+-console.log('\n可能错误1: CORS policy (跨域问题)');
+-console.log('解决方法: 通过本地服务器运行（如Live Server），或修改浏览器安全设置');
+-
+-console.log('\n可能错误2: Failed to load module (模块加载失败)');
+-console.log('解决方法: 检查文件路径是否正确，确保所有.js文件存在');
+-
+-console.log('\n可能错误3: SyntaxError (语法错误)');
+-console.log('解决方法: 检查JavaScript代码语法');
+-
+-// 尝试直接导入模块测试
+-console.log('\n6. 直接测试模块导入:');
+-async function testImports() {
++async function diagnose() {
++    console.log('=== 俄罗斯方块游戏诊断开始 ===');
++    
+     try {
+-        console.log('测试导入 config.js...');
++        // 1. 测试配置文件
++        console.log('1. 测试配置文件...');
+         const config = await import('./src/config.js');
+-        console.log('✅ config.js 导入成功');
++        console.log('✅ 配置文件导入成功');
++        console.log('   GameConfig:', Object.keys(config.GameConfig));
++        console.log('   BlockType:', config.BlockType);
+         
+-        console.log('测试导入 game.js...');
+-        const game = await import('./src/game/game.js');
+-        console.log('✅ game.js 导入成功');
++        // 2. 测试方块模块
++        console.log('2. 测试方块模块...');
++        const blockModule = await import('./src/block/block.js');
++        console.log('✅ 方块模块导入成功');
+         
+-        console.log('测试导入 block.js...');
+-        const block = await import('./src/block/block.js');
+-        console.log('✅ block.js 导入成功');
++        const factory = new blockModule.BlockFactory();
++        const block = factory.createNextBlock();
++        console.log(`   ✅ 方块生成: ${block.type} (${block.x}, ${block.y})`);
+         
+-        console.log('✅ 所有模块导入测试通过！');
++        // 3. 测试游戏网格
++        console.log('3. 测试游戏网格...');
++        const gridModule = await import('./src/game/grid.js');
++        console.log('✅ 游戏网格导入成功');
++        
++        const grid = new gridModule.GameGrid();
++        console.log(`   ✅ 网格创建: ${grid.width}x${grid.height}`);
++        
++        // 4. 测试游戏引擎
++        console.log('4. 测试游戏引擎...');
++        const gameModule = await import('./src/game/game.js');
++        console.log('✅ 游戏引擎导入成功');
++        
++        const engine = new gameModule.GameEngine();
++        console.log(`   ✅ 引擎状态: ${engine.state}`);
++        
++        // 5. 测试分数模块
++        console.log('5. 测试分数模块...');
++        const scoreModule = await import('./src/game/score.js');
++        console.log('✅ 分数模块导入成功');
++        
++        const scoreManager = new scoreModule.ScoreManager();
++        console.log(`   ✅ 初始分数: ${scoreManager.getCurrentScore()}`);
++        
++        // 6. 测试渲染器模块
++        console.log('6. 测试渲染器模块...');
++        const renderModule = await import('./src/render/canvas-renderer.js');
++        console.log('✅ 渲染器模块导入成功');
++        
++        // 创建测试Canvas
++        const canvas = document.createElement('canvas');
++        canvas.width = 400;
++        canvas.height = 800;
++        
++        try {
++            const renderer = new renderModule.CanvasRenderer(canvas);
++            console.log('   ✅ Canvas渲染器创建成功');
++        } catch (error) {
++            console.error('   ❌ Canvas渲染器创建失败:', error.message);
++        }
++        
++        // 7. 测试UI控制器
++        console.log('7. 测试UI控制器...');
++        const uiModule = await import('./src/ui/ui-controller.js');
++        console.log('✅ UI控制器模块导入成功');
++        
++        // 8. 测试主入口模块
++        console.log('8. 测试主入口模块...');
++        try {
++            const mainModule = await import('./src/main.js');
++            console.log('✅ 主入口模块导入成功');
++        } catch (error) {
++            console.error('❌ 主入口模块导入失败:', error.message);
++        }
++        
++        console.log('=== 诊断完成 ===');
++        console.log('所有模块导入正常！');
++        
++        // 检查常见问题
++        console.log('\n=== 常见问题检查 ===');
++        
++        // 检查DOM元素是否存在
++        console.log('检查DOM元素...');
++        const elements = {
++            gameCanvas: document.getElementById('gameCanvas'),
++            startButton: document.getElementById('startButton'),
++            scoreValue: document.getElementById('scoreValue')
++        };
++        
++        for (const [name, element] of Object.entries(elements)) {
++            if (element) {
++                console.log(`   ✅ ${name}: 存在`);
++            } else {
++                console.log(`   ❌ ${name}: 不存在`);
++            }
++        }
++        
++        // 检查localStorage
++        console.log('检查localStorage支持...');
++        try {
++            localStorage.setItem('test_diagnose', 'ok');
++            const value = localStorage.getItem('test_diagnose');
++            localStorage.removeItem('test_diagnose');
++            console.log(`   ✅ localStorage: 正常 (${value})`);
++        } catch (error) {
++            console.log('   ❌ localStorage: 不支持或禁用');
++        }
++        
++        // 检查模块导入路径
++        console.log('检查模块导入路径...');
++        const paths = [
++            'src/config.js',
++            'src/block/block.js',
++            'src/game/game.js',
++            'src/game/grid.js',
++            'src/game/score.js',
++            'src/render/canvas-renderer.js',
++            'src/ui/ui-controller.js',
++            'src/main.js'
++        ];
++        
++        for (const path of paths) {
++            try {
++                const response = await fetch(path);
++                console.log(`   ✅ ${path}: ${response.ok ? '正常' : '失败'}`);
++            } catch (error) {
++                console.log(`   ❌ ${path}: 无法访问`);
++            }
++        }
++        
+     } catch (error) {
+-        console.error('❌ 模块导入失败:', error);
+-        console.error('错误详情:', error.message);
++        console.error('诊断过程中出错:', error);
++        console.error('错误堆栈:', error.stack);
++        
++        // 提供具体建议
++        console.log('\n=== 问题分析 ===');
++        if (error.message.includes('Cannot find module')) {
++            console.log('问题: 模块文件缺失或路径错误');
++            console.log('建议: 检查文件路径和文件名是否正确');
++        } else if (error.message.includes('Unexpected token')) {
++            console.log('问题: JavaScript语法错误');
++            console.log('建议: 检查代码语法，特别是ES6模块语法');
++        } else if (error.message.includes('is not a constructor')) {
++            console.log('问题: 类构造函数调用错误');
++            console.log('建议: 检查类的导出和导入方式');
++        } else {
++            console.log(`问题类型: ${error.message}`);
++        }
+     }
+ }
+ 
+-// 运行测试
+-testImports().then(() => {
+-    console.log('\n=== 诊断完成 ===');
+-    console.log('\n如果游戏仍然不工作，请检查浏览器控制台的完整错误信息');
+-});
+-
+-// 提供手动修复按钮
+-console.log('\n7. 手动修复选项:');
+-console.log('复制以下代码到控制台尝试手动修复:');
+-
+-const fixCode = `
+-// 尝试手动初始化游戏
+-async function manualInit() {
+-    try {
+-        // 导入模块
+-        const { GameEngine } = await import('./src/game/game.js');
+-        const { CanvasRenderer } = await import('./src/render/canvas-renderer.js');
+-        const { UIController } = await import('./src/ui/ui-controller.js');
+-        
+-        // 获取元素
+-        const elements = {
+-            gameCanvas: document.getElementById('gameCanvas'),
+-            startButton: document.getElementById('startButton'),
+-            pauseButton: document.getElementById('pauseButton'),
+-            restartButton: document.getElementById('restartButton'),
+-            nextBlockPreview: document.getElementById('nextBlockPreview'),
+-            scoreValue: document.getElementById('scoreValue'),
+-            highScoreValue: document.getElementById('highScoreValue'),
+-            linesValue: document.getElementById('linesValue'),
+-            levelValue: document.getElementById('levelValue'),
+-            gameStateText: document.getElementById('gameStateText'),
+-            speedValue: document.getElementById('speedValue'),
+-            timeValue: document.getElementById('timeValue'),
+-            instructions: document.getElementById('instructions'),
+-            messageElement: document.getElementById('messagePopup'),
+-            gameOverlay: document.getElementById('gameOverlay'),
+-            statusMessage: document.getElementById('statusMessage')
+-        };
+-        
+-        // 初始化组件
+-        const gameEngine = new GameEngine();
+-        const renderer = new CanvasRenderer(elements.gameCanvas);
+-        const uiController = new UIController(elements, gameEngine, renderer);
+-        
+-        // 启动游戏循环
+-        uiController.startGameLoop();
+-        
+-        // 更新UI
+-        uiController.updateUI();
+-        
+-        console.log('✅ 手动初始化成功！');
+-        console.log('游戏状态:', gameEngine.getGameState());
+-        
+-        // 设置到全局变量便于调试
+-        window.tetris = { gameEngine, renderer, uiController };
+-        
+-        return true;
+-    } catch (error) {
+-        console.error('❌ 手动初始化失败:', error);
+-        return false;
+-    }
++// 如果直接从控制台运行
++if (typeof window !== 'undefined') {
++    window.diagnose = diagnose;
++    console.log('诊断脚本已加载，运行 diagnose() 开始诊断');
+ }
+ 
+-// 运行手动初始化
+-manualInit();
+-`;
+-
+-console.log(fixCode);
++export { diagnose };

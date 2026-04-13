@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块 - 经典益智游戏</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧊</text></svg>">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>俄罗斯方块</h1>
+            <div class="game-subtitle">经典益智游戏</div>
+        </header>
+
+        <main class="game-main">
+            <!-- 左侧控制面板 -->
+            <aside class="control-panel">
+                <section class="next-block-section">
+                    <h3>下一个方块</h3>
+                    <div class="next-block-preview" id="nextBlockPreview">
+                        <!-- 通过Canvas动态渲染 -->
+                    </div>
+                </section>
+
+                <section class="game-controls">
+                    <h3>游戏控制</h3>
+                    <div class="control-buttons">
+                        <button id="startButton" class="btn btn-start">开始游戏</button>
+                        <button id="pauseButton" class="btn btn-pause">暂停</button>
+                        <button id="restartButton" class="btn btn-restart">重新开始</button>
+                    </div>
+                </section>
+
+                <section class="difficulty-section">
+                    <h3>难度等级</h3>
+                    <div class="difficulty-options">
+                        <label class="difficulty-option">
+                            <input type="radio" name="difficulty" value="1" checked>
+                            <span>简单</span>
+                        </label>
+                        <label class="difficulty-option">
+                            <input type="radio" name="difficulty" value="2">
+                            <span>普通</span>
+                        </label>
+                        <label class="difficulty-option">
+                            <input type="radio" name="difficulty" value="3">
+                            <span>困难</span>
+                        </label>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- 中间游戏区域 -->
+            <section class="game-area">
+                <div class="game-canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                    <div class="game-status-overlay" id="gameOverlay">
+                        <div class="status-message" id="statusMessage"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 右侧信息面板 -->
+            <aside class="info-panel">
+                <section class="score-section">
+                    <h3>分数统计</h3>
+                    <div class="score-display">
+                        <div class="score-item">
+                            <span class="score-label">当前分数:</span>
+                            <span class="score-value" id="scoreValue">000000</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">最高分数:</span>
+                            <span class="score-value" id="highScoreValue">000000</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">已消行数:</span>
+                            <span class="score-value" id="linesValue">000</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">当前等级:</span>
+                            <span class="score-value" id="levelValue">01</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="game-status-section">
+                    <h3>游戏状态</h3>
+                    <div class="status-display">
+                        <div class="status-item">
+                            <span class="status-label">状态:</span>
+                            <span class="status-value" id="gameStateText">准备开始</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">速度:</span>
+                            <span class="status-value" id="speedValue">1级</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">时间:</span>
+                            <span class="status-value" id="timeValue">00:00</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="instructions-section">
+                    <h3>操作说明</h3>
+                    <div class="instructions" id="instructions">
+                        <div>← → : 左右移动</div>
+                        <div>↑ : 旋转方块</div>
+                        <div>↓ : 加速下落</div>
+                        <div>空格 : 立即下落</div>
+                        <div>P : 暂停/继续</div>
+                        <div>R : 重新开始</div>
+                        <div>Enter : 开始游戏</div>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <footer class="game-footer">
+            <div class="footer-content">
+                <p>俄罗斯方块 © 2023 - 经典益智游戏</p>
+                <p class="footer-hint">提示：使用键盘方向键控制方块移动，空格键加速下落</p>
+            </div>
+        </footer>
+
+        <!-- 消息提示 -->
+        <div class="message-popup" id="messagePopup" style="display: none;"></div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

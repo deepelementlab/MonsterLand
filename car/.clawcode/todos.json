@@ -1,0 +1,32 @@
+[
+  {
+    "content": "添加音效反馈系统 (P3)",
+    "id": "add-sound-effects",
+    "status": "completed",
+    "created_at": 1775639490
+  },
+  {
+    "content": "增强粒子效果系统",
+    "id": "enhance-particles",
+    "status": "completed",
+    "created_at": 177329490
+  },
+  {
+    "content": "优化难度曲线系统",
+    "id": "optimize-difficulty",
+    "status": "completed",
+    "created_at": 1775639490
+  },
+  {
+    "content": "UI/UX细节打磨",
+    "id": "polish-ux",
+    "status": "completed",
+    "created_at": 1775639490
+  },
+  {
+    "content": "迭代2收敛评估",
+    "id": "iteration2-converge",
+    "status": "completed",
+    "created_at": 1775639490
+  }
+]

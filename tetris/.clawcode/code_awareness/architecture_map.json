@@ -1,0 +1,469 @@
+{
+  "version": 1,
+  "project_root": "D:\\opensource_project\\opencode-main\\opencode-main\\test\\tetris",
+  "updated_at": 1775029398.7846014,
+  "source": "llm",
+  "model_info": {
+    "available": true,
+    "provider": "openai",
+    "provider_key": "openai_deepseek",
+    "model": "deepseek-reasoner",
+    "last_attempt_at": 1775029398.7846014,
+    "stage1_outline_stats": {
+      "truncated": false,
+      "notes": [],
+      "max_depth": 3,
+      "max_total_paths": 400,
+      "max_children_per_dir": 30,
+      "sampled_paths": 11
+    },
+    "two_stage": true
+  },
+  "layers": {
+    "Other": [
+      "-p"
+    ],
+    "Infrastructure": [
+      "assets",
+      "assets/images",
+      "assets/sounds"
+    ],
+    "Support": [
+      "design",
+      "docs"
+    ],
+    "Application": [
+      "src",
+      "src/game"
+    ],
+    "Domain": [
+      "src/block"
+    ],
+    "Presentation": [
+      "src/render",
+      "src/ui"
+    ]
+  },
+  "dir_to_layer": {
+    "-p": "Other",
+    "assets": "Infrastructure",
+    "assets/images": "Infrastructure",
+    "assets/sounds": "Infrastructure",
+    "design": "Support",
+    "docs": "Support",
+    "src": "Application",
+    "src/block": "Domain",
+    "src/game": "Application",
+    "src/render": "Presentation",
+    "src/ui": "Presentation"
+  },
+  "layer_descriptions": {
+    "Presentation": "Handles user interface, rendering, and input controls for the game.",
+    "Application": "Manages game state, logic, scoring, and overall flow.",
+    "Domain": "Contains core game entities, rules, and mechanics like blocks and grid.",
+    "Infrastructure": "Provides static resources, configuration, and supporting assets.",
+    "Support": "Includes documentation, design files, and project metadata."
+  },
+  "layer_order": [
+    "Presentation",
+    "Application",
+    "Domain",
+    "Infrastructure",
+    "Support",
+    "Other"
+  ],
+  "file_events": [
+    {
+      "timestamp": 1774600831.4684515,
+      "path": "src/config.js",
+      "directory": "src",
+      "layer": "Project",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774600831.4802203,
+      "path": "src/block/block.js",
+      "directory": "src/block",
+      "layer": "Domain",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774600840.0907981,
+      "path": "src/game/grid.js",
+      "directory": "src/game",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774600927.3620858,
+      "path": "src/game/game.js",
+      "directory": "src/game",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774600963.9290707,
+      "path": "src/game/score.js",
+      "directory": "src/game",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601073.601725,
+      "path": "src/render/canvas-renderer.js",
+      "directory": "src/render",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601146.7864118,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601191.0435255,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601318.4055343,
+      "path": "style.css",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601376.6487603,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Project",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601448.8273005,
+      "path": "README.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774601812.0423605,
+      "path": "test-game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774605483.7974455,
+      "path": "quick-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774605636.357859,
+      "path": "final-check.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774605806.9114652,
+      "path": "docs/deployment-guide.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774605985.410451,
+      "path": "FINAL_DELIVERY_REPORT.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709391.9682274,
+      "path": "debug-test.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709503.6671586,
+      "path": "simple-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709612.3115685,
+      "path": "src/game/game.js",
+      "directory": "src/game",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709807.9270487,
+      "path": "diagnose.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709880.6756415,
+      "path": "test-block-placement.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774709913.4693909,
+      "path": "fix-game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710040.970979,
+      "path": "debug-fix.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710129.1278644,
+      "path": "fixed-block.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710197.1165128,
+      "path": "src/block/block.js",
+      "directory": "src/block",
+      "layer": "Domain",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710265.5853508,
+      "path": "test-fix.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710320.8385026,
+      "path": "direct-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710373.132549,
+      "path": "verify-block-pos.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710558.3479242,
+      "path": "final-check.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774710636.5890036,
+      "path": "deployment-guide.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711096.9612532,
+      "path": "debug-test.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711147.4534674,
+      "path": "diagnose.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711248.6540043,
+      "path": "direct-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711345.5898166,
+      "path": "simple-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711411.978391,
+      "path": "fix-game.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711440.473237,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711623.4245358,
+      "path": "src/main-fixed.js",
+      "directory": "src",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711727.3846116,
+      "path": "debug-fix.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711774.5769358,
+      "path": "test-fix.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774711817.5906913,
+      "path": "index-simple.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774712075.9805882,
+      "path": "verify.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774712178.9645076,
+      "path": "FINAL_DELIVERY_REPORT.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774753779.8231373,
+      "path": "debug-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774753828.3665547,
+      "path": "diagnose.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774753858.2458158,
+      "path": "simple-test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774754480.3442051,
+      "path": "final-verification.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774754833.5685813,
+      "path": "run_server.py",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774756021.1355636,
+      "path": "debug-pause.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757545.6136346,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757582.7359107,
+      "path": "test-pause.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757663.4419756,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757696.4613047,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757785.944365,
+      "path": "src/game/game.js",
+      "directory": "src/game",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757827.6253858,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757852.1556683,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774757878.7137606,
+      "path": "src/ui/ui-controller.js",
+      "directory": "src/ui",
+      "layer": "Presentation",
+      "kind": "modified"
+    }
+  ]
+}

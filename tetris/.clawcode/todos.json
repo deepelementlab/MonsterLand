@@ -1,0 +1,32 @@
+[
+  {
+    "id": "update_html_files",
+    "content": "更新HTML文件，使它们在文件协议下也能工作",
+    "status": "in_progress",
+    "created_at": 1775025411
+  },
+  {
+    "id": "create_bundle_js",
+    "content": "创建打包的非模块JavaScript文件",
+    "status": "pending",
+    "created_at": 1775025411
+  },
+  {
+    "id": "update_index_html",
+    "content": "更新主HTML文件使用非模块版本",
+    "status": "pending",
+    "created_at": 1775025411
+  },
+  {
+    "id": "update_test_html",
+    "content": "更新测试HTML文件使用非模块版本",
+    "status": "pending",
+    "created_at": 1775025411
+  },
+  {
+    "id": "create_file_protocol_version",
+    "content": "创建文件协议下可用的游戏版本",
+    "status": "pending",
+    "created_at": 1775025411
+  }
+]
