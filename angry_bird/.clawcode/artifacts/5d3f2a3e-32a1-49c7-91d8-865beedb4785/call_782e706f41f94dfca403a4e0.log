@@ -1,0 +1,227 @@
+import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+import { LevelsConfig } from '../config/game.config.js';
+
+export class MenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.MENU });
+        this.showLevelSelect = false;
+    }
+
+    create() {
+        this.showLevelSelect = false;
+        this.createBackground();
+        this.createTitle();
+        this.createMenuButtons();
+        this.createBirdDecorations();
+    }
+    
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        
+        for (let i = 0; i < 5; i++) {
+            const x = Phaser.Math.Between(100, width - 100);
+            const y = Phaser.Math.Between(50, 200);
+            this.createCloud(x, y);
+        }
+        
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 20);
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 60, width, 60);
+    }
+    
+    createCloud(x, y) {
+        const cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.9);
+        cloud.fillCircle(0, 0, 30);
+        cloud.fillCircle(25, 0, 40);
+        cloud.fillCircle(50, 0, 30);
+        cloud.fillCircle(25, -20, 25);
+        cloud.setPosition(x, y);
+        this.tweens.add({
+            targets: cloud, x: x + 50,
+            duration: Phaser.Math.Between(3000, 6000),
+            yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+    
+    createTitle() {
+        const width = this.cameras.main.width;
+        this.titleText = this.add.text(width / 2, 130, '愤怒的小鸟', {
+            fontSize: '64px', fontFamily: 'Arial Black',
+            color: '#FF0000', stroke: '#5D0000', strokeThickness: 8
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: this.titleText, y: 120,
+            duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+        
+        // 副标题
+        this.add.text(width / 2, 190, 'Angry Birds', {
+            fontSize: '24px', fontFamily: 'Arial',
+            color: '#FFFFFF', stroke: '#333333', strokeThickness: 3
+        }).setOrigin(0.5);
+    }
+    
+    createMenuButtons() {
+        const width = this.cameras.main.width;
+        this.menuContainer = this.add.container(0, 0);
+        
+        // 开始游戏
+        this.menuContainer.add(this.createButton(width / 2, 280, '🎮 开始游戏', '#4CAF50', () => {
+            this.scene.start(SCENE_KEYS.GAME, { level: 1 });
+        }));
+        
+        // 关卡选择
+        this.menuContainer.add(this.createButton(width / 2, 350, '📋 关卡选择', '#2196F3', () => {
+            this.showLevelSelectPanel();
+        }));
+        
+        // 操作说明
+        this.menuContainer.add(this.createButton(width / 2, 420, '📖 操作说明', '#FF9800', () => {
+            this.showHelpPanel();
+        }));
+    }
+    
+    createButton(x, y, text, bgColor, callback) {
+        const btn = this.add.text(x, y, text, {
+            fontSize: '26px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: bgColor, padding: { x: 25, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        btn.on('pointerover', () => btn.setScale(1.08));
+        btn.on('pointerout', () => btn.setScale(1));
+        btn.on('pointerdown', callback);
+        return btn;
+    }
+    
+    showLevelSelectPanel() {
+        if (this.levelPanel) return;
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 读取存档
+        let progress = {};
+        try {
+            progress = JSON.parse(localStorage.getItem('angrybird_progress') || '{}');
+        } catch(e) {}
+        const maxLevel = progress.maxLevel || 1;
+        
+        this.levelPanel = this.add.container(0, 0).setDepth(50);
+        
+        // 遮罩
+        const overlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.6);
+        overlay.setInteractive();
+        overlay.on('pointerdown', () => this.hideLevelSelectPanel());
+        this.levelPanel.add(overlay);
+        
+        // 面板背景
+        const panelBg = this.add.graphics();
+        panelBg.fillStyle(0x1A1A2E, 0.95);
+        panelBg.fillRoundedRect(width/2-250, height/2-200, 500, 400, 20);
+        panelBg.lineStyle(3, 0xFFD700, 1);
+        panelBg.strokeRoundedRect(width/2-250, height/2-200, 500, 400, 20);
+        this.levelPanel.add(panelBg);
+        
+        // 标题
+        this.levelPanel.add(this.add.text(width/2, height/2-170, '选择关卡', {
+            fontSize: '36px', fontFamily: 'Arial', color: '#FFD700'
+        }).setOrigin(0.5));
+        
+        // 关卡按钮网格
+        const cols = 3;
+        const startX = width/2 - 150;
+        const startY = height/2 - 100;
+        
+        LevelsConfig.forEach((level, index) => {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const bx = startX + col * 150;
+            const by = startY + row * 120;
+            
+            const unlocked = (index + 1) <= maxLevel;
+            const lvlData = progress[index + 1];
+            const stars = lvlData ? lvlData.stars : 0;
+            
+            // 关卡按钮容器
+            const lvlBtn = this.add.container(bx, by);
+            
+            // 背景
+            const bg = this.add.graphics();
+            if (unlocked) {
+                bg.fillStyle(0x2E7D32, 0.9);
+            } else {
+                bg.fillStyle(0x424242, 0.9);
+            }
+            bg.fillRoundedRect(-55, -40, 110, 80, 12);
+            if (unlocked) {
+                bg.lineStyle(2, 0x66BB6A, 1);
+            } else {
+                bg.lineStyle(2, 0x616161, 1);
+            }
+            bg.strokeRoundedRect(-55, -40, 110, 80, 12);
+            lvlBtn.add(bg);
+            
+            // 关卡名称
+            lvlBtn.add(this.add.text(0, -18, level.name, {
+                fontSize: '16px', fontFamily: 'Arial',
+                color: unlocked ? '#FFFFFF' : '#999999'
+            }).setOrigin(0.5));
+            
+            // 星级
+            const starText = unlocked ? '⭐'.repeat(stars) + '☆'.repeat(3-stars) : '🔒';
+            lvlBtn.add(this.add.text(0, 12, starText, {
+                fontSize: '14px'
+            }).setOrigin(0.5));
+            
+            lvlBtn.setSize(110, 80);
+            if (unlocked) {
+                lvlBtn.setInteractive({ useHandCursor: true });
+                lvlBtn.on('pointerdown', () => {
+                    this.scene.start(SCENE_KEYS.GAME, { level: index + 1 });
+                });
+                lvlBtn.on('pointerover', () => lvlBtn.setScale(1.05));
+                lvlBtn.on('pointerout', () => lvlBtn.setScale(1));
+            }
+            
+            this.levelPanel.add(lvlBtn);
+        });
+        
+        // 返回按钮
+        const backBtn = this.add.text(width/2, height/2+170, '返回', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#F44336', padding: { x: 25, y: 8 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        backBtn.on('pointerdown', () => this.hideLevelSelectPanel());
+        this.levelPanel.add(backBtn);
+    }
+    
+    hideLevelSelectPanel() {
+        if (this.levelPanel) {
+            this.levelPanel.destroy(true);
+            this.levelPanel = null;
+        }
+    }
+    
+    showHelpPanel() {
+        if (this.helpPanel) return;
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        this.helpPanel = this.add.container(0, 0).setDepth(50);
+        
+        const overlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.6);
+        overlay.setInteractive();
+        overlay.on('pointerdown', () => this.hideHelpPanel());
+        this.helpPanel.add(overlay);
+        
+        const panelBg = this.add.graphics();
+        panelBg.fillStyle(0x1A1A2E, 0.95);
+        panelBg.fillRoundedRect(width/2-220, hei

@@ -1,0 +1,401 @@
+import { SCENE_KEYS, COLORS, GAME_STATES } from '../utils/constants.js';
+import { GameConfig, LevelsConfig } from '../config/game.config.js';
+import { Bird } from '../objects/Bird.js';
+import { Pig } from '../objects/Pig.js';
+import { Block } from '../objects/Block.js';
+import { Slingshot } from '../objects/Slingshot.js';
+
+export class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.GAME });
+        
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.gameState = GAME_STATES.PLAYING;
+        this.birds = [];
+        this.currentBirdIndex = 0;
+        this.pigs = [];
+        this.blocks = [];
+        this.slingshot = null;
+        this.score = 0;
+        this.trajectoryPoints = [];
+        this.isDragging = false;
+    }
+
+    init(data) {
+        this.currentLevel = data.level || 1;
+        this.levelData = LevelsConfig[this.currentLevel - 1];
+        this.score = 0;
+        this.currentBirdIndex = 0;
+        this.gameState = GAME_STATES.PLAYING;
+    }
+
+    create() {
+        this.createBackground();
+        this.createGround();
+        this.createLevel();
+        this.createUI();
+        this.setupCollisions();
+        this.setupInput();
+    }
+    
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        
+        // 远景
+        const hills = this.add.graphics();
+        hills.fillStyle(0x6B8E23, 0.5);
+        hills.fillTriangle(0, 500, 300, 350, 600, 500);
+        hills.fillTriangle(400, 500, 700, 300, 1000, 500);
+        
+        // 云朵
+        for (let i = 0; i < 4; i++) {
+            const x = Phaser.Math.Between(100, 1100);
+            const y = Phaser.Math.Between(50, 200);
+            const cloud = this.add.graphics();
+            cloud.fillStyle(0xFFFFFF, 0.8);
+            cloud.fillCircle(0, 0, 25);
+            cloud.fillCircle(20, 0, 35);
+            cloud.fillCircle(40, 0, 25);
+            cloud.setPosition(x, y);
+        }
+    }
+    
+    createGround() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        this.matter.add.rectangle(width / 2, height - 40, width, 80, {
+            isStatic: true,
+            friction: 0.9,
+            restitution: 0.1,
+            label: 'ground'
+        });
+        
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 80, width, 80);
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 15);
+    }
+    
+    createLevel() {
+        if (!this.levelData) return;
+        
+        this.slingshot = new Slingshot(this, GameConfig.slingshot.x, GameConfig.slingshot.y);
+        
+        this.birds = [];
+        const birdStartX = 100;
+        this.levelData.birds.forEach((birdType, index) => {
+            const bird = new Bird(this, birdStartX - index * 40, 650, birdType);
+            this.birds.push(bird);
+        });
+        
+        this.prepareNextBird();
+        
+        this.levelData.structures.forEach(structure => {
+            if (structure.type === 'block') {
+                const block = new Block(this, structure.x, structure.y, structure.material, structure.width, structure.height);
+                this.blocks.push(block);
+            } else if (structure.type === 'pig') {
+                const pig = new Pig(this, structure.x, structure.y, structure.radius);
+                this.pigs.push(pig);
+            }
+        });
+    }
+    
+    prepareNextBird() {
+        if (this.currentBirdIndex >= this.birds.length) return false;
+        const bird = this.birds[this.currentBirdIndex];
+        bird.moveToSlingshot(this.slingshot.x, this.slingshot.y);
+        this.currentBird = bird;
+        return true;
+    }
+    
+    createUI() {
+        const width = this.cameras.main.width;
+        
+        this.add.text(50, 30, '⏸', { fontSize: '32px' }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.pauseGame());
+        
+        this.add.text(width / 2, 30, `关卡 ${this.currentLevel}`, {
+            fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+        }).setOrigin(0.5);
+        
+        this.scoreText = this.add.text(width - 50, 30, '⭐ 0', {
+            fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+        }).setOrigin(0.5);
+        
+        this.updateBirdQueue();
+    }
+    
+    updateBirdQueue() {
+        const remaining = this.birds.length - this.currentBirdIndex - 1;
+        if (this.birdQueueText) this.birdQueueText.destroy();
+        this.birdQueueText = this.add.text(50, 680, `🐦 x ${remaining + 1}`, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#333333'
+        });
+    }
+    
+    setupCollisions() {
+        this.matter.world.on('collisionstart', (event) => {
+            event.pairs.forEach(pair => this.handleCollision(pair.bodyA, pair.bodyB));
+        });
+    }
+    
+    handleCollision(bodyA, bodyB) {
+        const velocityA = bodyA.velocity;
+        const velocityB = bodyB.velocity;
+        const relativeVelocity = Math.sqrt(
+            Math.pow(velocityA.x - velocityB.x, 2) + Math.pow(velocityA.y - velocityB.y, 2)
+        );
+        const impactForce = relativeVelocity * (bodyA.mass + bodyB.mass) / 2;
+        
+        // 猪被撞击
+        if (bodyA.label === 'pig' || bodyB.label === 'pig') {
+            const pigBody = bodyA.label === 'pig' ? bodyA : bodyB;
+            const otherBody = bodyA.label === 'pig' ? bodyB : bodyA;
+            
+            if (impactForce > 3) {
+                const pig = this.pigs.find(p => p.body === pigBody);
+                if (pig && !pig.destroyed) {
+                    pig.takeDamage(impactForce * 10);
+                    if (pig.destroyed) {
+                        this.addScore(GameConfig.scores.pig, pig.x, pig.y);
+                    }
+                }
+            }
+        }
+        
+        // 方块碰撞
+        if (bodyA.label === 'block' || bodyB.label === 'block') {
+            const blockBody = bodyA.label === 'block' ? bodyA : bodyB;
+            
+            if (impactForce > 2) {
+                const block = this.blocks.find(b => b.body === blockBody);
+                if (block && !block.destroyed) {
+                    block.takeDamage(impactForce * 5);
+                    if (block.destroyed) {
+                        const points = GameConfig.scores[block.material] || 100;
+                        this.addScore(points, block.x, block.y);
+                    }
+                }
+            }
+        }
+    }
+    
+    addScore(points, x, y) {
+        this.score += points;
+        this.scoreText.setText(`⭐ ${this.score}`);
+        this.showScorePopup(points, x, y);
+    }
+    
+    showScorePopup(points, x, y) {
+        const popup = this.add.text(x, y, `+${points}`, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFD700',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: popup, y: y - 50, alpha: 0, duration: 800, ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+    }
+    
+    setupInput() {
+        this.input.on('pointerdown', (pointer) => {
+            if (this.gameState !== GAME_STATES.PLAYING) return;
+            if (!this.currentBird || this.currentBird.launched) return;
+            
+            const distance = Phaser.Math.Distance.Between(
+                pointer.x, pointer.y, this.slingshot.x, this.slingshot.y
+            );
+            
+            if (distance < 80) {
+                this.isDragging = true;
+                this.currentBird.startAiming();
+            }
+        });
+        
+        this.input.on('pointermove', (pointer) => {
+            if (!this.isDragging || !this.currentBird) return;
+            
+            const dx = this.slingshot.x - pointer.x;
+            const dy = this.slingshot.y - pointer.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = GameConfig.slingshot.maxDragDistance;
+            
+            let finalX, finalY;
+            if (distance > maxDist) {
+                const ratio = maxDist / distance;
+                finalX = this.slingshot.x - dx * ratio;
+                finalY = this.slingshot.y - dy * ratio;
+            } else {
+                finalX = pointer.x;
+                finalY = pointer.y;
+            }
+            
+            this.currentBird.setPosition(finalX, finalY);
+            this.slingshot.updateBand(finalX, finalY);
+            this.showTrajectory(dx, dy);
+        });
+        
+        this.input.on('pointerup', () => {
+            if (!this.isDragging || !this.currentBird) return;
+            this.isDragging = false;
+            
+            const dx = this.slingshot.x - this.currentBird.x;
+            const dy = this.slingshot.y - this.currentBird.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < GameConfig.slingshot.minDragDistance) {
+                this.currentBird.moveToSlingshot(this.slingshot.x, this.slingshot.y);
+                this.slingshot.resetBand();
+                this.hideTrajectory();
+                return;
+            }
+            
+            const power = GameConfig.slingshot.launchPower;
+            this.currentBird.launch(dx * power, dy * power);
+            this.slingshot.release();
+            this.hideTrajectory();
+            
+            this.time.delayedCall(3000, () => this.checkRoundEnd());
+        });
+    }
+    
+    showTrajectory(dx, dy) {
+        this.hideTrajectory();
+        const power = GameConfig.slingshot.launchPower;
+        const vx = dx * power;
+        const vy = dy * power;
+        
+        for (let i = 0; i < 10; i++) {
+            const t = i * 0.1;
+            const x = this.currentBird.x + vx * t * 60;
+            const y = this.currentBird.y + vy * t * 60 + 0.5 * 1 * t * t * 3600;
+            const dot = this.add.circle(x, y, 4, 0xFFFFFF, 0.5);
+            this.trajectoryPoints.push(dot);
+        }
+    }
+    
+    hideTrajectory() {
+        this.trajectoryPoints.forEach(dot => dot.destroy());
+        this.trajectoryPoints = [];
+    }
+    
+    checkRoundEnd() {
+        if (this.gameState !== GAME_STATES.PLAYING) return;
+        
+        const allSleeping = this.matter.world.engine.world.bodies.every(
+            body => body.isStatic || body.speed < 0.5
+        );
+        
+        if (!allSleeping) {
+            this.time.delayedCall(500, () => this.checkRoundEnd());
+            return;
+        }
+        
+        this.checkGameState();
+    }
+    
+    checkGameState() {
+        const alivePigs = this.pigs.filter(pig => !pig.destroyed);
+        
+        if (alivePigs.length === 0) {
+            this.gameWin();
+        } else if (this.currentBirdIndex >= this.birds.length - 1) {
+            this.gameLose();
+        } else {
+            this.currentBirdIndex++;
+            if (this.prepareNextBird()) {
+                this.updateBirdQueue();
+            } else {
+                this.gameLose();
+            }
+        }
+    }
+    
+    gameWin() {
+        this.gameState = GAME_STATES.WIN;
+        const remainingBirds = this.birds.length - this.currentBirdIndex - 1;
+        this.score += remainingBirds * GameConfig.scores.birdBonus;
+        this.scoreText.setText(`⭐ ${this.score}`);
+        this.showResultScreen(true);
+    }
+    
+    gameLose() {
+        this.gameState = GAME_STATES.LOSE;
+        this.showResultScreen(false);
+    }
+    
+    showResultScreen(isWin) {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.5);
+        
+        this.add.text(width / 2, height / 2 - 100, isWin ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢', {
+            fontSize: '48px', fontFamily: 'Arial', color: isWin ? '#FFD700' : '#FF6B6B'
+        }).setOrigin(0.5);
+        
+        this.add.text(width / 2, height / 2 - 20, `得分: ${this.score}`, {
+            fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF'
+        }).setOrigin(0.5);
+        
+        if (isWin) {
+            const stars = this.calculateStars();
+            this.add.text(width / 2, height / 2 + 30, '⭐'.repeat(stars), {
+                fontSize: '40px'
+            }).setOrigin(0.5);
+        }
+        
+        this.createResultButton(width / 2, height / 2 + 100, '重玩', () => {
+            this.scene.restart({ level: this.currentLevel });
+        });
+        
+        if (isWin && this.currentLevel < LevelsConfig.length) {
+            this.createResultButton(width / 2, height / 2 + 160, '下一关', () => {
+                this.scene.restart({ level: this.currentLevel + 1 });
+            });
+        }
+        
+        this.createResultButton(width / 2, height / 2 + (isWin ? 220 : 160), '主菜单', () => {
+            this.scene.start(SCENE_KEYS.MENU);
+        });
+    }
+    
+    calculateStars() {
+        const starScores = this.levelData.starScores;
+        if (this.score >= starScores[2]) return 3;
+        if (this.score >= starScores[1]) return 2;
+        return 1;
+    }
+    
+    createResultButton(x, y, text, callback) {
+        const btn = this.add.text(x, y, text, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#4CAF50', padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        btn.on('pointerdown', callback);
+    }
+    
+    pauseGame() {
+        // 简单暂停实现
+        if (this.matter.world.enabled) {
+            this.matter.world.pause();
+        } else {
+            this.matter.world.resume();
+        }
+    }
+    
+    update() {
+        // 更新游戏逻辑
+    }
+}

@@ -1,0 +1,455 @@
+--- src/systems/EntityManager.js L1-150 (150 lines) ---
+/**
+ * 实体管理系统模块
+ * 集中管理所有游戏实体（小鸟、猪、方块）的创建、更新和销毁
+ */
+import { Bird } from '../objects/Bird.js';
+import { Pig } from '../objects/Pig.js';
+import { Block } from '../objects/Block.js';
+import { Slingshot } from '../objects/Slingshot.js';
+import { POSITIONS, BIRD_TYPES, COLLISION } from '../utils/constants.js';
+
+export class EntityManager {
+    constructor(scene) {
+        this.scene = scene;
+        
+        // 实体集合
+        this.birds = [];
+        this.pigs = [];
+        this.blocks = [];
+        this.slingshot = null;
+        
+        // 当前小鸟索引
+        this.currentBirdIndex = 0;
+        this.currentBird = null;
+    }
+    
+    /**
+     * 初始化实体管理器
+     * @param {Object} levelData - 关卡配置数据
+     */
+    init(levelData) {
+        this.clearAll();
+        
+        // 创建弹弓
+        this.slingshot = new Slingshot(this.scene, POSITIONS.SLINGSHOT_X, POSITIONS.SLINGSHOT_Y);
+        
+        // 创建小鸟队列
+        levelData.birds.forEach((birdType, index) => {
+            const x = POSITIONS.BIRD_START_X + index * POSITIONS.BIRD_SPACING;
+            const bird = new Bird(this.scene, x, POSITIONS.BIRD_START_Y, birdType);
+            this.birds.push(bird);
+        });
+        
+        // 创建关卡结构（方块和猪）
+        levelData.structures.forEach(structure => {
+            if (structure.type === 'block') {
+                const block = new Block(
+                    this.scene, structure.x, structure.y,
+                    structure.material, structure.width, structure.height
+                );
+                this.blocks.push(block);
+            } else if (structure.type === 'pig') {
+                const pig = new Pig(this.scene, structure.x, structure.y, structure.radius);
+                this.pigs.push(pig);
+            }
+        });
+        
+        // 准备第一只小鸟
+        this.prepareNextBird();
+    }
+    
+    /**
+     * 准备下一只小鸟到弹弓上
+     * @returns {boolean} 是否成功准备
+     */
+    prepareNextBird() {
+        if (this.currentBirdIndex >= this.birds.length) return false;
+        const bird = this.birds[this.currentBirdIndex];
+        bird.moveToSlingshot(this.slingshot.x, this.slingshot.y);
+        this.currentBird = bird;
+        return true;
+    }
+    
+    /**
+     * 前进到下一只小鸟
+     * @returns {boolean} 是否还有下一只
+     */
+    advanceToNextBird() {
+        this.currentBirdIndex++;
+        return this.prepareNextBird();
+    }
+    
+    /**
+     * 获取当前小鸟
+     */
+    getCurrentBird() { return this.currentBird; }
+    
+    /**
+     * 获取弹弓引用
+     */
+    getSlingshot() { return this.slingshot; }
+    
+    /**
+     * 获取存活的猪数量
+     */
+    getAlivePigCount() {
+        return this.pigs.filter(pig => !pig.destroyed). length;
+    }
+    
+    /**
+     * 获取剩余小鸟数量
+     */
+    getRemainingBirdCount() {
+        return this.birds.length - this.currentBirdIndex;
+    }
+    
+    /**
+     * 检查所有物体是否静止
+     */
+    isAllSleeping() {
+        return this.scene.matter.world.engine.world.bodies.every(
+            body => body.isStatic || body.speed < COLLISION.SLEEP_SPEED_THRESHOLD
+        );
+    }
+    
+    /**
+     * 更新所有实体
+     */
+    update() {
+        // 更新当前小鸟
+        if (this.currentBird && !this.currentBird.destroyed) {
+            this.currentBird.update();
+        }
+        
+        // 更新所有猪
+        this.pigs.forEach(pig => {
+            if (!pig.destroyed) pig.update();
+        });
+        
+        // 更新所有方块
+        this.blocks.forEach(block => {
+            if (!block.destroyed) block.update();
+        });
+        
+        // 更新已发射但非当前的小鸟
+        this.birds.forEach(bird => {
+            if (bird !== this.currentBird && !bird.destroyed && bird.launched) {
+                bird.update();
+            }
+        });
+    }
+    
+    /**
+     * 清除所有实体
+     */
+    clearAll() {
+        this.birds.forEach(bird => { if (bird.destroy) bird.destroy(); });
+        this.pigs.forEach(pig => { if (pig.destroy) pig.destroy(); });
+        this.blocks.forEach(block => { if (block.destroy) block.destroy(); });
+        if (this.slingshot && this.slingshot.destroy) this.slingshot.destroy();
+        
+
+--- src/systems/GameStateSystem.js L1-150 (150 lines) ---
+/**
+ * 游戏状态管理系统模块
+ * 管理游戏状态流转、得分计算、胜利/失败判断和关卡进度保存
+ */
+import { GAME_STATES } from '../utils/constants.js';
+import { GameConfig, LevelsConfig } from '../config/game.config.js';
+
+export class GameStateSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.gameState = GAME_STATES.PLAYING;
+        this.score = 0;
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.currentBirdIndex = 0;
+        
+        // 回调函数
+        this.onWin = null;
+        this.onLose = null;
+        this.onNextBird = null;
+    }
+    
+    /**
+     * 初始化状态系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        this.currentLevel = config.level || 1;
+        this.levelData = LevelsConfig[this.currentLevel - 1];
+        this.score = 0;
+        this.currentBirdIndex = 0;
+        this.gameState = GAME_STATES.PLAYING;
+        
+        if (config.onWin) this.onWin = config.onWin;
+        if (config.onLose) this.onLose = config.onLose;
+        if (config.onNextBird) this.onNextBird = config.onNextBird;
+    }
+    
+    /**
+     * 获取当前游戏状态
+     */
+    getState() { return this.gameState; }
+    
+    /**
+     * 检查是否正在游戏
+     */
+    isPlaying() { return this.gameState === GAME_STATES.PLAYING; }
+    
+    /**
+     * 添加分数
+     * @param {number} points - 分数
+     */
+    addScore(points) {
+        this.score += points;
+        return this.score;
+    }
+    
+    /**
+     * 获取当前分数
+     */
+    getScore() { return this.score; }
+    
+    /**
+     * 检查回合结束（所有物体静止后调用）
+     * @param {Array} pigs - 猪对象数组
+     * @param {Array} birds - 小鸟对象数组
+     * @returns {string} 状态: 'win', 'lose', 'next_bird'
+     */
+    checkGameState(pigs, birds) {
+        const alivePigs = pigs.filter(pig => !pig.destroyed);
+        
+        if (alivePigs.length === 0) {
+            return 'win';
+        } else if (this.currentBirdIndex >= birds.length - 1) {
+            return 'lose';
+        } else {
+            return 'next_bird';
+        }
+    }
+    
+    /**
+     * 处理游戏胜利
+     * @param {number} totalBirds - 总小鸟数
+     * @returns {Object} { score, stars }
+     */
+    handleWin(totalBirds) {
+        this.gameState = GAME_STATES.WIN;
+        const remainingBirds = totalBirds - this.currentBirdIndex - 1;
+        this.score += remainingBirds * GameConfig.scores.birdBonus;
+        const stars = this.calculateStars();
+        
+        // 保存进度
+        this.saveLevelProgress();
+        
+        if (this.onWin) this.onWin(this.score, stars);
+        return { score: this.score, stars };
+    }
+    
+    /**
+     * 处理游戏失败
+     */
+    handleLose() {
+        this.gameState = GAME_STATES.LOSE;
+        if (this.onLose) this.onLose(this.score);
+        return { score: this.score };
+    }
+    
+    /**
+     * 前进到下一只小鸟
+     */
+    advanceBird() {
+        this.currentBirdIndex++;
+        return this.currentBirdIndex;
+    }
+    
+    /**
+     * 计算星级评价
+     * @returns {number} 1-3星
+     */
+    calculateStars() {
+        if (!this.levelData) return 1;
+        const starScores = this.levelData.starScores;
+        if (this.score >= starScores[2]) return 3;
+        if (this.score >= starScores[1]) return 2;
+        return 1;
+    }
+    
+    /**
+     * 暂停游戏
+     */
+    pause() {
+        if (this.gameState === GAME_STATES.PLAYING) {
+            this.gameState = GAME_STATES.PAUSED;
+            this.scene.matter.world.pause();
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * 恢复游戏
+     */
+    resume() {
+        if (this.gameState === GAME_STATES.PAUSED) {
+            this.gameState = GAME_STATES.PLAYING;
+            this.scene.matter.world.resume();
+            return true;
+        }
+        return false;
+    }
+
+--- src/systems/InputSystem.js L1-150 (150 lines) ---
+/**
+ * 输入处理系统模块
+ * 处理弹弓拖拽、小鸟发射和轨迹预测的所有输入逻辑
+ */
+import { GameConfig } from '../config/game.config.js';
+import { SIZES, TIMING, VISUAL } from '../utils/constants.js';
+
+export class InputSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.isDragging = false;
+        this.trajectoryPoints = [];
+        this.enabled = false;
+        
+        // 回调函数
+        this.onLaunch = null;
+        this.onRoundEnd = null;
+        this.onDragStart = null;
+        this.onDragMove = null;
+        this.onDragCancel = null;
+        
+        // 外部引用（通过init设置）
+        this.getSlingshot = null;
+        this.getCurrentBird = null;
+        this.getGameState = null;
+    }
+    
+    /**
+     * 初始化输入系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        if (config.onLaunch) this.onLaunch = config.onLaunch;
+        if (config.onRoundEnd) this.onRoundEnd = config.onRoundEnd;
+        if (config.onDragStart) this.onDragStart = config.onDragStart;
+        if (config.onDragMove) this.onDragMove = config.onDragMove;
+        if (config.onDragCancel) this.onDragCancel = config.onDragCancel;
+        if (config.getSlingshot) this.getSlingshot = config.getSlingshot;
+        if (config.getCurrentBird) this.getCurrentBird = config.getCurrentBird;
+        if (config.getGameState) this.getGameState = config.getGameState;
+    }
+    
+    /**
+     * 设置输入监听
+     */
+    setup() {
+        this.scene.input.on('pointerdown', (pointer) => this.handlePointerDown(pointer));
+        this.scene.input.on('pointermove', (pointer) => this.handlePointerMove(pointer));
+        this.scene.input.on('pointerup', () => this.handlePointerUp());
+        this.enabled = true;
+    }
+    
+    enable() { this.enabled = true; }
+    disable() { this.enabled = false; this.isDragging = false; }
+    
+    handlePointerDown(pointer) {
+        if (!this.enabled) return;
+        const gameState = this.getGameState ? this.getGameState() : null;
+        if (gameState !== 'playing') return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird || currentBird.launched) return;
+        const distance = Phaser.Math.Distance.Between(
+            pointer.x, pointer.y, slingshot.x, slingshot.y
+        );
+        if (distance < SIZES.SLINGSHOT_ACTIVE_RADIUS) {
+            this.isDragging = true;
+            currentBird.startAiming();
+            if (this.onDragStart) this.onDragStart();
+        }
+    }
+    
+    handlePointerMove(pointer) {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        const dx = slingshot.x - pointer.x;
+        const dy = slingshot.y - pointer.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = GameConfig.slingshot.maxDragDistance;
+        let finalX, finalY;
+        if (distance > maxDist) {
+            const ratio = maxDist / distance;
+            finalX = slingshot.x - dx * ratio;
+            finalY = slingshot.y - dy * ratio;
+        } else {
+            finalX = pointer.x;
+            finalY = pointer.y;
+        }
+        currentBird.setPosition(finalX, finalY);
+        slingshot.updateBand(finalX, finalY);
+        this.showTrajectory(dx, dy);
+        if (this.onDragMove) this.onDragMove(finalX, finalY);
+    }
+    
+    handlePointerUp() {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        this.isDragging = false;
+        const dx = slingshot.x - currentBird.x;
+        const dy = slingshot.y - currentBird.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < GameConfig.slingshot.minDragDistance) {
+            currentBird.moveToSlingshot(slingshot.x, slingshot.y);
+            slingshot.resetBand();
+            this.hideTrajectory();
+            if (this.onDragCancel) this.onDragCancel();
+            return;
+        }
+        const power = GameConfig.slingshot.launchPower;
+        currentBird.launch(dx * power, dy * power);
+        slingshot.release();
+        this.hideTrajectory();
+        if (this.onLaunch) this.onLaunch(currentBird);
+        this.scene.time.delayedCall(TIMING.NEXT_BIRD_DELAY, () => {
+            if (this.onRoundEnd) this.onRoundEnd();
+        });
+    }
+    
+    showTrajectory(dx, dy) {
+        this.hideTrajectory();
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!currentBird) return;
+        const power = GameConfig.slingshot.launchPower;
+        const vx = dx * power;
+        const vy = dy * power;
+        const gravityY = this.scene.matter.world.engine.gravity.y;
+        for (let i = 1; i <= VISUAL.TRAJECTORY_POINTS; i++) {
+            const t = i * VISUAL.TRAJECTORY_STEP;
+            const ts = t * 60;
+            const px = currentBird.x + vx * ts;
+            const py = currentBird.y + vy * ts + 0.5 * gravityY * ts * ts;
+            const alpha = 0.6 * (1 - i / 16);
+            this.trajectoryPoints.push(
+                this.scene.add.circle(px, py, VISUAL.TRAJECTORY_DOT_RADIUS, 0xFFFFFF, alpha)
+            );
+        }
+    }
+    
+    hideTrajectory() {
+        this.trajectoryPoints.forEach(dot => dot.destroy());
+        this.trajectoryPoints = [];
+    }
+    
+    destroy() {
+        this.hideTrajectory();
+        this.scene.input.off('pointerdown');

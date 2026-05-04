@@ -1,0 +1,1099 @@
+Sub-agent (clawteam-system-architect) Result:
+Content: ## GameScene重构设计方案
+
+### 1. InputSystem.js - 输入处理系统设计
+
+#### 职责分解：
+1. **鼠标/触摸输入处理** - 处理基本的输入事件
+2. **弹弓拖拽系统** - 处理弹弓的拖拽、发射逻辑
+3. **轨迹预测系统** - 计算和显示发射轨迹
+4. **手势识别** - 识别双击、长按等手势
+5. **UI输入转发** - 将UI输入转发给UISystem
+
+#### 接口设计：
+```javascript
+/**
+ * 输入处理系统
+ * 处理所有输入逻辑：鼠标/触摸、弹弓拖拽、轨迹预测
+ */
+export class InputSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.currentDragPosition = null;
+        this.trajectoryPoints = [];
+        this.trajectoryGraphics = null;
+        
+        // 事件监听器
+        this.eventListeners = {
+            onDragStart: [],      // 开始拖拽
+            onDragging: [],       // 拖拽中
+            onDragEnd: [],        // 拖拽结束
+            onTouchStart: [],     // 触摸开始
+            onTouchEnd: [],       // 触摸结束
+            onClick: []           // 点击事件
+        };
+    }
+    
+    /**
+     * 初始化输入系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        this.setupInputEvents();
+        this.createTrajectoryGraphics();
+        return this;
+    }
+    
+    /**
+     * 设置输入事件监听
+     */
+    setupInputEvents() {
+        // 鼠标和触摸事件绑定
+        this.scene.input.on('pointerdown', this.onPointerDown, this);
+        this.scene.input.on('pointermove', this.onPointerMove, this);
+        this.scene.input.on('pointerup', this.onPointerUp, this);
+    }
+    
+    /**
+     * 创建轨迹预测图形
+     */
+    createTrajectoryGraphics() {
+        this.trajectoryGraphics = this.scene.add.graphics();
+    }
+    
+    /**
+     * 计算弹弓发射的轨迹点
+     * @param {number} startX - 起点X
+     * @param {number} startY - 起点Y
+     * @param {number} velocityX - 速度X
+     * @param {number} velocityY - 速度Y
+     * @returns {Array} 轨迹点数组
+     */
+    calculateTrajectory(startX, startY, velocityX, velocityY) {
+        const points = [];
+        const steps = 20;
+        const timeStep = 0.1;
+        
+        for (let i = 0; i < steps; i++) {
+            const t = i * timeStep;
+            const x = startX + velocityX * t;
+            const y = startY + velocityY * t + 0.5 * 1 * t * t; // 重力加速度为1
+            
+            points.push({ x, y });
+            
+            // 如果碰到地面，停止计算
+            if (y > this.scene.cameras.main.height - 80) {
+                break;
+            }
+        }
+        
+        return points;
+    }
+    
+    /**
+     * 绘制轨迹预测线
+     * @param {Array} points - 轨迹点数组
+     */
+    drawTrajectory(points) {
+        this.trajectoryGraphics.clear();
+        this.trajectoryGraphics.lineStyle(2, 0xFFFFFF, 0.6);
+        
+        for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i];
+            const end = points[i + 1];
+            this.trajectoryGraphics.lineBetween(start.x, start.y, end.x, end.y);
+        }
+        
+        // 绘制轨迹点
+        this.trajectoryGraphics.fillStyle(0xFFFFFF, 0.3);
+        points.forEach(point => {
+            this.trajectoryGraphics.fillCircle(point.x, point.y, 3);
+        });
+    }
+    
+    /**
+     * 清除轨迹预测线
+     */
+    clearTrajectory() {
+        if (this.trajectoryGraphics) {
+            this.trajectoryGraphics.clear();
+        }
+    }
+    
+    /**
+     * 注册事件监听器
+     * @param {string} event - 事件名称
+     * @param {Function} callback - 回调函数
+     */
+    on(event, callback) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].push(callback);
+        }
+    }
+    
+    /**
+     * 触发事件
+     * @param {string} event - 事件名称
+     * @param {...any} args - 事件参数
+     */
+    emit(event, ...args) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].forEach(callback => {
+                callback(...args);
+            });
+        }
+    }
+    
+    /**
+     * 指针按下事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerDown(pointer) {
+        const { x, y } = pointer;
+        
+        // 检查是否在弹弓可拖拽范围内
+        const slingshotX = 200;
+        const slingshotY = 550;
+        const distance = Phaser.Math.Distance.Between(x, y, slingshotX, slingshotY);
+        
+        if (distance < 80) {
+            this.isDragging = true;
+            this.dragStart = { x, y };
+            this.currentDragPosition = { x, y };
+            
+            // 触发开始拖拽事件
+            this.emit('onDragStart', { x, y });
+        }
+        
+        this.emit('onTouchStart', { x, y });
+    }
+    
+    /**
+     * 指针移动事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerMove(pointer) {
+        const { x, y } = pointer;
+        
+        if (this.isDragging) {
+            this.currentDragPosition = { x, y };
+            
+            // 计算发射速度
+            const velocityX = (slingshotX - x) * 0.15;
+            const velocityY = (slingshotY - y) * 0.15;
+            
+            // 计算并绘制轨迹
+            const trajectory = this.calculateTrajectory(
+                slingshotX, slingshotY, 
+                velocityX, velocityY
+            );
+            this.drawTrajectory(trajectory);
+            
+            // 触发拖拽中事件
+            this.emit('onDragging', { 
+                x, y, 
+                velocityX, velocityY,
+                trajectory 
+            });
+        }
+    }
+    
+    /**
+     * 指针抬起事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerUp(pointer) {
+        const { x, y } = pointer;
+        
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.clearTrajectory();
+            
+            // 计算最终发射速度
+            const velocityX = (slingshotX - x) * 0.15;
+            const velocityY = (slingshotY - y) * 0.15;
+            
+            // 触发拖拽结束事件
+            this.emit('onDragEnd', { 
+                x, y, 
+                velocityX, velocityY 
+            });
+        }
+        
+        this.emit('onTouchEnd', { x, y });
+    }
+    
+    /**
+     * 销毁输入系统
+     */
+    destroy() {
+        this.clearTrajectory();
+        if (this.trajectoryGraphics) {
+            this.trajectoryGraphics.destroy();
+        }
+    }
+}
+```
+
+### 2. GameStateSystem.js - 游戏状态系统设计
+
+#### 职责分解：
+1. **游戏状态管理** - 管理游戏状态（PLAYING, PAUSED, WIN, LOSE等）
+2. **游戏流程控制** - 控制游戏开始、暂停、结束等流程
+3. **胜负判断** - 判断游戏胜负条件
+4. **得分计算** - 计算和更新分数
+5. **关卡管理** - 管理关卡进度和切换
+6. **小鸟队列管理** - 管理当前可用的小鸟
+
+#### 接口设计：
+```javascript
+/**
+ * 游戏状态系统
+ * 管理游戏状态、流程控制、胜负判断和得分计算
+ */
+import { GAME_STATES } from '../utils/constants.js';
+
+export class GameStateSystem {
+    constructor(scene) {
+        this.scene = scene;
+        
+        // 游戏状态
+        this.gameState = GAME_STATES.PLAYING;
+        
+        // 游戏数据
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.score = 0;
+        this.stars = 0;
+        
+        // 小鸟管理
+        this.birds = [];
+        this.currentBirdIndex = 0;
+        this.pigsRemaining = 0;
+        this.blocksRemaining = 0;
+        
+        // 游戏配置
+        this.config = {
+            maxBirds: 5,
+            scoring: {
+                pig: 1000,
+                block: {
+                    wood: 100,
+                    stone: 200,
+                    glass: 150
+                },
+                birdRemaining: 5000
+            },
+            starThresholds: [2000, 4000, 6000] // 1星, 2星, 3星阈值
+        };
+        
+        // 事件监听器
+        this.eventListeners = {
+            onStateChange: [],    // 状态变化
+            onScoreUpdate: [],    // 分数更新
+            onBirdLaunch: [],     // 小鸟发射
+            onBirdUsed: [],       // 小鸟使用
+            onPigDestroyed: [],   // 猪被消灭
+            onBlockDestroyed: [], // 方块被破坏
+            onLevelComplete: [],  // 关卡完成
+            onGameOver: []        // 游戏结束
+        };
+    }
+    
+    /**
+     * 初始化游戏状态系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        Object.assign(this.config, config);
+        return this;
+    }
+    
+    /**
+     * 加载关卡数据
+     * @param {number} level - 关卡编号
+     * @param {Object} levelData - 关卡数据
+     */
+    loadLevel(level, levelData) {
+        this.currentLevel = level;
+        this.levelData = levelData;
+        this.score = 0;
+        this.stars = 0;
+        this.currentBirdIndex = 0;
+        
+        // 初始化小鸟队列
+        this.birds = levelData.birds || [];
+        this.pigsRemaining = levelData.pigs?.length || 0;
+        this.blocksRemaining = levelData.blocks?.length || 0;
+        
+        // 触发分数更新事件
+        this.emit('onScoreUpdate', this.score);
+        
+        console.log(`Level ${level} loaded: ${this.birds.length} birds, ${this.pigsRemaining} pigs`);
+    }
+    
+    /**
+     * 设置游戏状态
+     * @param {string} newState - 新状态
+     */
+    setGameState(newState) {
+        const oldState = this.gameState;
+        this.gameState = newState;
+        
+        // 触发状态变化事件
+        this.emit('onStateChange', newState, oldState);
+        
+        // 特殊状态处理
+        switch (newState) {
+            case GAME_STATES.WIN:
+                this.onWin();
+                break;
+            case GAME_STATES.LOSE:
+                this.onLose();
+                break;
+            case GAME_STATES.PAUSED:
+                this.onPause();
+                break;
+        }
+    }
+    
+    /**
+     * 获取当前游戏状态
+     * @returns {string} 游戏状态
+     */
+    getGameState() {
+        return this.gameState;
+    }
+    
+    /**
+     * 获取当前小鸟
+     * @returns {string|null} 小鸟类型或null
+     */
+    getCurrentBird() {
+        return this.birds[this.currentBirdIndex] || null;
+    }
+    
+    /**
+     * 发射小鸟
+     */
+    launchBird() {
+        if (this.currentBirdIndex < this.birds.length) {
+            this.emit('onBirdLaunch', this.birds[this.currentBirdIndex]);
+            this.currentBirdIndex++;
+            
+            // 触发小鸟使用事件
+            this.emit('onBirdUsed', this.currentBirdIndex - 1, this.birds.length);
+            
+            console.log(`Bird launched. Remaining: ${this.birds.length - this.currentBirdIndex}`);
+        }
+    }
+    
+    /**
+     * 获取剩余小鸟数量
+     * @returns {number} 剩余小鸟数量
+     */
+    getRemainingBirds() {
+        return Math.max(0, this.birds.length - this.currentBirdIndex);
+    }
+    
+    /**
+     * 猪被消灭
+     * @param {Object} pig - 猪对象
+     */
+    onPigDestroyed(pig) {
+        this.pigsRemaining--;
+        
+        // 计算分数
+        const points = this.config.scoring.pig;
+        this.addScore(points, pig.x, pig.y);
+        
+        // 触发事件
+        this.emit('onPigDestroyed', pig, points, this.pigsRemaining);
+        
+        // 检查游戏状态
+        this.checkRoundEnd();
+    }
+    
+    /**
+     * 方块被破坏
+     * @param {Object} block - 方块对象
+     */
+    onBlockDestroyed(block) {
+        this.blocksRemaining--;
+        
+        // 根据材质计算分数
+        const material = block.material || 'wood';
+        const points = this.config.scoring.block[material] || this.config.scoring.block.wood;
+        this.addScore(points, block.x, block.y);
+        
+        // 触发事件
+        this.emit('onBlockDestroyed', block, points, material, this.blocksRemaining);
+    }
+    
+    /**
+     * 增加分数
+     * @param {number} points - 分数值
+     * @param {number} x - 分数弹出位置X
+     * @param {number} y - 分数弹出位置Y
+     */
+    addScore(points, x, y) {
+        const oldScore = this.score;
+        this.score += points;
+        
+        // 计算星星数量
+        this.calculateStars();
+        
+        // 触发分数更新事件
+        this.emit('onScoreUpdate', this.score, points, x, y, this.stars);
+        
+        console.log(`Score: ${oldScore} -> ${this.score} (+${points})`);
+    }
+    
+    /**
+     * 计算星星数量
+     */
+    calculateStars() {
+        const thresholds = this.config.starThresholds;
+        
+        if (this.score >= thresholds[2]) {
+            this.stars = 3;
+        } else if (this.score >= thresholds[1]) {
+            this.stars = 2;
+        } else if (this.score >= thresholds[0]) {
+            this.stars = 1;
+        } else {
+            this.stars = 0;
+        }
+    }
+    
+    /**
+     * 检查回合结束条件
+     */
+    checkRoundEnd() {
+        // 如果所有猪都被消灭，玩家胜利
+        if (this.pigsRemaining <= 0) {
+            this.setGameState(GAME_STATES.WIN);
+            return;
+        }
+        
+        // 如果所有小鸟都用完，玩家失败
+        if (this.getRemainingBirds() <= 0) {
+            // 等待物理世界稳定后再判断
+            this.scene.time.delayedCall(1000, () => {
+                if (this.pigsRemaining > 0) {
+                    this.setGameState(GAME_STATES.LOSE);
+                }
+            });
+        }
+    }
+    
+    /**
+     * 胜利处理
+     */
+    onWin() {
+        console.log('Level completed!');
+        
+        // 计算剩余小鸟奖励
+        const remainingBirds = this.getRemainingBirds();
+        const bonus = remainingBirds * this.config.scoring.birdRemaining;
+        
+        if (bonus > 0) {
+            this.addScore(bonus, 640, 360); // 屏幕中心
+        }
+        
+        // 触发关卡完成事件
+        this.emit('onLevelComplete', this.currentLevel, this.score, this.stars, bonus);
+    }
+    
+    /**
+     * 失败处理
+     */
+    onLose() {
+        console.log('Game over!');
+        this.emit('onGameOver', this.currentLevel, this.score);
+    }
+    
+    /**
+     * 暂停处理
+     */
+    onPause() {
+        console.log('Game paused');
+    }
+    
+    /**
+     * 注册事件监听器
+     * @param {string} event - 事件名称
+     * @param {Function} callback - 回调函数
+     */
+    on(event, callback) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].push(callback);
+        }
+    }
+    
+    /**
+     * 触发事件
+     * @param {string} event - 事件名称
+     * @param {...any} args - 事件参数
+     */
+    emit(event, ...args) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].forEach(callback => {
+                callback(...args);
+            });
+        }
+    }
+    
+   ## GameScene重构设计方案
+
+### 1. InputSystem.js - 输入处理系统设计
+
+#### 职责分解：
+1. **鼠标/触摸输入处理** - 处理基本的输入事件
+2. **弹弓拖拽系统** - 处理弹弓的拖拽、发射逻辑
+3. **轨迹预测系统** - 计算和显示发射轨迹
+4. **手势识别** - 识别双击、长按等手势
+5. **UI输入转发** - 将UI输入转发给UISystem
+
+#### 接口设计：
+```javascript
+/**
+ * 输入处理系统
+ * 处理所有输入逻辑：鼠标/触摸、弹弓拖拽、轨迹预测
+ */
+export class InputSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.currentDragPosition = null;
+        this.trajectoryPoints = [];
+        this.trajectoryGraphics = null;
+        
+        // 事件监听器
+        this.eventListeners = {
+            onDragStart: [],      // 开始拖拽
+            onDragging: [],       // 拖拽中
+            onDragEnd: [],        // 拖拽结束
+            onTouchStart: [],     // 触摸开始
+            onTouchEnd: [],       // 触摸结束
+            onClick: []           // 点击事件
+        };
+    }
+    
+    /**
+     * 初始化输入系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        this.setupInputEvents();
+        this.createTrajectoryGraphics();
+        return this;
+    }
+    
+    /**
+     * 设置输入事件监听
+     */
+    setupInputEvents() {
+        // 鼠标和触摸事件绑定
+        this.scene.input.on('pointerdown', this.onPointerDown, this);
+        this.scene.input.on('pointermove', this.onPointerMove, this);
+        this.scene.input.on('pointerup', this.onPointerUp, this);
+    }
+    
+    /**
+     * 创建轨迹预测图形
+     */
+    createTrajectoryGraphics() {
+        this.trajectoryGraphics = this.scene.add.graphics();
+    }
+    
+    /**
+     * 计算弹弓发射的轨迹点
+     * @param {number} startX - 起点X
+     * @param {number} startY - 起点Y
+     * @param {number} velocityX - 速度X
+     * @param {number} velocityY - 速度Y
+     * @returns {Array} 轨迹点数组
+     */
+    calculateTrajectory(startX, startY, velocityX, velocityY) {
+        const points = [];
+        const steps = 20;
+        const timeStep = 0.1;
+        
+        for (let i = 0; i < steps; i++) {
+            const t = i * timeStep;
+            const x = startX + velocityX * t;
+            const y = startY + velocityY * t + 0.5 * 1 * t * t; // 重力加速度为1
+            
+            points.push({ x, y });
+            
+            // 如果碰到地面，停止计算
+            if (y > this.scene.cameras.main.height - 80) {
+                break;
+            }
+        }
+        
+        return points;
+    }
+    
+    /**
+     * 绘制轨迹预测线
+     * @param {Array} points - 轨迹点数组
+     */
+    drawTrajectory(points) {
+        this.trajectoryGraphics.clear();
+        this.trajectoryGraphics.lineStyle(2, 0xFFFFFF, 0.6);
+        
+        for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i];
+            const end = points[i + 1];
+            this.trajectoryGraphics.lineBetween(start.x, start.y, end.x, end.y);
+        }
+        
+        // 绘制轨迹点
+        this.trajectoryGraphics.fillStyle(0xFFFFFF, 0.3);
+        points.forEach(point => {
+            this.trajectoryGraphics.fillCircle(point.x, point.y, 3);
+        });
+    }
+    
+    /**
+     * 清除轨迹预测线
+     */
+    clearTrajectory() {
+        if (this.trajectoryGraphics) {
+            this.trajectoryGraphics.clear();
+        }
+    }
+    
+    /**
+     * 注册事件监听器
+     * @param {string} event - 事件名称
+     * @param {Function} callback - 回调函数
+     */
+    on(event, callback) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].push(callback);
+        }
+    }
+    
+    /**
+     * 触发事件
+     * @param {string} event - 事件名称
+     * @param {...any} args - 事件参数
+     */
+    emit(event, ...args) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].forEach(callback => {
+                callback(...args);
+            });
+        }
+    }
+    
+    /**
+     * 指针按下事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerDown(pointer) {
+        const { x, y } = pointer;
+        
+        // 检查是否在弹弓可拖拽范围内
+        const slingshotX = 200;
+        const slingshotY = 550;
+        const distance = Phaser.Math.Distance.Between(x, y, slingshotX, slingshotY);
+        
+        if (distance < 80) {
+            this.isDragging = true;
+            this.dragStart = { x, y };
+            this.currentDragPosition = { x, y };
+            
+            // 触发开始拖拽事件
+            this.emit('onDragStart', { x, y });
+        }
+        
+        this.emit('onTouchStart', { x, y });
+    }
+    
+    /**
+     * 指针移动事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerMove(pointer) {
+        const { x, y } = pointer;
+        
+        if (this.isDragging) {
+            this.currentDragPosition = { x, y };
+            
+            // 计算发射速度
+            const velocityX = (slingshotX - x) * 0.15;
+            const velocityY = (slingshotY - y) * 0.15;
+            
+            // 计算并绘制轨迹
+            const trajectory = this.calculateTrajectory(
+                slingshotX, slingshotY, 
+                velocityX, velocityY
+            );
+            this.drawTrajectory(trajectory);
+            
+            // 触发拖拽中事件
+            this.emit('onDragging', { 
+                x, y, 
+                velocityX, velocityY,
+                trajectory 
+            });
+        }
+    }
+    
+    /**
+     * 指针抬起事件处理
+     * @param {Phaser.Input.Pointer} pointer - 指针对象
+     */
+    onPointerUp(pointer) {
+        const { x, y } = pointer;
+        
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.clearTrajectory();
+            
+            // 计算最终发射速度
+            const velocityX = (slingshotX - x) * 0.15;
+            const velocityY = (slingshotY - y) * 0.15;
+            
+            // 触发拖拽结束事件
+            this.emit('onDragEnd', { 
+                x, y, 
+                velocityX, velocityY 
+            });
+        }
+        
+        this.emit('onTouchEnd', { x, y });
+    }
+    
+    /**
+     * 销毁输入系统
+     */
+    destroy() {
+        this.clearTrajectory();
+        if (this.trajectoryGraphics) {
+            this.trajectoryGraphics.destroy();
+        }
+    }
+}
+```
+
+### 2. GameStateSystem.js - 游戏状态系统设计
+
+#### 职责分解：
+1. **游戏状态管理** - 管理游戏状态（PLAYING, PAUSED, WIN, LOSE等）
+2. **游戏流程控制** - 控制游戏开始、暂停、结束等流程
+3. **胜负判断** - 判断游戏胜负条件
+4. **得分计算** - 计算和更新分数
+5. **关卡管理** - 管理关卡进度和切换
+6. **小鸟队列管理** - 管理当前可用的小鸟
+
+#### 接口设计：
+```javascript
+/**
+ * 游戏状态系统
+ * 管理游戏状态、流程控制、胜负判断和得分计算
+ */
+import { GAME_STATES } from '../utils/constants.js';
+
+export class GameStateSystem {
+    constructor(scene) {
+        this.scene = scene;
+        
+        // 游戏状态
+        this.gameState = GAME_STATES.PLAYING;
+        
+        // 游戏数据
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.score = 0;
+        this.stars = 0;
+        
+        // 小鸟管理
+        this.birds = [];
+        this.currentBirdIndex = 0;
+        this.pigsRemaining = 0;
+        this.blocksRemaining = 0;
+        
+        // 游戏配置
+        this.config = {
+            maxBirds: 5,
+            scoring: {
+                pig: 1000,
+                block: {
+                    wood: 100,
+                    stone: 200,
+                    glass: 150
+                },
+                birdRemaining: 5000
+            },
+            starThresholds: [2000, 4000, 6000] // 1星, 2星, 3星阈值
+        };
+        
+        // 事件监听器
+        this.eventListeners = {
+            onStateChange: [],    // 状态变化
+            onScoreUpdate: [],    // 分数更新
+            onBirdLaunch: [],     // 小鸟发射
+            onBirdUsed: [],       // 小鸟使用
+            onPigDestroyed: [],   // 猪被消灭
+            onBlockDestroyed: [], // 方块被破坏
+            onLevelComplete: [],  // 关卡完成
+            onGameOver: []        // 游戏结束
+        };
+    }
+    
+    /**
+     * 初始化游戏状态系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        Object.assign(this.config, config);
+        return this;
+    }
+    
+    /**
+     * 加载关卡数据
+     * @param {number} level - 关卡编号
+     * @param {Object} levelData - 关卡数据
+     */
+    loadLevel(level, levelData) {
+        this.currentLevel = level;
+        this.levelData = levelData;
+        this.score = 0;
+        this.stars = 0;
+        this.currentBirdIndex = 0;
+        
+        // 初始化小鸟队列
+        this.birds = levelData.birds || [];
+        this.pigsRemaining = levelData.pigs?.length || 0;
+        this.blocksRemaining = levelData.blocks?.length || 0;
+        
+        // 触发分数更新事件
+        this.emit('onScoreUpdate', this.score);
+        
+        console.log(`Level ${level} loaded: ${this.birds.length} birds, ${this.pigsRemaining} pigs`);
+    }
+    
+    /**
+     * 设置游戏状态
+     * @param {string} newState - 新状态
+     */
+    setGameState(newState) {
+        const oldState = this.gameState;
+        this.gameState = newState;
+        
+        // 触发状态变化事件
+        this.emit('onStateChange', newState, oldState);
+        
+        // 特殊状态处理
+        switch (newState) {
+            case GAME_STATES.WIN:
+                this.onWin();
+                break;
+            case GAME_STATES.LOSE:
+                this.onLose();
+                break;
+            case GAME_STATES.PAUSED:
+                this.onPause();
+                break;
+        }
+    }
+    
+    /**
+     * 获取当前游戏状态
+     * @returns {string} 游戏状态
+     */
+    getGameState() {
+        return this.gameState;
+    }
+    
+    /**
+     * 获取当前小鸟
+     * @returns {string|null} 小鸟类型或null
+     */
+    getCurrentBird() {
+        return this.birds[this.currentBirdIndex] || null;
+    }
+    
+    /**
+     * 发射小鸟
+     */
+    launchBird() {
+        if (this.currentBirdIndex < this.birds.length) {
+            this.emit('onBirdLaunch', this.birds[this.currentBirdIndex]);
+            this.currentBirdIndex++;
+            
+            // 触发小鸟使用事件
+            this.emit('onBirdUsed', this.currentBirdIndex - 1, this.birds.length);
+            
+            console.log(`Bird launched. Remaining: ${this.birds.length - this.currentBirdIndex}`);
+        }
+    }
+    
+    /**
+     * 获取剩余小鸟数量
+     * @returns {number} 剩余小鸟数量
+     */
+    getRemainingBirds() {
+        return Math.max(0, this.birds.length - this.currentBirdIndex);
+    }
+    
+    /**
+     * 猪被消灭
+     * @param {Object} pig - 猪对象
+     */
+    onPigDestroyed(pig) {
+        this.pigsRemaining--;
+        
+        // 计算分数
+        const points = this.config.scoring.pig;
+        this.addScore(points, pig.x, pig.y);
+        
+        // 触发事件
+        this.emit('onPigDestroyed', pig, points, this.pigsRemaining);
+        
+        // 检查游戏状态
+        this.checkRoundEnd();
+    }
+    
+    /**
+     * 方块被破坏
+     * @param {Object} block - 方块对象
+     */
+    onBlockDestroyed(block) {
+        this.blocksRemaining--;
+        
+        // 根据材质计算分数
+        const material = block.material || 'wood';
+        const points = this.config.scoring.block[material] || this.config.scoring.block.wood;
+        this.addScore(points, block.x, block.y);
+        
+        // 触发事件
+        this.emit('onBlockDestroyed', block, points, material, this.blocksRemaining);
+    }
+    
+    /**
+     * 增加分数
+     * @param {number} points - 分数值
+     * @param {number} x - 分数弹出位置X
+     * @param {number} y - 分数弹出位置Y
+     */
+    addScore(points, x, y) {
+        const oldScore = this.score;
+        this.score += points;
+        
+        // 计算星星数量
+        this.calculateStars();
+        
+        // 触发分数更新事件
+        this.emit('onScoreUpdate', this.score, points, x, y, this.stars);
+        
+        console.log(`Score: ${oldScore} -> ${this.score} (+${points})`);
+    }
+    
+    /**
+     * 计算星星数量
+     */
+    calculateStars() {
+        const thresholds = this.config.starThresholds;
+        
+        if (this.score >= thresholds[2]) {
+            this.stars = 3;
+        } else if (this.score >= thresholds[1]) {
+            this.stars = 2;
+        } else if (this.score >= thresholds[0]) {
+            this.stars = 1;
+        } else {
+            this.stars = 0;
+        }
+    }
+    
+    /**
+     * 检查回合结束条件
+     */
+    checkRoundEnd() {
+        // 如果所有猪都被消灭，玩家胜利
+        if (this.pigsRemaining <= 0) {
+            this.setGameState(GAME_STATES.WIN);
+            return;
+        }
+        
+        // 如果所有小鸟都用完，玩家失败
+        if (this.getRemainingBirds() <= 0) {
+            // 等待物理世界稳定后再判断
+            this.scene.time.delayedCall(1000, () => {
+                if (this.pigsRemaining > 0) {
+                    this.setGameState(GAME_STATES.LOSE);
+                }
+            });
+        }
+    }
+    
+    /**
+     * 胜利处理
+     */
+    onWin() {
+        console.log('Level completed!');
+        
+        // 计算剩余小鸟奖励
+        const remainingBirds = this.getRemainingBirds();
+        const bonus = remainingBirds * this.config.scoring.birdRemaining;
+        
+        if (bonus > 0) {
+            this.addScore(bonus, 640, 360); // 屏幕中心
+        }
+        
+        // 触发关卡完成事件
+        this.emit('onLevelComplete', this.currentLevel, this.score, this.stars, bonus);
+    }
+    
+    /**
+     * 失败处理
+     */
+    onLose() {
+        console.log('Game over!');
+        this.emit('onGameOver', this.currentLevel, this.score);
+    }
+    
+    /**
+     * 暂停处理
+     */
+    onPause() {
+        console.log('Game paused');
+    }
+    
+    /**
+     * 注册事件监听器
+     * @param {string} event - 事件名称
+     * @param {Function} callback - 回调函数
+     */
+    on(event, callback) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].push(callback);
+        }
+    }
+    
+    /**
+     * 触发事件
+     * @param {string} event - 事件名称
+     * @param {...any} args - 事件参数
+     */
+    emit(event, ...args) {
+        if (this.eventListeners[event]) {
+            this.eventListeners[event].forEach(callback => {
+                callback(...args);
+            });
+        }
+    }
+    
+   
+Duration: 204857 ms
+Tool calls: 15
+Token usage: 79725

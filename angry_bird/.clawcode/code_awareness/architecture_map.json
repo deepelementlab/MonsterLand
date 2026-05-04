@@ -1,0 +1,997 @@
+{
+  "version": 2,
+  "project_root": "D:\\opensource_project\\opencode-main\\opencode-main\\test\\angry_bird",
+  "updated_at": 1777903924.4732955,
+  "source": "llm",
+  "model_info": {
+    "available": true,
+    "provider": "openai",
+    "provider_key": "openai_glm",
+    "model": "glm-5.1",
+    "last_attempt_at": 1777878417.5886016,
+    "stage1_outline_stats": {
+      "truncated": false,
+      "notes": [],
+      "max_depth": 3,
+      "max_total_paths": 400,
+      "max_children_per_dir": 30,
+      "sampled_paths": 11
+    },
+    "two_stage": true
+  },
+  "layers": {
+    "Documentation": [
+      "docs"
+    ],
+    "Other": [
+      "src"
+    ],
+    "Configuration": [
+      "src/config"
+    ],
+    "Game Objects": [
+      "src/objects"
+    ],
+    "Scenes": [
+      "src/scenes"
+    ],
+    "Systems": [
+      "src/systems"
+    ],
+    "UI": [
+      "src/ui"
+    ],
+    "Utilities": [
+      "src/utils"
+    ],
+    "Tests": [
+      "tests",
+      "tests/unit",
+      "tests/unit/objects"
+    ]
+  },
+  "dir_to_layer": {
+    "docs": "Documentation",
+    "src": "Other",
+    "src/config": "Configuration",
+    "src/objects": "Game Objects",
+    "src/scenes": "Scenes",
+    "src/systems": "Systems",
+    "src/ui": "UI",
+    "src/utils": "Utilities",
+    "tests": "Tests",
+    "tests/unit": "Tests",
+    "tests/unit/objects": "Tests"
+  },
+  "layer_descriptions": {
+    "Documentation": "Design and specification documents in docs/ covering product requirements, architecture decisions, and UI/UX mockups",
+    "Configuration": "Game config files in src/config/ defining level layouts, scoring thresholds, physics parameters, and star ratings",
+    "Scenes": "Phaser scene classes in src/scenes/ controlling the game lifecycle from boot through resource loading, menu navigation, to active gameplay",
+    "UI": "UI layer in src/ui/ handling in-game interfaces, score displays, star ratings, and interactive prompts",
+    "Systems": "Gameplay systems in src/systems/ orchestrating physics simulation via Matter.js, collision detection, score calculation, and level progression",
+    "Game Objects": "Entity classes in src/objects/ representing interactive game elements — birds, pigs, destructible blocks, and the slingshot launcher",
+    "Utilities": "Shared code in src/utils/ providing constant definitions and reusable helper functions across the codebase",
+    "Tests": "Unit test suite in tests/ verifying correctness of game objects and core mechanics"
+  },
+  "layer_order": [
+    "Documentation",
+    "Configuration",
+    "Scenes",
+    "UI",
+    "Systems",
+    "Game Objects",
+    "Utilities",
+    "Tests",
+    "Other"
+  ],
+  "file_events": [
+    {
+      "timestamp": 1774868531.0132878,
+      "path": "docs/architecture.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774868855.184949,
+      "path": "docs/ui-ux-design.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774868981.0263863,
+      "path": "package.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869036.1434655,
+      "path": "vite.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869048.3844476,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869059.735469,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869098.904811,
+      "path": "src/config/game.config.js",
+      "directory": "src/config",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869182.900917,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Source Core",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869238.192513,
+      "path": "src/scenes/BootScene.js",
+      "directory": "src/scenes",
+      "layer": "Features",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869280.1274195,
+      "path": "src/scenes/PreloadScene.js",
+      "directory": "src/scenes",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869462.3968532,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.7395172,
+      "path": "package.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.7469444,
+      "path": "vite.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.755172,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5363085,
+      "path": "src/config/game.config.js",
+      "directory": "src/config",
+      "layer": "Configuration",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5480452,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utils",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5593944,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869766.967714,
+      "path": "src/scenes/BootScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869767.1795297,
+      "path": "src/scenes/PreloadScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869767.191972,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870057.2454789,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.3173857,
+      "path": "src/objects/Bird.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.5151722,
+      "path": "src/objects/Pig.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.5274594,
+      "path": "src/objects/Block.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.542791,
+      "path": "src/objects/Slingshot.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870484.8832126,
+      "path": "README.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774876182.3646839,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774969747.5617938,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scene Management",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775009523.9443638,
+      "path": "TESTING_STRATEGY.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775138922.8372786,
+      "path": "docs/test-strategy.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775145038.559714,
+      "path": "docs/test-strategy.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775470089.14022,
+      "path": "docs/code-quality-report.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775470825.5297768,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utilities",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775471139.140721,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489355.752987,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Physics",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489579.7302368,
+      "path": "src/systems/UISystem.js",
+      "directory": "src/systems",
+      "layer": "Physics",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489845.5309212,
+      "path": "TESTING_STRATEGY_CN.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489922.8915224,
+      "path": "jest.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489933.9411564,
+      "path": "playwright.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489959.465151,
+      "path": "tests/README.md",
+      "directory": "tests",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775490059.4511197,
+      "path": "package-test.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775490059.4629734,
+      "path": "tests/unit/objects/Bird.test.js",
+      "directory": "tests/unit/objects",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775491478.817487,
+      "path": "src/systems/EntityManager.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492263.9625473,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492328.4424686,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492547.821133,
+      "path": "src/scenes/GameScene_refactored.js",
+      "directory": "src/scenes",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775493214.525814,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775493381.065375,
+      "path": "src/main_refactored.js",
+      "directory": "src",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775493417.0619764,
+      "path": "test_refactored.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775493782.5406408,
+      "path": "test_system_integration.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775976322.9543016,
+      "path": "src/config/game.config.js",
+      "directory": "src/config",
+      "layer": "Configuration",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775976622.7250245,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775978208.0370145,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775979685.1127157,
+      "path": "src/scenes/test_write.txt",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775984433.8984933,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776053074.407192,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776067307.8595757,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776075734.735851,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776076031.2858157,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776082102.7054162,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776083540.4699264,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776083690.6549358,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776091018.2268405,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1776175078.4532704,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Infrastructure Layer",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777863479.093067,
+      "path": "test_debug.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777864374.3999457,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scene Management",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777866926.056864,
+      "path": "debug_blue.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777866988.9229863,
+      "path": "test_debug_v2.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867071.0924437,
+      "path": "test_scene_chain.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867104.5465562,
+      "path": "test_original_debug.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867156.4926758,
+      "path": "test_index_en.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867257.4652133,
+      "path": "test_canvas_check.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867390.9202847,
+      "path": "test_rendering.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867812.2626917,
+      "path": "test_input_debug.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777867956.1646767,
+      "path": "test_game_debug.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868021.1077468,
+      "path": "src/objects/Bird.js",
+      "directory": "src/objects",
+      "layer": "Game Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868046.9014184,
+      "path": "src/objects/Pig.js",
+      "directory": "src/objects",
+      "layer": "Game Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868056.4585078,
+      "path": "src/objects/Block.js",
+      "directory": "src/objects",
+      "layer": "Game Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868078.0959742,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utilities",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868216.7171044,
+      "path": "test_auto_click.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868267.3838532,
+      "path": "test_direct_input.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868762.9292011,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utilities",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868770.3389633,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utilities",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868776.8814251,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868786.857529,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868794.5809293,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868806.946867,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777868834.7639606,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777869818.14917,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777869859.387725,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777869864.5517418,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777869877.226751,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777869978.5579257,
+      "path": "game_test.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777870063.2796392,
+      "path": "test_input.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777870069.750649,
+      "path": "test_input.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777870078.8002613,
+      "path": "test_input.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777870091.365455,
+      "path": "test_input.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777876845.2021694,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777876860.698088,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777876905.6426957,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777876926.0072756,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777877409.6677067,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777877491.238309,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777877628.4404132,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777878697.8257675,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777878817.423865,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777878861.8507547,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777879174.5200384,
+      "path": "test_live_game.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777894090.4821444,
+      "path": "test_debug_full.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777894153.9194906,
+      "path": "test_debug_full.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777894576.4355037,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901290.5577781,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901373.4985058,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901395.263107,
+      "path": "src/objects/Bird.js",
+      "directory": "src/objects",
+      "layer": "Game Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901445.2983315,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901453.4323466,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901467.9864569,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901554.878305,
+      "path": "test_game_state.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777901610.5591614,
+      "path": "test_node.mjs",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777902112.6663165,
+      "path": "src/objects/Bird.js",
+      "directory": "src/objects",
+      "layer": "Game Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777902385.5419319,
+      "path": "test_play.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1777903924.4732823,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Systems",
+      "kind": "modified"
+    }
+  ],
+  "file_symbol_outline": {
+    "src/objects/Bird.js": [
+      "Bird"
+    ],
+    "src/objects/Block.js": [
+      "Block"
+    ],
+    "src/objects/Pig.js": [
+      "Pig"
+    ],
+    "src/objects/Slingshot.js": [
+      "Slingshot"
+    ],
+    "src/scenes/BootScene.js": [
+      "BootScene"
+    ],
+    "src/scenes/GameScene.js": [
+      "GameScene"
+    ],
+    "src/scenes/GameScene_refactored.js": [
+      "GameScene"
+    ],
+    "src/scenes/MenuScene.js": [
+      "MenuScene"
+    ],
+    "src/scenes/PreloadScene.js": [
+      "PreloadScene"
+    ],
+    "src/systems/EntityManager.js": [
+      "EntityManager"
+    ],
+    "src/systems/GameStateSystem.js": [
+      "GameStateSystem"
+    ],
+    "src/systems/InputSystem.js": [
+      "InputSystem"
+    ],
+    "src/systems/PhysicsSystem.js": [
+      "PhysicsSystem"
+    ],
+    "src/systems/UISystem.js": [
+      "createAirbnbButton",
+      "UISystem"
+    ],
+    "test_system_integration.js": [
+      "MockScene"
+    ]
+  },
+  "dir_role_hints": {
+    "src/config": "config",
+    "src/utils": "util",
+    "tests": "test"
+  },
+  "tech_map_updated_at": 1777878456.1946695
+}

@@ -1,0 +1,298 @@
+     1	/**
+     2	 * 物理系统模块
+     3	 * 处理所有物理引擎逻辑，包括Matter.js物理世界初始化、碰撞检测、物体创建和轨迹计算
+     4	 */
+     5	export class PhysicsSystem {
+     6	    constructor(scene) {
+     7	        this.scene = scene;
+     8	        this.matter = scene.matter;
+     9	        this.world = scene.matter.world;
+    10	        this.engine = scene.matter.world.engine;
+    11	        
+    12	        // 碰撞回调集合
+    13	        this.collisionCallbacks = [];
+    14	        
+    15	        // 物理参数配置
+    16	        this.config = {
+    17	            gravity: { x: 0, y: 1 },
+    18	            launchPower: 0.15,
+    19	            materials: {
+    20	                wood: {
+    21	                    health: 100,
+    22	                    density: 0.001,
+    23	                    friction: 0.5,
+    24	                    restitution: 0.3
+    25	                },
+    26	                stone: {
+    27	                    health: 300,
+    28	                    density: 0.003,
+    29	                    friction: 0.8,
+    30	                    restitution: 0.1
+    31	                },
+    32	                glass: {
+    33	                    health: 50,
+    34	                    density: 0.001,
+    35	                    friction: 0.2,
+    36	                    restitution: 0.5
+    37	                }
+    38	            }
+    39	        };
+    40	        
+    41	        // 初始化物理世界
+    42	        this.init({ gravity: this.config.gravity });
+    43	    }
+    44	    
+    45	    /**
+    46	     * 初始化物理世界
+    47	     * @param {Object} config - 配置参数
+    48	     */
+    49	    init(config = {}) {
+    50	        // 设置重力
+    51	        if (config.gravity) {
+    52	            this.world.setGravity(config.gravity.x, config.gravity.y);
+    53	        }
+    54	        
+    55	        // 设置物理引擎配置
+    56	        if (config.friction !== undefined) {
+    57	            this.engine.world.friction = config.friction;
+    58	        }
+    59	        
+    60	        if (config.restitution !== undefined) {
+    61	            this.engine.world.restitution = config.restitution;
+    62	        }
+    63	        
+    64	        // 设置碰撞事件
+    65	        this.setupCollisions();
+    66	        
+    67	        
+    68	    }
+    69	    
+    70	    /**
+    71	     * 创建物理体
+    72	     * @param {Object} options - 物体选项
+    73	     * @param {string} options.type - 物体类型: 'rectangle', 'circle', 'polygon'
+    74	     * @param {number} options.x - X坐标
+    75	     * @param {number} options.y - Y坐标
+    76	     * @param {number} options.width - 宽度(矩形)
+    77	     * @param {number} options.height - 高度(矩形)
+    78	     * @param {number} options.radius - 半径(圆形)
+    79	     * @param {Object} options.vertices - 顶点数组(多边形)
+    80	     * @param {Object} options.material - 材质配置
+    81	     * @param {boolean} options.isStatic - 是否静态
+    82	     * @param {string} options.label - 物体标签
+    83	     * @returns {Object} Matter.js物理体
+    84	     */
+    85	    createBody(options) {
+    86	        const { type = 'rectangle', x, y, material = 'wood', isStatic = false, label = 'body' } = options;
+    87	        
+    88	        // 获取材质属性
+    89	        const materialProps = this.config.materials[material] || this.config.materials.wood;
+    90	        
+    91	        // 基本物理属性
+    92	        const bodyOptions = {
+    93	            isStatic: isStatic,
+    94	            friction: materialProps.friction,
+    95	            restitution: materialProps.restitution,
+    96	            density: materialProps.density,
+    97	            label: label,
+    98	            material: material
+    99	        };
+   100	        
+   101	        let body;
+   102	        
+   103	        // 根据类型创建物体
+   104	        switch (type) {
+   105	            case 'rectangle':
+   106	                body = this.matter.add.rectangle(x, y, options.width, options.height, bodyOptions);
+   107	                break;
+   108	                
+   109	            case 'circle':
+   110	                body = this.matter.add.circle(x, y, options.radius, bodyOptions);
+   111	                break;
+   112	                
+   113	            case 'polygon':
+   114	                body = this.matter.add.polygon(x, y, options.sides || 3, options.radius || 50, bodyOptions);
+   115	                break;
+   116	                
+   117	            default:
+   118	                console.warn(`Unknown body type: ${type}, defaulting to rectangle`);
+   119	                body = this.matter.add.rectangle(x, y, options.width || 50, options.height || 50, bodyOptions);
+   120	        }
+   121	        
+   122	        // 存储材质信息
+   123	        body.material = material;
+   124	        body.health = materialProps.health;
+   125	        
+   126	        return body;
+   127	    }
+   128	    
+   129	    /**
+   130	     * 注册碰撞回调
+   131	     * @param {Function} callback - 碰撞回调函数
+   132	     */
+   133	    onCollision(callback) {
+   134	        if (typeof callback === 'function') {
+   135	            this.collisionCallbacks.push(callback);
+   136	        }
+   137	    }
+   138	    
+   139	    /**
+   140	     * 施加力到物体
+   141	     * @param {Object} body - Matter.js物理体
+   142	     * @param {Object} force - 力对象 {x, y}
+   143	     */
+   144	    applyForce(body, force) {
+   145	        if (body && force) {
+   146	            this.matter.body.applyForce(body, body.position, {
+   147	                x: force.x / body.mass,
+   148	                y: force.y / body.mass
+   149	            });
+   150	        }
+   151	    }
+   152	    
+   153	    /**
+   154	     * 计算弹道轨迹
+   155	     * @param {Object} startPos - 起始位置 {x, y}
+   156	     * @param {Object} velocity - 初始速度 {x, y}
+   157	     * @param {number} steps - 轨迹点数
+   158	     * @returns {Array} 轨迹点数组 [{x, y}, ...]
+   159	     */
+   160	    calculateTrajectory(startPos, velocity, steps = 10) {
+   161	        const points = [];
+   162	        const gravity = this.config.gravity.y;
+   163	        const launchPower = this.config.launchPower;
+   164	        
+   165	        // 调整速度参数
+   166	        const vx = velocity.x * launchPower;
+   167	        const vy = velocity.y * launchPower;
+   168	        
+   169	        for (let i = 0; i < steps; i++) {
+   170	            const t = i * 0.1; // 时间步长
+   171	            const x = startPos.x + vx * t * 60; // 假设60FPS
+   172	            const y = startPos.y + vy * t * 60 + 0.5 * gravity * t * t * 3600;
+   173	            
+   174	            // 检查是否超出屏幕或碰撞地面
+   175	            if (y > 720) { // 假设屏幕高度720
+   176	                break;
+   177	            }
+   178	            
+   179	            points.push({ x, y });
+   180	        }
+   181	        
+   182	        return points;
+   183	    }
+   184	    
+   185	    /**
+   186	     * 销毁物理体
+   187	     * @param {Object} body - Matter.js物理体
+   188	     */
+   189	    destroyBody(body) {
+   190	        if (body && this.world) {
+   191	            this.matter.world.remove(body);
+   192	        }
+   193	    }
+   194	    
+   195	    /**
+   196	     * 计算碰撞力
+   197	     * @param {Object} bodyA - 物体A
+   198	     * @param {Object} bodyB - 物体B
+   199	     * @returns {number} 碰撞力大小
+   200	     */
+   201	    calculateImpactForce(bodyA, bodyB) {
+   202	        const velocityA = bodyA.velocity;
+   203	        const velocityB = bodyB.velocity;
+   204	        const relativeVelocity = Math.sqrt(
+   205	            Math.pow(velocityA.x - velocityB.x, 2) + Math.pow(velocityA.y - velocityB.y, 2)
+   206	        );
+   207	        return relativeVelocity * (bodyA.mass + bodyB.mass) / 2;
+   208	    }
+   209	    
+   210	    /**
+   211	     * 获取材质配置
+   212	     * @param {string} materialName - 材质名称
+   213	     * @returns {Object} 材质配置
+   214	     */
+   215	    getMaterialConfig(materialName) {
+   216	        return this.config.materials[materialName] || this.config.materials.wood;
+   217	    }
+   218	    
+   219	    /**
+   220	     * 设置重力
+   221	     * @param {number} x - X方向重力
+   222	     * @param {number} y - Y方向重力
+   223	     */
+   224	    setGravity(x, y) {
+   225	        this.world.setGravity(x, y);
+   226	        this.config.gravity = { x, y };
+   227	    }
+   228	    
+   229	    /**
+   230	     * 获取当前重力
+   231	     * @returns {Object} 重力对象 {x, y}
+   232	     */
+   233	    getGravity() {
+   234	        return this.config.gravity;
+   235	    }
+   236	    
+   237	    /**
+   238	     * 设置碰撞事件监听
+   239	     */
+   240	    setupCollisions() {
+   241	        // 移除已有的碰撞监听器
+   242	        this.world.off('collisionstart');
+   243	        
+   244	        // 设置新的碰撞监听器
+   245	        this.world.on('collisionstart', (event) => {
+   246	            event.pairs.forEach(pair => {
+   247	                const bodyA = pair.bodyA;
+   248	                const bodyB = pair.bodyB;
+   249	                
+   250	                // 计算碰撞力
+   251	                const impactForce = this.calculateImpactForce(bodyA, bodyB);
+   252	                
+   253	                // 调用所有注册的碰撞回调
+   254	                this.collisionCallbacks.forEach(callback => {
+   255	                    callback(bodyA, bodyB, impactForce);
+   256	                });
+   257	            });
+   258	        });
+   259	    }
+   260	    
+   261	    /**
+   262	     * 获取所有物理体
+   263	     * @returns {Array} 物理体数组
+   264	     */
+   265	    getAllBodies() {
+   266	        return this.engine.world.bodies;
+   267	    }
+   268	    
+   269	    /**
+   270	     * 检查是否所有物体都静止
+   271	     * @param {number} threshold - 速度阈值
+   272	     * @returns {boolean} 是否全部静止
+   273	     */
+   274	    isAllSleeping(threshold = 0.5) {
+   275	        return this.getAllBodies().every(
+   276	            body => body.isStatic || body.speed < threshold
+   277	        );
+   278	    }
+   279	    
+   280	    /**
+   281	     * 清理物理世界
+   282	     */
+   283	    cleanup() {
+   284	        // 移除所有碰撞回调
+   285	        this.collisionCallbacks = [];
+   286	        
+   287	        // 移除所有物体（除了静态地面）
+   288	        const bodies = this.getAllBodies();
+   289	        bodies.forEach(body => {
+   290	            if (!body.isStatic || body.label !== 'ground') {
+   291	                this.destroyBody(body);
+   292	            }
+   293	        });
+   294	        
+   295	        
+   296	    }
+   297	}
+   298	

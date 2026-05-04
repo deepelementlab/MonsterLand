@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Input Test</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { padding: 10px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; max-height: 400px; overflow-y: auto; position: absolute; top: 0; left: 0; z-index: 999; width: 50%; background: rgba(0,0,0,0.85); }
+        .err { color: #ff5a5f; } .ok { color: #00a699; } .warn { color: #ffb400; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    window.onerror = function(msg, url, line) { addLog('ERR: ' + msg + ' L' + line, 'err'); };
+    window.addEventListener('unhandledrejection', function(e) { addLog('PROMISE: ' + (e.reason ? e.reason.message || e.reason : e), 'err'); });
+</script>
+<script type="module">
+    import Phaser from 'phaser';
+    import { GameConfig, LevelsConfig } from './src/config/game.config.js';
+    import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, SIZES, BIRD_TYPES, COLLISION } from './src/utils/constants.js';
+    import { Bird } from './src/objects/Bird.js';
+    import { Pig } from './src/objects/Pig.js';
+    import { Block } from './src/objects/Block.js';
+    import { Slingshot } from './src/objects/Slingshot.js';
+    
+    addLog('Config: w=' + GameConfig.width + ' h=' + GameConfig.height);
+    addLog('Positions: SLING=(' + POSITIONS.SLINGSHOT_X + ',' + POSITIONS.SLINGSHOT_Y + ')');
+    addLog('SIZES.SLINGSHOT_ACTIVE_RADIUS=' + SIZES.SLINGSHOT_ACTIVE_RADIUS);
+    addLog('GameConfig.slingshot=' + JSON.stringify(GameConfig.slingshot));
+    
+    class TestGame extends Phaser.Scene {
+        constructor() { super('TestGame'); }
+        create() {
+            addLog('TestGame.create()', 'ok');
+            const width = this.cameras.main.width;
+            const height = this.cameras.main.height;
+            addLog('Camera: ' + width + 'x' + height);
+            
+            // Sky
+            const sky = this.add.graphics();
+            sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F0FF, 0xE0F0FF, 1);
+            sky.fillRect(0, 0, width, height);
+            
+            // Ground
+            const ground = this.add.graphics();
+            ground.fillStyle(0x8B4513, 1);
+            ground.fillRect(0, 640, width, height - 640);
+            ground.fillStyle(0x4CAF50, 1);
+            ground.fillRect(0, 640, width, 15);
+            this.matter.add.rectangle(width / 2, 680, width, 80, { isStatic: true, label: 'ground' });
+            
+            // Create slingshot and bird manually
+            this.slingshot = new Slingshot(this, POSITIONS.SLINGSHOT_X, POSITIONS.SLINGSHOT_Y);
+            addLog('Slingshot: x=' + POSITIONS.SLINGSHOT_X + ' y=' + POSITIONS.SLINGSHOT_Y);
+            addLog('Slingshot.launchPoint: x=' + this.slingshot.launchPoint.x + ' y=' + this.slingshot.launchPoint.y);
+            
+            const lp = this.slingshot.launchPoint;
+            this.bird = new Bird(this, lp.x, lp.y, BIRD_TYPES.RED);
+            addLog('Bird: x=' + lp.x + ' y=' + lp.y + ' radius=' + this.bird.radius);
+            
+            // Draw debug target circle
+            const debug = this.add.graphics();
+            debug.lineStyle(2, 0xFF0000, 0.5);
+            debug.strokeCircle(lp.x, lp.y, SIZES.SLINGSHOT_ACTIVE_RADIUS);
+            debug.lineStyle(1, 0x00FF00, 0.5);
+            debug.strokeCircle(lp.x, lp.y, 25);
+            
+            // Input tracking
+            this.isDragging = false;
+            this.input.on('pointerdown', (pointer) => {
+                addLog('pointerdown at (' + pointer.x + ', ' + pointer.y + ')');
+                const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, lp.x, lp.y);
+                addLog('Distance to launchPoint: ' + dist.toFixed(1) + ' (radius: ' + SIZES.SLINGSHOT_ACTIVE_RADIUS + ')');
+                
+                if (dist < SIZES.SLINGSHOT_ACTIVE_RADIUS) {
+                    addLog('DRAG START!', 'ok');
+                    this.isDragging = true;
+                    this.bird.startAiming();
+                } else {
+                    addLog('Too far from launch point', 'warn');
+                }
+            });
+            
+            this.input.on('pointermove', (pointer) => {
+                if (!this.isDragging) return;
+                addLog('drag move: (' + pointer.x.toFixed(0) + ', ' + pointer.y.toFixed(0) + ')');
+                this.bird.setPosition(pointer.x, pointer.y);
+                this.slingshot.updateBand(pointer.x, pointer.y);
+            });
+            
+            this.input.on('pointerup', () => {
+                if (!this.isDragging) return;
+                addLog('pointerup - LAUNCH', 'ok');
+                this.isDragging = false;
+                const dx = lp.x - this.bird.x;
+                const dy = lp.y - this.bird.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                addLog('Launch delta: dx=' + dx.toFixed(1) + ' dy=' + dy.toFixed(1) + ' dist=' + dist.toFixed(1));
+                if (dist > 10) {
+                    const power = GameConfig.slingshot.launchPower;
+                    this.bird.launch(dx * power, dy * power);
+                    this.slingshot.release();
+                    addLog('Launched! vx=' + (dx*power).toFixed(1) + ' vy=' + (dy*power).toFixed(1), 'ok');
+                } else {
+                    this.bird.moveToSlingshot(lp.x, lp.y);
+                    this.slingshot.resetBand();
+                    addLog('Too close, reset', 'warn');
+                }
+            });
+        }
+        
+        update() {
+            if (this.bird && this.bird.launched) {
+                this.bird.update();
+            }
+        }
+    }
+    
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: { default: 'matter', matter: { gravity: GameConfig.physics.gravity, debug: true } },
+        scene: [TestGame],
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+    };
+    
+    new Phaser.Game(config);
+    addLog('Game created', 'ok');
+</script>
+<div id="game-container"></div>
+</body>
+</html>

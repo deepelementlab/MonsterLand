@@ -1,0 +1,335 @@
+Successfully wrote 43 lines (1264 bytes) to src/scenes/PreloadScene.js
+
+--- a/src/scenes/PreloadScene.js
++++ b/src/scenes/PreloadScene.js
+@@ -1,310 +1,42 @@
+-/**
+- * 资源加载场景
+- * 负责加载所有游戏资源（图片、音频等）
+- */
++import { SCENE_KEYS } from '../utils/constants.js';
+ 
+-import Phaser from 'phaser';
+-import { GAME_CONSTANTS } from '../config/game.config.js';
+-
+-export default class PreloadScene extends Phaser.Scene {
++export class PreloadScene extends Phaser.Scene {
+     constructor() {
+-        super({ key: GAME_CONSTANTS.SCENES.PRELOAD });
++        super({ key: SCENE_KEYS.PRELOAD });
+     }
+ 
+-    /**
+-     * 预加载资源
+-     */
+     preload() {
+-        console.log('📦 PreloadScene: 加载游戏资源...');
+-        
+-        // 创建加载进度条
+-        this.createLoadingBar();
+-        
+-        // 加载资源
+-        this.loadAssets();
+-    }
+-
+-    /**
+-     * 创建加载进度条
+-     */
+-    createLoadingBar() {
+         const width = this.cameras.main.width;
+         const height = this.cameras.main.height;
+         
+-        // 进度条背景
+-        const progressBarBg = this.add.rectangle(
+-            width / 2,
+-            height / 2 + 50,
+-            400,
+-            30,
+-            0x222222
+-        );
++        // 创建加载进度条
++        const progressBar = this.add.graphics();
++        const progressBox = this.add.graphics();
+         
+-        // 进度条
+-        const progressBar = this.add.rectangle(
+-            width / 2 - 195,
+-            height / 2 + 50,
+-            0,
+-            24,
+-            0x4CAF50
+-        );
+-        progressBar.setOrigin(0, 0.5);
++        progressBox.fillStyle(0x222222, 0.8);
++        progressBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+         
+         // 加载文字
+-        const loadingText = this.add.text(
+-            width / 2,
+-            height / 2,
+-            '加载中...',
+-            {
+-                fontFamily: 'Arial',
+-                fontSize: '32px',
+-                fill: '#FFFFFF'
+-            }
+-        );
+-        loadingText.setOrigin(0.5);
++        const loadingText = this.add.text(width / 2, height / 2 - 50, '加载中...', {
++            font: '24px Arial',
++            fill: '#ffffff'
++        }).setOrigin(0.5);
+         
+-        // 百分比文字
+-        const percentText = this.add.text(
+-            width / 2,
+-            height / 2 + 100,
+-            '0%',
+-            {
+-                fontFamily: 'Arial',
+-                fontSize: '24px',
+-                fill: '#FFFFFF'
+-            }
+-        );
+-        percentText.setOrigin(0.5);
+-        
+-        // 监听加载进度
++        // 加载进度事件
+         this.load.on('progress', (value) => {
+-            progressBar.width = 390 * value;
+-            percentText.setText(parseInt(value * 100) + '%');
++            progressBar.clear();
++            progressBar.fillStyle(0x4CAF50, 1);
++            progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
+         });
+         
+-        // 监听加载完成
+         this.load.on('complete', () => {
+-            console.log('✅ PreloadScene: 资源加载完成');
+-            loadingText.setText('加载完成！');
++            progressBar.destroy();
++            progressBox.destroy();
++            loadingText.destroy();
+         });
+     }
+ 
+-    /**
+-     * 加载所有游戏资源
+-     */
+-    loadAssets() {
+-        // 注意：这里暂时使用占位符，实际项目需要真实资源
+-        
+-        // 由于MVP阶段使用图形绘制，这里暂时不加载外部资源
+-        // 如果有真实资源，可以这样加载：
+-        // this.load.image('bird-red', 'assets/images/bird-red.png');
+-        // this.load.audio('launch', 'assets/audio/launch.mp3');
+-        
+-        // 模拟加载延迟（开发阶段）
+-        for (let i = 0; i < 10; i++) {
+-            this.load.image(`placeholder_${i}`, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+-        }
+-    }
+-
+-    /**
+-     * 场景创建
+-     */
+     create() {
+-        // 创建图形资源（MVP阶段使用代码绘制）
+-        this.createGameGraphics();
+-        
+-        // 延迟跳转到主菜单
+-        this.time.delayedCall(500, () => {
+-            this.scene.start(GAME_CONSTANTS.SCENES.MENU);
+-        });
+-    }
+-
+-    /**
+-     * 创建游戏图形资源
+-     * MVP阶段使用Graphics绘制，避免依赖外部资源
+-     */
+-    createGameGraphics() {
+-        // 创建小鸟纹理
+-        this.createBirdTexture('bird-red', 0xFF0000);
+-        this.createBirdTexture('bird-blue', 0x1E90FF);
+-        this.createBirdTexture('bird-yellow', 0xFFD700);
+-        
+-        // 创建猪纹理
+-        this.createPigTexture('pig-small', 0x90EE90, 30);
+-        this.createPigTexture('pig-medium', 0x90EE90, 35);
+-        this.createPigTexture('pig-large', 0x90EE90, 40);
+-        
+-        // 创建方块纹理
+-        this.createBlockTexture('block-wood', 0x8B4513);
+-        this.createBlockTexture('block-stone', 0x708090);
+-        this.createBlockTexture('block-glass', 0xADD8E6);
+-        
+-        // 创建弹弓纹理
+-        this.createSlingshotTexture();
+-        
+-        // 创建地面纹理
+-        this.createGroundTexture();
+-        
+-        // 创建UI按钮纹理
+-        this.createButtonTextures();
+-        
+-        console.log('🎨 PreloadScene: 图形资源创建完成');
+-    }
+-
+-    /**
+-     * 创建小鸟纹理
+-     */
+-    createBirdTexture(key, color) {
+-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+-        
+-        // 绘制小鸟身体
+-        graphics.fillStyle(color, 1);
+-        graphics.fillCircle(25, 25, 23);
+-        
+-        // 绘制眼睛
+-        graphics.fillStyle(0xFFFFFF, 1);
+-        graphics.fillCircle(30, 18, 8);
+-        graphics.fillStyle(0x000000, 1);
+-        graphics.fillCircle(32, 18, 4);
+-        
+-        // 绘制眉毛（愤怒表情）
+-        graphics.lineStyle(3, 0x000000, 1);
+-        graphics.lineBetween(22, 10, 35, 14);
+-        
+-        // 绘制嘴巴
+-        graphics.fillStyle(0xFFA500, 1);
+-        graphics.fillTriangle(40, 25, 50, 28, 40, 31);
+-        
+-        graphics.generateTexture(key, 60, 50);
+-        graphics.destroy();
+-    }
+-
+-    /**
+-     * 创建猪纹理
+-     */
+-    createPigTexture(key, color, size) {
+-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+-        
+-        // 绘制猪身体
+-        graphics.fillStyle(color, 1);
+-        graphics.fillCircle(size, size, size - 2);
+-        
+-        // 绘制鼻子
+-        graphics.fillStyle(0x7CCD7C, 1);
+-        graphics.fillCircle(size, size + 5, 10);
+-        graphics.fillStyle(0x228B22, 1);
+-        graphics.fillCircle(size - 4, size + 5, 3);
+-        graphics.fillCircle(size + 4, size + 5, 3);
+-        
+-        // 绘制眼睛
+-        graphics.fillStyle(0xFFFFFF, 1);
+-        graphics.fillCircle(size - 10, size - 8, 8);
+-        graphics.fillCircle(size + 10, size - 8, 8);
+-        graphics.fillStyle(0x000000, 1);
+-        graphics.fillCircle(size - 10, size - 8, 4);
+-        graphics.fillCircle(size + 10, size - 8, 4);
+-        
+-        // 绘制耳朵
+-        graphics.fillStyle(color, 1);
+-        graphics.fillCircle(size - 18, size - 18, 8);
+-        graphics.fillCircle(size + 18, size - 18, 8);
+-        
+-        graphics.generateTexture(key, size * 2 + 20, size * 2 + 20);
+-        graphics.destroy();
+-    }
+-
+-    /**
+-     * 创建方块纹理
+-     */
+-    createBlockTexture(key, color) {
+-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+-        
+-        // 绘制方块
+-        graphics.fillStyle(color, 1);
+-        graphics.fillRect(0, 0, 40, 80);
+-        
+-        // 添加边框
+-        graphics.lineStyle(2, 0x000000, 0.3);
+-        graphics.strokeRect(0, 0, 40, 80);
+-        
+-        // 添加纹理线条
+-        graphics.lineStyle(1, 0x000000, 0.1);
+-        for (let i = 0; i < 4; i++) {
+-            graphics.lineBetween(5, i * 20 + 10, 35, i * 20 + 10);
+-        }
+-        
+-        graphics.generateTexture(key, 40, 80);
+-        graphics.destroy();
+-    }
+-
+-    /**
+-     * 创建弹弓纹理
+-     */
+-    createSlingshotTexture() {
+-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+-        
+-        // 绘制弹弓主体
+-        graphics.fillStyle(0x8B4513, 1);
+-        
+-        // 左叉
+-        graphics.fillRoundedRect(0, 0, 15, 120, 5);
+-        
+-        // 右叉
+-        graphics.fillRoundedRect(45, 0, 15, 120, 5);
+-        
+-        // 底座
+-        graphics.fillRoundedRect(5, 100, 50, 30, 5);
+-        
+-        graphics.generateTexture('slingshot', 60, 130);
+-        graphics.destroy();
+-    }
+-
+-    /**
+-     * 创建地面纹理
+-     */
+-    createGroundTexture() {
+-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+-        
+-        // 绘制地面
+-        graphics.fillStyle(0x228B22, 1);
+-        graphics.fillRect(0, 0, 1280, 100);
+-        
+-        // 添加草地纹理
+-        graphics.fillStyle(0x32CD32, 1);
+-        for (let i = 0; i < 128; i++) {
+-            graphics.fillTriangle(i * 10, 0, i * 10 + 5, -10, i * 10 + 10, 0);
+-        }
+-        
+-        graphics.generateTexture('ground', 1280, 100);
+-        graphics.destroy();
+-    }
+-
+-    /**
+-     * 创建UI按钮纹理
+-     */
+-    createButtonTextures() {
+-        // 普通按钮
+-        const normalBtn = this.make.graphics({ x: 0, y: 0, add: false });
+-        normalBtn.fillStyle(0x4CAF50, 1);
+-        normalBtn.fillRoundedRect(0, 0, 200, 60, 30);
+-        normalBtn.generateTexture('button-normal', 200, 60);
+-        normalBtn.destroy();
+-        
+-        // 悬停按钮
+-        const hoverBtn = this.make.graphics({ x: 0, y: 0, add: false });
+-        hoverBtn.fillStyle(0x66BB6A, 1);
+-        hoverBtn.fillRoundedRect(0, 0, 200, 60, 30);
+-        hoverBtn.generateTexture('button-hover', 200, 60);
+-        hoverBtn.destroy();
+-        
+-        // 暂停按钮
+-        const pauseBtn = this.make.graphics({ x: 0, y: 0, add: false });
+-        pauseBtn.fillStyle(0x4CAF50, 1);
+-        pauseBtn.fillCircle(25, 25, 25);
+-        pauseBtn.fillStyle(0xFFFFFF, 1);
+-        pauseBtn.fillRect(15, 15, 8, 20);
+-        pauseBtn.fillRect(27, 15, 8, 20);
+-        pauseBtn.generateTexture('button-pause', 50, 50);
+-        pauseBtn.destroy();
++        this.scene.start(SCENE_KEYS.MENU);
+     }
+ }

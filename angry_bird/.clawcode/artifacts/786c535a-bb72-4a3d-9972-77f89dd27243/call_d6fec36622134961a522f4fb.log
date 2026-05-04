@@ -1,0 +1,403 @@
+Successfully wrote 175 lines (5143 bytes) to src/scenes/MenuScene.js
+
+--- a/src/scenes/MenuScene.js
++++ b/src/scenes/MenuScene.js
+@@ -1,211 +1,112 @@
+-/**
+- * 主菜单场景
+- * 游戏主菜单界面，包含开始游戏、排行榜、设置等按钮
+- */
++import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+ 
+-import Phaser from 'phaser';
+-import { GAME_CONSTANTS } from '../config/game.config.js';
+-import { UI } from '../utils/constants.js';
+-
+-export default class MenuScene extends Phaser.Scene {
++export class MenuScene extends Phaser.Scene {
+     constructor() {
+-        super({ key: GAME_CONSTANTS.SCENES.MENU });
++        super({ key: SCENE_KEYS.MENU });
+     }
+ 
+-    /**
+-     * 场景创建
+-     */
+     create() {
+-        console.log('🎯 MenuScene: 主菜单加载');
+-        
+         const width = this.cameras.main.width;
+         const height = this.cameras.main.height;
+         
+-        // 绘制背景
++        // 背景
+         this.createBackground();
+         
+-        // 创建标题
+-        this.createTitle(width, height);
++        // 游戏标题
++        const title = this.add.text(width / 2, 150, '愤怒的小鸟', {
++            fontSize: '64px',
++            fontFamily: 'Arial Black',
++            color: '#FF0000',
++            stroke: '#000000',
++            strokeThickness: 8
++        }).setOrigin(0.5);
+         
+-        // 创建菜单按钮
+-        this.createMenuButtons(width, height);
+-        
+-        // 添加装饰小鸟
+-        this.createDecorativeBirds(width, height);
+-        
+-        // 添加动画
+-        this.createAnimations();
+-    }
+-
+-    /**
+-     * 创建背景
+-     */
+-    createBackground() {
+-        const width = this.cameras.main.width;
+-        const height = this.cameras.main.height;
+-        
+-        // 渐变天空背景
+-        const sky = this.add.graphics();
+-        sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E0E6, 0xB0E0E6, 1);
+-        sky.fillRect(0, 0, width, height);
+-        
+-        // 添加云朵
+-        this.createClouds();
+-        
+-        // 添加草地
+-        this.createGrass();
+-    }
+-
+-    /**
+-     * 创建云朵
+-     */
+-    createClouds() {
+-        const clouds = [
+-            { x: 200, y: 80, scale: 1 },
+-            { x: 600, y: 120, scale: 0.8 },
+-            { x: 1000, y: 100, scale: 1.2 },
+-            { x: 400, y: 150, scale: 0.6 }
+-        ];
+-        
+-        clouds.forEach(cloud => {
+-            const cloudGraphic = this.add.graphics();
+-            cloudGraphic.fillStyle(0xFFFFFF, 0.8);
+-            
+-            // 绘制云朵（多个圆形组合）
+-            cloudGraphic.fillCircle(cloud.x, cloud.y, 30 * cloud.scale);
+-            cloudGraphic.fillCircle(cloud.x + 30 * cloud.scale, cloud.y, 25 * cloud.scale);
+-            cloudGraphic.fillCircle(cloud.x - 30 * cloud.scale, cloud.y, 20 * cloud.scale);
+-            cloudGraphic.fillCircle(cloud.x + 15 * cloud.scale, cloud.y - 15 * cloud.scale, 20 * cloud.scale);
+-            
+-            // 云朵飘动动画
+-            this.tweens.add({
+-                targets: cloudGraphic,
+-                x: { from: cloud.x - 20, to: cloud.x + 20 },
+-                duration: 3000 + Math.random() * 2000,
+-                yoyo: true,
+-                repeat: -1,
+-                ease: 'Sine.easeInOut'
+-            });
+-        });
+-    }
+-
+-    /**
+-     * 创建草地
+-     */
+-    createGrass() {
+-        const width = this.cameras.main.width;
+-        
+-        // 地面
+-        const ground = this.add.graphics();
+-        ground.fillStyle(0x228B22, 1);
+-        ground.fillRect(0, 620, width, 100);
+-        
+-        // 草丛
+-        ground.fillStyle(0x32CD32, 1);
+-        for (let i = 0; i < width / 10; i++) {
+-            ground.fillTriangle(i * 10, 620, i * 10 + 5, 610, i * 10 + 10, 620);
+-        }
+-    }
+-
+-    /**
+-     * 创建标题
+-     */
+-    createTitle(width, height) {
+-        // 标题阴影
+-        const titleShadow = this.add.text(width / 2, height / 3 - 50, '愤怒的小鸟', {
+-            fontFamily: UI.FONT_FAMILY,
+-            fontSize: '64px',
+-            fill: '#000000',
+-            fontStyle: 'bold'
+-        });
+-        titleShadow.setOrigin(0.5);
+-        titleShadow.setAlpha(0.3);
+-        
+-        // 标题文字
+-        const title = this.add.text(width / 2, height / 3 - 55, '愤怒的小鸟', {
+-            fontFamily: UI.FONT_FAMILY,
+-            fontSize: '64px',
+-            fill: '#FF0000',
+-            fontStyle: 'bold',
+-            stroke: '#FFFFFF',
+-            strokeThickness: 6
+-        });
+-        title.setOrigin(0.5);
+-        
+-        // 标题弹跳动画
++        // 添加标题动画
+         this.tweens.add({
+             targets: title,
+-            y: height / 3 - 60,
++            y: 140,
+             duration: 1000,
+             yoyo: true,
+             repeat: -1,
+             ease: 'Sine.easeInOut'
+         });
+-    }
+-
+-    /**
+-     * 创建菜单按钮
+-     */
+-    createMenuButtons(width, height) {
+-        const buttonY = height / 2 + 50;
+-        const buttonSpacing = 80;
+         
+         // 开始游戏按钮
+-        this.createButton(
+-            width / 2,
+-            buttonY,
+-            '▶ 开始游戏',
+-            () => this.startGame()
+-        );
++        this.createButton(width / 2, 320, '开始游戏', () => {
++            this.scene.start(SCENE_KEYS.GAME, { level: 1 });
++        });
+         
+-        // 排行榜按钮
+-        this.createButton(
+-            width / 2,
+-            buttonY + buttonSpacing,
+-            '🏆 排行榜',
+-            () => this.showLeaderboard()
+-        );
++        // 小鸟装饰
++        this.createBirdDecorations();
++    }
++    
++    createBackground() {
++        const width = this.cameras.main.width;
++        const height = this.cameras.main.height;
+         
+-        // 设置按钮
+-        this.createButton(
+-            width / 2,
+-            buttonY + buttonSpacing * 2,
+-            '⚙ 设置',
+-            () => this.showSettings()
+-        );
++        // 天空渐变
++        const sky = this.add.graphics();
++        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
++        sky.fillRect(0, 0, width, height);
++        
++        // 云朵
++        for (let i = 0; i < 5; i++) {
++            const x = Phaser.Math.Between(100, width - 100);
++            const y = Phaser.Math.Between(50, 200);
++            this.createCloud(x, y);
++        }
++        
++        // 地面
++        const ground = this.add.graphics();
++        ground.fillStyle(COLORS.GROUND, 1);
++        ground.fillRect(0, height - 80, width, 80);
++        
++        // 草地装饰
++        ground.fillStyle(COLORS.GRASS, 1);
++        ground.fillRect(0, height - 80, width, 20);
+     }
+-
+-    /**
+-     * 创建按钮
+-     */
++    
++    createCloud(x, y) {
++        const cloud = this.add.graphics();
++        cloud.fillStyle(0xFFFFFF, 0.9);
++        cloud.fillCircle(0, 0, 30);
++        cloud.fillCircle(25, 0, 40);
++        cloud.fillCircle(50, 0, 30);
++        cloud.fillCircle(25, -20, 25);
++        cloud.setPosition(x, y);
++        
++        // 云朵移动动画
++        this.tweens.add({
++            targets: cloud,
++            x: x + 50,
++            duration: Phaser.Math.Between(3000, 6000),
++            yoyo: true,
++            repeat: -1,
++            ease: 'Sine.easeInOut'
++        });
++    }
++    
+     createButton(x, y, text, callback) {
+         const button = this.add.container(x, y);
+         
+         // 按钮背景
+         const bg = this.add.graphics();
+-        bg.fillStyle(0x4CAF50, 1);
++        bg.fillStyle(COLORS.UI_PRIMARY, 1);
+         bg.fillRoundedRect(-100, -30, 200, 60, 30);
+         
+         // 按钮文字
+-        const buttonText = this.add.text(0, 0, text, {
+-            fontFamily: UI.FONT_FAMILY,
+-            fontSize: '24px',
+-            fill: '#FFFFFF',
+-            fontStyle: 'bold'
+-        });
+-        buttonText.setOrigin(0.5);
++        const label = this.add.text(0, 0, text, {
++            fontSize: '28px',
++            fontFamily: 'Arial',
++            color: '#FFFFFF'
++        }).setOrigin(0.5);
+         
+-        button.add([bg, buttonText]);
+-        
+-        // 交互设置
++        button.add([bg, label]);
+         button.setSize(200, 60);
+         button.setInteractive({ useHandCursor: true });
+         
+         // 悬停效果
+         button.on('pointerover', () => {
+-            bg.clear();
+-            bg.fillStyle(0x66BB6A, 1);
+-            bg.fillRoundedRect(-100, -30, 200, 60, 30);
+             this.tweens.add({
+                 targets: button,
+                 scaleX: 1.05,
+@@ -215,9 +116,6 @@
+         });
+         
+         button.on('pointerout', () => {
+-            bg.clear();
+-            bg.fillStyle(0x4CAF50, 1);
+-            bg.fillRoundedRect(-100, -30, 200, 60, 30);
+             this.tweens.add({
+                 targets: button,
+                 scaleX: 1,
+@@ -226,120 +124,51 @@
+             });
+         });
+         
+-        button.on('pointerdown', () => {
+-            this.tweens.add({
+-                targets: button,
+-                scaleX: 0.95,
+-                scaleY: 0.95,
+-                duration: 50,
+-                yoyo: true,
+-                onComplete: callback
+-            });
+-        });
++        button.on('pointerdown', callback);
+         
+         return button;
+     }
+-
+-    /**
+-     * 创建装饰小鸟
+-     */
+-    createDecorativeBirds(width, height) {
+-        // 三只小鸟在标题上方
+-        const birdPositions = [
+-            { x: width / 2 - 80, y: height / 3 - 120, type: 'bird-blue' },
+-            { x: width / 2, y: height / 3 - 130, type: 'bird-red' },
+-            { x: width / 2 + 80, y: height / 3 - 120, type: 'bird-yellow' }
+-        ];
++    
++    createBirdDecorations() {
++        const width = this.cameras.main.width;
++        const height = this.cameras.main.height;
+         
+-        birdPositions.forEach((pos, index) => {
+-            const bird = this.add.image(pos.x, pos.y, pos.type);
+-            bird.setScale(0.8);
++        // 创建几只小鸟装饰
++        const birdColors = [COLORS.BIRD_RED, COLORS.BIRD_YELLOW, COLORS.BIRD_BLUE];
++        
++        for (let i = 0; i < 3; i++) {
++            const bird = this.add.graphics();
++            bird.fillStyle(birdColors[i], 1);
++            bird.fillCircle(0, 0, 25);
++            
++            // 眼睛
++            bird.fillStyle(0xFFFFFF, 1);
++            bird.fillCircle(-8, -5, 8);
++            bird.fillCircle(8, -5, 8);
++            bird.fillStyle(0x000000, 1);
++            bird.fillCircle(-6, -5, 4);
++            bird.fillCircle(10, -5, 4);
++            
++            // 眉毛
++            bird.lineStyle(3, 0x000000, 1);
++            bird.lineBetween(-15, -15, -2, -12);
++            bird.lineBetween(2, -12, 15, -15);
++            
++            // 嘴巴
++            bird.fillStyle(0xFFA500, 1);
++            bird.fillTriangle(20, 0, 35, 5, 35, -5);
++            
++            bird.setPosition(width / 2 - 100 + i * 100, height - 150);
+             
+             // 弹跳动画
+             this.tweens.add({
+                 targets: bird,
+-                y: pos.y - 10,
+-                duration: 500 + index * 200,
++                y: height - 160,
++                duration: 500 + i * 200,
+                 yoyo: true,
+                 repeat: -1,
+-                ease: 'Sine.easeInOut'
++                ease: 'Bounce.easeOut'
+             });
+-        });
+-    }
+-
+-    /**
+-     * 创建动画效果
+-     */
+-    createAnimations() {
+-        // 可以添加更多背景动画
+-    }
+-
+-    /**
+-     * 开始游戏
+-     */
+-    startGame() {
+-        console.log('🎮 MenuScene: 开始游戏');
+-        this.cameras.main.fadeOut(300, 0, 0, 0);
+-        this.cameras.main.once('camerafadeoutcomplete', () => {
+-            this.scene.start(GAME_CONSTANTS.SCENES.GAME, { level: 1 });
+-        });
+-    }
+-
+-    /**
+-     * 显示排行榜
+-     */
+-    showLeaderboard() {
+-        console.log('🏆 MenuScene: 显示排行榜');
+-        // TODO: 实现排行榜功能
+-        this.showMessage('排行榜功能开发中...');
+... (diff truncated)

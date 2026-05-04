@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Click Helper</title>
+<style>
+body{margin:0;background:#111;color:#eee;font-family:monospace}
+#log{padding:10px;font-size:12px;line-height:1.4;max-height:300px;overflow-y:auto}
+.err{color:#ff5a5f}.ok{color:#00a699}.warn{color:#ffb400}
+#game-container{width:100%;height:calc(100vh - 300px);display:flex;justify-content:center;align-items:center}
+canvas{border:1px solid red}
+</style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+var logEl=document.getElementById('log');
+function addLog(m,c){var d=document.createElement('div');if(c)d.className=c;d.textContent=m;logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight}
+window.onerror=function(m,u,l,co,e){addLog('ERR:'+m+' L'+l,'err');if(e&&e.stack)addLog(e.stack,'err')};
+window.addEventListener('unhandledrejection',function(e){addLog('PROMISE:'+(e.reason?e.reason.message||e.reason:e),'err')});
+</script>
+<script type="module">
+import Phaser from 'phaser';
+import{GameConfig}from'./src/config/game.config.js';
+import{SCENE_KEYS,COLORS,SIZES}from'./src/utils/constants.js';
+import{BootScene}from'./src/scenes/BootScene.js';
+import{PreloadScene}from'./src/scenes/PreloadScene.js';
+import{MenuScene}from'./src/scenes/MenuScene.js';
+import{GameScene}from'./src/scenes/GameScene.js';
+
+// Patch ALL scenes
+BootScene.prototype.create=function(){addLog('Boot.create -> Preload','ok');this.scene.start(SCENE_KEYS.PRELOAD)};
+PreloadScene.prototype.preload=function(){addLog('Preload.preload','ok')};
+PreloadScene.prototype.create=function(){addLog('Preload.create -> Menu','ok');this.scene.start(SCENE_KEYS.MENU)};
+
+var origMenuCreate=MenuScene.prototype.create;
+MenuScene.prototype.create=function(){
+  addLog('Menu.create START','ok');
+  try{
+    origMenuCreate.call(this);
+    addLog('Menu.create DONE - click Start Game in 2s','ok');
+    // Auto-click after 2 seconds
+    setTimeout(()=>{
+      addLog('Auto-clicking Start Game...','warn');
+      var canvas=document.querySelector('#game-container canvas');
+      if(!canvas){addLog('NO CANVAS','err');return}
+      var rect=canvas.getBoundingClientRect();
+      addLog('Canvas rect: '+rect.width+'x'+rect.height+' at ('+rect.left+','+rect.top+')','ok');
+      // Scale from canvas coords to game coords
+      var scaleX=GameConfig.width/rect.width;
+      var scaleY=GameConfig.height/rect.height;
+      // Start Game button is at (640, 280) in game coords
+      var clickX=rect.left+640/scaleX;
+      var clickY=rect.top+280/scaleY;
+      addLog('Click at page ('+clickX.toFixed(0)+','+clickY.toFixed(0)+')','warn');
+      canvas.dispatchEvent(new PointerEvent('pointerdown',{clientX:clickX,clientY:clickY,pointerId:1,isPrimary:true}));
+      setTimeout(()=>{
+        canvas.dispatchEvent(new PointerEvent('pointerup',{clientX:clickX,clientY:clickY,pointerId:1}));
+        addLog('Click done','ok');
+      },100);
+    },2000);
+  }catch(e){addLog('Menu ERR:'+e.message,'err');addLog(e.stack,'err')}
+};
+
+var origGSInit=GameScene.prototype.init;
+var origGSCreate=GameScene.prototype.create;
+GameScene.prototype.init=function(data){
+  addLog('GS.init level='+(data.level||1),'ok');
+  try{origGSInit.call(this,data);addLog('  state='+this.stateSystem.getState(),'ok')}
+  catch(e){addLog('GS.init ERR:'+e.message,'err');addLog(e.stack,'err')}
+};
+GameScene.prototype.create=function(){
+  addLog('GS.create START','ok');
+  try{
+    origGSCreate.call(this);
+    addLog('GS.create DONE','ok');
+    var em=this.entityManager;
+    if(em.slingshot)addLog('  lp:'+JSON.stringify(em.slingshot.launchPoint),'ok');
+    if(em.currentBird){
+      addLog('  bird at:'+em.currentBird.x+','+em.currentBird.y,'ok');
+      if(em.currentBird.body)addLog('  mass='+em.currentBird.body.mass+' frAir='+em.currentBird.body.frictionAir,'ok');
+    }
+    addLog('  state='+this.stateSystem.getState(),'ok');
+    addLog('  input.enabled='+this.inputSystem.enabled,'ok');
+
+    // Test: simulate drag to trigger trajectory
+    setTimeout(()=>{
+      addLog('=== AUTO DRAG TEST ===','warn');
+      var canvas=document.querySelector('#game-container canvas');
+      if(!canvas||!em.slingshot||!em.currentBird){addLog('Missing objects','err');return}
+      var rect=canvas.getBoundingClientRect();
+      var sx=GameConfig.width/rect.width;
+      var sy=GameConfig.height/rect.height;
+      var lp=em.slingshot.launchPoint;
+      addLog('launchPt:'+JSON.stringify(lp),'ok');
+      // Click near launchPoint
+      var px1=rect.left+lp.x/sx;
+      var py1=rect.top+lp.y/sy;
+      addLog('pointerdown at ('+px1.toFixed(0)+','+py1.toFixed(0)+')','warn');
+      canvas.dispatchEvent(new PointerEvent('pointerdown',{clientX:px1,clientY:py1,pointerId:1,isPrimary:true}));
+      // Drag to lower-left
+      var px2=rect.left+(lp.x-80)/sx;
+      var py2=rect.top+(lp.y+60)/sy;
+      addLog('pointermove to ('+px2.toFixed(0)+','+py2.toFixed(0)+')','warn');
+      canvas.dispatchEvent(new PointerEvent('pointermove',{clientX:px2,clientY:py2,pointerId:1}));
+      // Wait and check
+      setTimeout(()=>{
+        addLog('isDragging='+this.inputSystem.isDragging,'warn');
+        addLog('trajectoryDots='+this.inputSystem.trajectoryPoints.length,'warn');
+        // Release
+        canvas.dispatchEvent(new PointerEvent('pointerup',{clientX:px2,clientY:py2,pointerId:1}));
+        addLog('Released','ok');
+      },500);
+    },3000);
+  }catch(e){addLog('GS.create ERR:'+e.message,'err');addLog(e.stack,'err')}
+};
+
+var config={
+  type:Phaser.AUTO,width:GameConfig.width,height:GameConfig.height,
+  parent:'game-container',backgroundColor:'#87CEEB',
+  physics:{default:'matter',matter:{gravity:GameConfig.physics.gravity,debug:false}},
+  scene:[BootScene,PreloadScene,MenuScene,GameScene],
+  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH}
+};
+addLog('Creating game...','warn');
+window.game=new Phaser.Game(config);
+</script>
+</body>
+</html>

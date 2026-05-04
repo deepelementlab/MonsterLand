@@ -1,0 +1,232 @@
+/**
+ * 输入处理系统模块
+ * 处理弹弓拖拽、小鸟发射和轨迹预测的所有输入逻辑
+ */
+import { GameConfig } from '../config/game.config.js';
+import { SIZES, TIMING, VISUAL } from '../utils/constants.js';
+
+export class InputSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.isDragging = false;
+        this.trajectoryPoints = [];
+        this.enabled = false;
+        
+        // 回调函数
+        this.onLaunch = null;
+        this.onRoundEnd = null;
+        this.onDragStart = null;
+        this.onDragMove = null;
+        this.onDragCancel = null;
+        
+        // 外部引用（通过init设置）
+        this.getSlingshot = null;
+        this.getCurrentBird = null;
+        this.getGameState = null;
+    }
+    
+    /**
+     * 初始化输入系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        if (config.onLaunch) this.onLaunch = config.onLaunch;
+        if (config.onRoundEnd) this.onRoundEnd = config.onRoundEnd;
+        if (config.onDragStart) this.onDragStart = config.onDragStart;
+        if (config.onDragMove) this.onDragMove = config.onDragMove;
+        if (config.onDragCancel) this.onDragCancel = config.onDragCancel;
+        if (config.getSlingshot) this.getSlingshot = config.getSlingshot;
+        if (config.getCurrentBird) this.getCurrentBird = config.getCurrentBird;
+        if (config.getGameState) this.getGameState = config.getGameState;
+    }
+    
+    /**
+     * 设置输入监听
+     */
+    setup() {
+        this.scene.input.on('pointerdown', (pointer) => this.handlePointerDown(pointer));
+        this.scene.input.on('pointermove', (pointer) => this.handlePointerMove(pointer));
+        this.scene.input.on('pointerup', () => this.handlePointerUp());
+        this.enabled = true;
+    }
+    
+    enable() { this.enabled = true; }
+    disable() { this.enabled = false; this.isDragging = false; }
+    
+    /**
+     * 获取弹弓的发射参考点（叉口中心）
+     */
+    _getLaunchPoint(slingshot) {
+        // launchPoint 是弹弓叉口中心，也是小鸟停靠位置
+        return slingshot.launchPoint || { x: slingshot.x, y: slingshot.y };
+    }
+    
+    handlePointerDown(pointer) {
+        if (!this.enabled) return;
+        const gameState = this.getGameState ? this.getGameState() : null;
+        // READY: 等待拖拽发射; PLAYING: 小鸟飞行中
+        if (gameState !== 'playing' && gameState !== 'ready') return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird || currentBird.launched) return;
+        
+        // 以弹弓叉口中心为拖拽检测中心
+        const lp = this._getLaunchPoint(slingshot);
+        const distance = Phaser.Math.Distance.Between(
+            pointer.x, pointer.y, lp.x, lp.y
+        );
+        if (distance < SIZES.SLINGSHOT_ACTIVE_RADIUS) {
+            this.isDragging = true;
+            currentBird.startAiming();
+            if (this.onDragStart) this.onDragStart();
+        }
+    }
+    
+    handlePointerMove(pointer) {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        
+        // 以叉口中心为拖拽参考点
+        const lp = this._getLaunchPoint(slingshot);
+        const dx = lp.x - pointer.x;
+        const dy = lp.y - pointer.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = GameConfig.slingshot.maxDragDistance;
+        
+        let finalX, finalY;
+        if (distance > maxDist) {
+            const ratio = maxDist / distance;
+            finalX = lp.x - dx * ratio;
+            finalY = lp.y - dy * ratio;
+        } else {
+            finalX = pointer.x;
+            finalY = pointer.y;
+        }
+        
+        currentBird.setPosition(finalX, finalY);
+        slingshot.updateBand(finalX, finalY);
+        // 用鸟的实际位置计算发射向量，与handlePointerUp一致
+        this.showTrajectory(lp.x - finalX, lp.y - finalY);
+        if (this.onDragMove) this.onDragMove(finalX, finalY);
+    }
+    
+    handlePointerUp() {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        
+        this.isDragging = false;
+        
+        // 清除之前的回合结束定时器，防止并发
+        if (this._roundEndTimer) {
+            this._roundEndTimer.remove();
+            this._roundEndTimer = null;
+        }
+        
+        // 以叉口中心为发射参考点
+        const lp = this._getLaunchPoint(slingshot);
+        const dx = lp.x - currentBird.x;
+        const dy = lp.y - currentBird.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < GameConfig.slingshot.minDragDistance) {
+            // 拖拽距离太短，回到弹弓叉口
+            currentBird.moveToSlingshot(lp.x, lp.y);
+            slingshot.resetBand();
+            this.hideTrajectory();
+            if (this.onDragCancel) this.onDragCancel();
+            return;
+        }
+        
+        const power = GameConfig.slingshot.launchPower;
+        currentBird.launch(dx * power, dy * power);
+        slingshot.release();
+        this.hideTrajectory();
+        if (this.onLaunch) this.onLaunch(currentBird);
+        
+        this._roundEndTimer = this.scene.time.delayedCall(TIMING.NEXT_BIRD_DELAY, () => {
+            this._roundEndTimer = null;
+            if (this.onRoundEnd) this.onRoundEnd();
+        });
+    }
+    
+    showTrajectory(dx, dy) {
+        this.hideTrajectory();
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!currentBird) return;
+        
+        const power = GameConfig.slingshot.launchPower;
+        const launchVx = dx * power;
+        const launchVy = dy * power;
+        
+        // 完全复现 Matter.js Body.update 的 Verlet 积分逻辑
+        const engine = this.scene.matter.world.engine;
+        const body = currentBird.body;
+        const gScale = engine.gravity.scale || 0.001;
+        const gY = engine.gravity.y;
+        const mass = body.mass || 1;
+        const frictionAir = body.frictionAir || 0.01;
+        // Matter.js delta = engine.timing.delta 或默认 16.667
+        const delta = (engine.timing && engine.timing.delta) || (1000 / 60);
+        const timeScale = (engine.timing && engine.timing.timeScale) || 1;
+        const correction = 1; // 默认无修正
+        const deltaTime = delta * timeScale * correction;
+        const deltaTimeSquared = deltaTime * deltaTime;
+        
+        // 每步重力力 = mass * gravity.y * gravity.scale
+        const gravForceY = mass * gY * gScale;
+        // 空气阻力衰减因子
+        const frictionAirFactor = 1 - frictionAir * deltaTime;
+        
+        // 逐帧模拟 Verlet 积分
+        const MAX_FRAMES = 180;
+        const DOT_INTERVAL = 4;
+        const camWidth = this.scene.cameras.main.width;
+        const camHeight = this.scene.cameras.main.height;
+        
+        let px = currentBird.x;
+        let py = currentBird.y;
+        let vx = launchVx;
+        let vy = launchVy;
+        
+        for (let frame = 1; frame <= MAX_FRAMES; frame++) {
+            // 与 Matter.js Body.update 完全一致的公式
+            // velocity = (pos - prevPos) * frictionAir + force/mass * delta²
+            // 但我们直接用 velocity 模拟：
+            //   newVel = vel * frictionAirFactor + gravForce / mass * delta²
+            const newVx = vx * frictionAirFactor;
+            const newVy = vy * frictionAirFactor + (gravForceY / mass) * deltaTimeSquared;
+            px += newVx;
+            py += newVy;
+            vx = newVx;
+            vy = newVy;
+            
+            if (px > camWidth + 50 || px < -50 || py > camHeight || py < -100) break;
+            
+            if (frame % DOT_INTERVAL === 0) {
+                const dotIdx = frame / DOT_INTERVAL;
+                // 提高alpha并设置depth，确保在所有游戏对象之上
+                const alpha = Math.max(0.25, 0.9 - dotIdx * 0.04);
+                const dot = this.scene.add.circle(px, py, VISUAL.TRAJECTORY_DOT_RADIUS, 0xFFFFFF, alpha);
+                dot.setDepth(50);  // 确保在所有游戏对象之上
+                this.trajectoryPoints.push(dot);
+            }
+        }
+    }
+    
+    hideTrajectory() {
+        this.trajectoryPoints.forEach(dot => dot.destroy());
+        this.trajectoryPoints = [];
+    }
+    
+    destroy() {
+        this.hideTrajectory();
+        this.scene.input.off('pointerdown');
+        this.scene.input.off('pointermove');
+        this.scene.input.off('pointerup');
+        this.enabled = false;
+    }
+}

@@ -1,0 +1,279 @@
+/**
+ * UI系统模块
+ * 处理所有UI界面逻辑，包括游戏界面、结果界面、分数弹窗和UI状态更新
+ */
+import { COLORS, POSITIONS, TEXT_STYLES, GAME_STATES } from '../utils/constants.js';
+
+export class UISystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.currentLevel = 1;
+        this.levelData = null;
+        
+        // UI元素引用
+        this.scoreText = null;
+        this.birdQueueText = null;
+        this.pauseButton = null;
+        this.levelText = null;
+        
+        // 结果界面元素
+        this.resultOverlay = null;
+        this.resultTitle = null;
+        this.resultScoreText = null;
+        this.resultStarsText = null;
+        this.resultButtons = [];
+        
+        // 暂停覆盖层
+        this.pauseOverlayContainer = null;
+        
+        // 弹窗元素
+        this.scorePopups = [];
+    }
+    
+    /**
+     * 初始化UI系统
+     */
+    init(config = {}) {
+        if (config.level) this.currentLevel = config.level;
+        if (config.levelData) this.levelData = config.levelData;
+    }
+    
+    /**
+     * 创建游戏主界面
+     */
+    createGameUI() {
+        const width = this.scene.cameras.main.width;
+        
+        // 暂停按钮
+        this.pauseButton = this.scene.add.text(
+            POSITIONS.PAUSE_BUTTON_X,
+            POSITIONS.PAUSE_BUTTON_Y,
+            '⏸',
+            TEXT_STYLES.PAUSE_BUTTON
+        )
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+            if (this.scene.pauseGame) this.scene.pauseGame();
+        });
+        
+        // 关卡标题
+        this.levelText = this.scene.add.text(
+            width / 2,
+            POSITIONS.LEVEL_TEXT_Y,
+            `关卡 ${this.currentLevel}`,
+            TEXT_STYLES.LEVEL_TITLE
+        ).setOrigin(0.5);
+        
+        // 分数显示
+        this.scoreText = this.scene.add.text(
+            POSITIONS.SCORE_TEXT_X,
+            POSITIONS.SCORE_TEXT_Y,
+            '⭐ 0',
+            TEXT_STYLES.SCORE
+        ).setOrigin(0.5);
+    }
+    
+    /**
+     * 更新分数显示
+     */
+    updateScore(score) {
+        if (this.scoreText) {
+            this.scoreText.setText(`⭐ ${score}`);
+        }
+    }
+    
+    /**
+     * 更新小鸟队列显示
+     */
+    updateBirdQueue(count) {
+        if (this.birdQueueText) this.birdQueueText.destroy();
+        this.birdQueueText = this.scene.add.text(
+            POSITIONS.BIRD_QUEUE_X,
+            POSITIONS.BIRD_QUEUE_Y,
+            `🐦 x ${count}`,
+            TEXT_STYLES.BIRD_QUEUE
+        );
+    }
+    
+    /**
+     * 显示得分弹窗
+     */
+    showScorePopup(points, x, y) {
+        const popup = this.scene.add.text(x, y, `+${points}`, TEXT_STYLES.SCORE_POPUP)
+            .setOrigin(0.5);
+        
+        this.scene.tweens.add({
+            targets: popup,
+            y: y - 50,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+        
+        this.scorePopups.push(popup);
+    }
+    
+    /**
+     * 显示结果界面
+     * @param {string} resultType - 'win' 或 'fail'
+     * @param {number} score - 最终得分
+     * @param {number} stars - 星级（胜利时）
+     * @param {Object} callbacks - 回调函数集合
+     */
+    showResult(resultType, score, stars, callbacks = {}) {
+        const width = this.scene.cameras.main.width;
+        const height = this.scene.cameras.main.height;
+        
+        this.clearResultUI();
+        
+        // 半透明覆盖层
+        this.resultOverlay = this.scene.add.rectangle(
+            width / 2, height / 2, width, height, 0x000000, 0.5
+        );
+        
+        // 标题
+        const titleText = resultType === 'win' ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢';
+        const titleColor = resultType === 'win' ? '#FFD700' : '#FF6B6B';
+        this.resultTitle = this.scene.add.text(
+            width / 2, height / 2 - 100, titleText,
+            { fontSize: '48px', fontFamily: 'Arial', color: titleColor }
+        ).setOrigin(0.5);
+        
+        // 得分
+        this.resultScoreText = this.scene.add.text(
+            width / 2, height / 2 - 20, `得分: ${score}`,
+            { fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF' }
+        ).setOrigin(0.5);
+        
+        // 星级（仅胜利时）
+        if (resultType === 'win' && stars) {
+            this.resultStarsText = this.scene.add.text(
+                width / 2, height / 2 + 30,
+                '⭐'.repeat(stars),
+                { fontSize: '40px' }
+            ).setOrigin(0.5);
+        }
+        
+        // 按钮
+        let btnY = height / 2 + 100;
+        
+        // 重玩按钮
+        this.createResultButton(width / 2, btnY, '重玩', '#4CAF50', callbacks.onRetry);
+        btnY += 60;
+        
+        // 下一关按钮（仅胜利且有下一关时）
+        if (resultType === 'win' && callbacks.hasNextLevel) {
+            this.createResultButton(width / 2, btnY, '下一关', '#2196F3', callbacks.onNext);
+            btnY += 60;
+        }
+        
+        // 主菜单按钮
+        this.createResultButton(width / 2, btnY, '主菜单', '#FF5722', callbacks.onMenu);
+    }
+    
+    /**
+     * 创建结果按钮
+     */
+    createResultButton(x, y, text, color, callback) {
+        const btn = this.scene.add.text(x, y, text, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: color, padding: { x: 20, y: 10 }
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+        
+        if (callback) btn.on('pointerdown', callback);
+        
+        // 悬停效果
+        btn.on('pointerover', () => btn.setAlpha(0.8));
+        btn.on('pointerout', () => btn.setAlpha(1));
+        
+        this.resultButtons.push(btn);
+        return btn;
+    }
+    
+    /**
+     * 显示暂停覆盖层
+     * @param {Object} callbacks - 回调函数集合
+     */
+    showPauseOverlay(callbacks = {}) {
+        const w = this.scene.cameras.main.width;
+        const h = this.scene.cameras.main.height;
+        
+        this.pauseOverlayContainer = this.scene.add.container(0, 0).setDepth(100);
+        
+        // 半透明背景
+        this.pauseOverlayContainer.add(
+            this.scene.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.5)
+        );
+        
+        // 标题
+        this.pauseOverlayContainer.add(
+            this.scene.add.text(w / 2, h / 2 - 80, '⏸ 暂停', {
+                fontSize: '48px', fontFamily: 'Arial', color: '#FFFFFF'
+            }).setOrigin(0.5)
+        );
+        
+        // 继续按钮
+        const resumeBtn = this.scene.add.text(w / 2, h / 2 + 10, '继续游戏', {
+            fontSize: '28px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#4CAF50', padding: { x: 30, y: 12 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        resumeBtn.on('pointerdown', callbacks.onResume);
+        this.pauseOverlayContainer.add(resumeBtn);
+        
+        // 重新开始按钮
+        const retryBtn = this.scene.add.text(w / 2, h / 2 + 70, '重新开始', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#FF9800', padding: { x: 25, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        retryBtn.on('pointerdown', callbacks.onRetry);
+        this.pauseOverlayContainer.add(retryBtn);
+        
+        // 返回菜单按钮
+        const menuBtn = this.scene.add.text(w / 2, h / 2 + 125, '返回菜单', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#F44336', padding: { x: 25, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        menuBtn.on('pointerdown', callbacks.onMenu);
+        this.pauseOverlayContainer.add(menuBtn);
+    }
+    
+    /**
+     * 隐藏暂停覆盖层
+     */
+    hidePauseOverlay() {
+        if (this.pauseOverlayContainer) {
+            this.pauseOverlayContainer.destroy();
+            this.pauseOverlayContainer = null;
+        }
+    }
+    
+    /**
+     * 清理结果界面
+     */
+    clearResultUI() {
+        if (this.resultOverlay) { this.resultOverlay.destroy(); this.resultOverlay = null; }
+        if (this.resultTitle) { this.resultTitle.destroy(); this.resultTitle = null; }
+        if (this.resultScoreText) { this.resultScoreText.destroy(); this.resultScoreText = null; }
+        if (this.resultStarsText) { this.resultStarsText.destroy(); this.resultStarsText = null; }
+        this.resultButtons.forEach(btn => { if (btn) btn.destroy(); });
+        this.resultButtons = [];
+    }
+
+    /**
+     * 销毁UI系统
+     */
+    destroy() {
+        this.clearResultUI();
+        this.hidePauseOverlay();
+        if (this.scoreText) { this.scoreText.destroy(); this.scoreText = null; }
+        if (this.birdQueueText) { this.birdQueueText.destroy(); this.birdQueueText = null; }
+        if (this.pauseButton) { this.pauseButton.destroy(); this.pauseButton = null; }
+        if (this.levelText) { this.levelText.destroy(); this.levelText = null; }
+        this.scorePopups.forEach(function(p) { if (p && p.destroy) p.destroy(); });
+        this.scorePopups = [];
+    }
+}

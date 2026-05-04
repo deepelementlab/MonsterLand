@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Game State Inspector</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { padding: 10px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .err { color: #ff5a5f; } .ok { color: #00a699; } .warn { color: #ffb400; }
+        #game-container { width: 100%; height: calc(100vh - 410px); display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    window.onerror = function(msg, url, line, col, err) {
+        addLog('UNCAUGHT: ' + msg + ' L' + line, 'err');
+        if (err && err.stack) addLog(err.stack, 'err');
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        addLog('PROMISE: ' + (e.reason ? e.reason.message || e.reason : e), 'err');
+        if (e.reason && e.reason.stack) addLog(e.reason.stack, 'err');
+    });
+    
+    // Poll game state every second
+    setInterval(() => {
+        const game = window.game;
+        if (!game) return;
+        const scenes = game.scene.scenes;
+        scenes.forEach(s => {
+            const key = s.sys.settings.key;
+            const status = s.sys.settings.active ? 'ACTIVE' : (s.sys.settings.visible ? 'VISIBLE' : 'SLEEPING');
+            addLog('Scene: ' + key + ' = ' + status);
+        });
+        
+        // Check canvas
+        const canvas = game.canvas;
+        if (canvas) {
+            addLog('Canvas: ' + canvas.width + 'x' + canvas.height);
+        }
+    }, 3000);
+</script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

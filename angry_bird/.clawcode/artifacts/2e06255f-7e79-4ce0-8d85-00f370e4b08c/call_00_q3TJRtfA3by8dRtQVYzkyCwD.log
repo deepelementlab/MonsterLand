@@ -1,0 +1,535 @@
+--- src/systems/UISystem.js L1-200 (200 lines) ---
+/**
+ * UI系统模块
+ * 处理所有UI界面逻辑，包括游戏界面、结果界面、分数弹窗和UI状态更新
+ */
+import { COLORS, POSITIONS, TEXT_STYLES, GAME_STATES } from '../utils/constants.js';
+
+export class UISystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.currentLevel = 1;
+        this.levelData = null;
+        
+        // UI元素引用
+        this.scoreText = null;
+        this.birdQueueText = null;
+        this.pauseButton = null;
+        this.levelText = null;
+        
+        // 结果界面元素
+        this.resultOverlay = null;
+        this.resultTitle = null;
+        this.resultScoreText = null;
+        this.resultStarsText = null;
+        this.resultButtons = [];
+        
+        // 暂停覆盖层
+        this.pauseOverlayContainer = null;
+        
+        // 弹窗元素
+        this.scorePopups = [];
+    }
+    
+    /**
+     * 初始化UI系统
+     */
+    init(config = {}) {
+        if (config.level) this.currentLevel = config.level;
+        if (config.levelData) this.levelData = config.levelData;
+    }
+    
+    /**
+     * 创建游戏主界面
+     */
+    createGameUI() {
+        const width = this.scene.cameras.main.width;
+        
+        // 暂停按钮
+        this.pauseButton = this.scene.add.text(
+            POSITIONS.PAUSE_BUTTON_X,
+            POSITIONS.PAUSE_BUTTON_Y,
+            '⏸',
+            TEXT_STYLES.PAUSE_BUTTON
+        )
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+            if (this.scene.pauseGame) this.scene.pauseGame();
+        });
+        
+        // 关卡标题
+        this.levelText = this.scene.add.text(
+            width / 2,
+            POSITIONS.LEVEL_TEXT_Y,
+            `关卡 ${this.currentLevel}`,
+            TEXT_STYLES.LEVEL_TITLE
+        ).setOrigin(0.5);
+        
+        // 分数显示
+        this.scoreText = this.scene.add.text(
+            POSITIONS.SCORE_TEXT_X,
+            POSITIONS.SCORE_TEXT_Y,
+            '⭐ 0',
+            TEXT_STYLES.SCORE
+        ).setOrigin(0.5);
+    }
+    
+    /**
+     * 更新分数显示
+     */
+    updateScore(score) {
+        if (this.scoreText) {
+            this.scoreText.setText(`⭐ ${score}`);
+        }
+    }
+    
+    /**
+     * 更新小鸟队列显示
+     */
+    updateBirdQueue(count) {
+        if (this.birdQueueText) this.birdQueueText.destroy();
+        this.birdQueueText = this.scene.add.text(
+            POSITIONS.BIRD_QUEUE_X,
+            POSITIONS.BIRD_QUEUE_Y,
+            `🐦 x ${count}`,
+            TEXT_STYLES.BIRD_QUEUE
+        );
+    }
+    
+    /**
+     * 显示得分弹窗
+     */
+    showScorePopup(points, x, y) {
+        const popup = this.scene.add.text(x, y, `+${points}`, TEXT_STYLES.SCORE_POPUP)
+            .setOrigin(0.5);
+        
+        this.scene.tweens.add({
+            targets: popup,
+            y: y - 50,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+        
+        this.scorePopups.push(popup);
+    }
+    
+    /**
+     * 显示结果界面
+     * @param {string} resultType - 'win' 或 'fail'
+     * @param {number} score - 最终得分
+     * @param {number} stars - 星级（胜利时）
+     * @param {Object} callbacks - 回调函数集合
+     */
+    showResult(resultType, score, stars, callbacks = {}) {
+        const width = this.scene.cameras.main.width;
+        const height = this.scene.cameras.main.height;
+        
+        this.clearResultUI();
+        
+        // 半透明覆盖层
+        this.resultOverlay = this.scene.add.rectangle(
+            width / 2, height / 2, width, height, 0x000000, 0.5
+        );
+        
+        // 标题
+        const titleText = resultType === 'win' ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢';
+        const titleColor = resultType === 'win' ? '#FFD700' : '#FF6B6B';
+        this.resultTitle = this.scene.add.text(
+            width / 2, height / 2 - 100, titleText,
+            { fontSize: '48px', fontFamily: 'Arial', color: titleColor }
+        ).setOrigin(0.5);
+        
+        // 得分
+        this.resultScoreText = this.scene.add.text(
+            width / 2, height / 2 - 20, `得分: ${score}`,
+            { fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF' }
+        ).setOrigin(0.5);
+        
+        // 星级（仅胜利时）
+        if (resultType === 'win' && stars) {
+            this.resultStarsText = this.scene.add.text(
+                width / 2, height / 2 + 30,
+                '⭐'.repeat(stars),
+                { fontSize: '40px' }
+            ).setOrigin(0.5);
+        }
+        
+        // 按钮
+        let btnY = height / 2 + 100;
+        
+        // 重玩按钮
+        this.createResultButton(width / 2, btnY, '重玩', '#4CAF50', callbacks.onRetry);
+        btnY += 60;
+        
+        // 下一关按钮（仅胜利且有下一关时）
+        if (resultType === 'win' && callbacks.hasNextLevel) {
+            this.createResultButton(width / 2, btnY, '下一关', '#2196F3', callbacks.onNext);
+            btnY += 60;
+        }
+        
+        // 主菜单按钮
+        this.createResultButton(width / 2, btnY, '主菜单', '#FF5722', callbacks.onMenu);
+    }
+    
+    /**
+     * 创建结果按钮
+     */
+    createResultButton(x, y, text, color, callback) {
+        const btn = this.scene.add.text(x, y, text, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: color, padding: { x: 20, y: 10 }
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+        
+        if (callback) btn.on('pointerdown', callback);
+        
+        // 悬停效果
+        btn.on('pointerover', () => btn.setAlpha(0.8));
+        btn.on('pointerout', () => btn.setAlpha(1));
+        
+        this.resultButtons.push(btn);
+        return btn;
+    }
+    
+    /**
+     * 显示暂停覆盖层
+     * @param {Object} callbacks - 回调函数集合
+     */
+
+--- src/utils/constants.js L1-178 (178 lines) ---
+// 游戏常量
+
+// 颜色常量
+export const COLORS = {
+    // 角色
+    BIRD_RED: 0xFF0000,
+    BIRD_YELLOW: 0xFFD700,
+    BIRD_BLUE: 0x1E90FF,
+    PIG: 0x90EE90,
+    
+    // 材质
+    WOOD: 0x8B4513,
+    STONE: 0x708090,
+    GLASS: 0xADD8E6,
+    
+    // 环境
+    SKY_TOP: 0x87CEEB,
+    SKY_BOTTOM: 0xB0E0E6,
+    GROUND: 0x228B22,
+    GRASS: 0x32CD32,
+    
+    // UI
+    UI_PRIMARY: 0x4CAF50,
+    UI_DANGER: 0xF44336,
+    UI_ACCENT: 0xFFC107,
+    UI_TEXT: 0x333333,
+    UI_WHITE: 0xFFFFFF
+};
+
+// 位置常量
+export const POSITIONS = {
+    // 游戏区域
+    SLINGSHOT_X: 200,
+    SLINGSHOT_Y: 550,
+    
+    // 小鸟队列起始位置
+    BIRD_START_X: 100,
+    BIRD_START_Y: 650,
+    BIRD_SPACING: 40,  // 小鸟之间的间距
+    
+    // UI位置
+    PAUSE_BUTTON_X: 50,
+    PAUSE_BUTTON_Y: 30,
+    LEVEL_TEXT_X: 640,  // 屏幕中心(1280/2)
+    LEVEL_TEXT_Y: 30,
+    SCORE_TEXT_X: 1230, // 1280-50
+    SCORE_TEXT_Y: 30,
+    BIRD_QUEUE_X: 50,
+    BIRD_QUEUE_Y: 680,
+    
+    // 结果界面
+    RESULT_TITLE_Y_OFFSET: -100,
+    RESULT_SCORE_Y_OFFSET: -20,
+    RESULT_STARS_Y_OFFSET: 30,
+    RESULT_BUTTON_Y_START: 100,
+    RESULT_BUTTON_SPACING: 60
+};
+
+// 尺寸常量
+export const SIZES = {
+    // 游戏区域
+    GROUND_HEIGHT: 80,
+    GRASS_HEIGHT: 15,
+    
+    // 物理体
+    GROUND_WIDTH_PADDING: 0,  // 地面宽度会动态计算为屏幕宽度
+    
+    // 背景元素
+    HILL_HEIGHT_REDUCTION: 150,  // 山丘比地面高多少
+    CLOUD_RADIUS_SMALL: 25,
+    CLOUD_RADIUS_LARGE: 35,
+    CLOUD_SPACING: 20,
+    
+    // 交互区域
+    SLINGSHOT_ACTIVE_RADIUS: 80,
+    MIN_DRAG_DISTANCE: 30,
+    MAX_DRAG_DISTANCE: 150
+};
+
+// 视觉效果常量
+export const VISUAL = {
+    // 云朵
+    CLOUD_COUNT: 4,
+    CLOUD_MIN_X: 100,
+    CLOUD_MAX_X: 1100,
+    CLOUD_MIN_Y: 50,
+    CLOUD_MAX_Y: 200,
+    CLOUD_ALPHA: 0.8,
+    
+    // 山丘
+    HILL_ALPHA: 0.5,
+    HILL_COLOR: 0x6B8E23,
+    
+    // 弹道预测
+    TRAJECTORY_POINTS: 10,
+    TRAJECTORY_STEP: 0.1,  // 时间步长
+    TRAJECTORY_DOT_RADIUS: 4,
+    TRAJECTORY_DOT_ALPHA: 0.5,
+    
+    // 得分弹出
+    POPUP_ANIMATION_DURATION: 800,
+    POPUP_MOVE_DISTANCE: 50
+};
+
+// 碰撞阈值常量
+export const COLLISION = {
+    PIG_DAMAGE_THRESHOLD: 3,
+    BLOCK_DAMAGE_THRESHOLD: 2,
+    PIG_DAMAGE_MULTIPLIER: 10,
+    BLOCK_DAMAGE_MULTIPLIER: 5,
+    BIRD_DAMAGE_THRESHOLD: 10,
+    BIRD_DESTROY_THRESHOLD: 50,
+    SLEEP_SPEED_THRESHOLD: 0.5
+};
+
+export const TIMING = {
+    // 游戏逻辑
+    ROUND_END_CHECK_DELAY: 500,  // 毫秒
+    NEXT_BIRD_DELAY: 3000,        // 发射后等待检查
+    
+    // 动画
+    FADE_DURATION: 800
+};
+
+// 碰撞分类
+export const COLLISION_CATEGORIES = {
+    BIRD: 0x0001,
+    PIG: 0x0002,
+    BLOCK: 0x0004,
+    GROUND: 0x0008,
+    SLINGSHOT: 0x0010
+};
+
+// 游戏状态
+export const GAME_STATES = {
+    MENU: 'menu',
+    PLAYING: 'playing',
+    PAUSED: 'paused',
+    WIN: 'win',
+    LOSE: 'lose'
+};
+
+// 小鸟类型
+export const BIRD_TYPES = {
+    RED: 'red',
+    YELLOW: 'yellow',
+    BLUE: 'blue'
+};
+
+// 材质类型
+export const MATERIAL_TYPES = {
+    WOOD: 'wood',
+    STONE: 'stone',
+    GLASS: 'glass'
+};
+
+// 场景键名
+export const SCENE_KEYS = {
+    BOOT: 'BootScene',
+    PRELOAD: 'PreloadScene',
+    MENU: 'MenuScene',
+    LEVEL_SELECT: 'LevelSelectScene',
+    GAME: 'GameScene',
+    RESULT: 'ResultScene'
+};
+
+// 文本样式常量
+export const TEXT_STYLES = {
+    PAUSE_BUTTON: { fontSize: '32px' },
+    LEVEL_TITLE: { fontSize: '28px', fontFamily: 'Arial', color: '#333333' },
+    SCORE: { fontSize: '28px', fontFamily: 'Arial', color: '#333333' },
+    BIRD_QUEUE: { fontSize: '24px', fontFamily: 'Arial', color: '#333333' },
+    RESULT_TITLE: { fontSize: '48px', fontFamily: 'Arial' },
+    RESULT_SCORE: { fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF' },
+    RESULT_STARS: { fontSize: '40px' },
+    RESULT_BUTTON: { fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF', backgroundColor: '#4CAF50', padding: { x: 20, y: 10 } },
+    SCORE_POPUP: { fontSize: '24px', fontFamily: 'Arial', color: '#FFD700', stroke: '#000000', strokeThickness: 3 }
+};
+
+--- src/systems/GameStateSystem.js L1-50 (50 lines) ---
+/**
+ * 游戏状态管理系统模块
+ * 管理游戏状态流转、得分计算、胜利/失败判断和关卡进度保存
+ */
+import { GAME_STATES } from '../utils/constants.js';
+import { GameConfig, LevelsConfig } from '../config/game.config.js';
+
+export class GameStateSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.gameState = GAME_STATES.PLAYING;
+        this.score = 0;
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.currentBirdIndex = 0;
+        
+        // 回调函数
+        this.onWin = null;
+        this.onLose = null;
+        this.onNextBird = null;
+    }
+    
+    /**
+     * 初始化状态系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        this.currentLevel = config.level || 1;
+        this.levelData = LevelsConfig[this.currentLevel - 1];
+        this.score = 0;
+        this.currentBirdIndex = 0;
+        this.gameState = GAME_STATES.PLAYING;
+        
+        if (config.onWin) this.onWin = config.onWin;
+        if (config.onLose) this.onLose = config.onLose;
+        if (config.onNextBird) this.onNextBird = config.onNextBird;
+    }
+    
+    /**
+     * 获取当前游戏状态
+     */
+    getState() { return this.gameState; }
+    
+    /**
+     * 检查是否正在游戏
+     */
+    isPlaying() { return this.gameState === GAME_STATES.PLAYING; }
+    
+    /**
+     * 添加分数
+
+--- src/scenes/MenuScene.js L1-100 (100 lines) ---
+import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+import { LevelsConfig } from '../config/game.config.js';
+
+export class MenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.MENU });
+    }
+
+    create() {
+        this.createBackground();
+        this.createTitle();
+        this.createMenuButtons();
+        this.createBirdDecorations();
+    }
+
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        for (let i = 0; i < 5; i++) {
+            this.createCloud(Phaser.Math.Between(100, width - 100), Phaser.Math.Between(50, 200));
+        }
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 20);
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 60, width, 60);
+    }
+
+    createCloud(x, y) {
+        const cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.9);
+        cloud.fillCircle(0, 0, 30);
+        cloud.fillCircle(25, 0, 40);
+        cloud.fillCircle(50, 0, 30);
+        cloud.fillCircle(25, -20, 25);
+        cloud.setPosition(x, y);
+        this.tweens.add({
+            targets: cloud, x: x + 50,
+            duration: Phaser.Math.Between(3000, 6000),
+            yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+
+    createTitle() {
+        const width = this.cameras.main.width;
+        this.titleText = this.add.text(width / 2, 130, '\u6124\u6012\u7684\u5c0f\u9e1f', {
+            fontSize: '64px', fontFamily: 'Arial Black',
+            color: '#FF0000', stroke: '#5D0000', strokeThickness: 8
+        }).setOrigin(0.5);
+        this.tweens.add({
+            targets: this.titleText, y: 120,
+            duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+        this.add.text(width / 2, 190, 'Angry Birds', {
+            fontSize: '24px', fontFamily: 'Arial',
+            color: '#FFFFFF', stroke: '#333333', strokeThickness: 3
+        }).setOrigin(0.5);
+    }
+
+    createMenuButtons() {
+        const width = this.cameras.main.width;
+        this.menuContainer = this.add.container(0, 0);
+        this.menuContainer.add(this.createButton(width / 2, 280, '\ud83c\udfae \u5f00\u59cb\u6e38\u620f', '#4CAF50', () => {
+            this.scene.start(SCENE_KEYS.GAME, { level: 1 });
+        }));
+        this.menuContainer.add(this.createButton(width / 2, 350, '\ud83d\udccb \u5173\u5361\u9009\u62e9', '#2196F3', () => {
+            this.showLevelSelectPanel();
+        }));
+        this.menuContainer.add(this.createButton(width / 2, 420, '\ud83d\udcd6 \u64cd\u4f5c\u8bf4\u660e', '#FF9800', () => {
+            this.showHelpPanel();
+        }));
+    }
+
+    createButton(x, y, text, bgColor, callback) {
+        const btn = this.add.text(x, y, text, {
+            fontSize: '26px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: bgColor, padding: { x: 25, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        btn.on('pointerover', () => btn.setScale(1.08));
+        btn.on('pointerout', () => btn.setScale(1));
+        btn.on('pointerdown', callback);
+        return btn;
+    }
+
+    _parseProgress(progress) {
+        let unlocked = 1;
+        for (let i = 1; i <= LevelsConfig.length; i++) {
+            if (progress[i] !== undefined) unlocked = i + 1;
+        }
+        if (unlocked > LevelsConfig.length) unlocked = LevelsConfig.length;
+        return unlocked;
+    }
+
+    showLevelSelectPanel() {
+        if (this.levelPanel) return;
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;

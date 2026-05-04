@@ -1,0 +1,226 @@
+import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+import { LevelsConfig } from '../config/game.config.js';
+
+export class MenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.MENU });
+    }
+
+    create() {
+        this.createBackground();
+        this.createTitle();
+        this.createMenuButtons();
+        this.createBirdDecorations();
+    }
+
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        for (let i = 0; i < 5; i++) {
+            this.createCloud(Phaser.Math.Between(100, width - 100), Phaser.Math.Between(50, 200));
+        }
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 20);
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 60, width, 60);
+    }
+
+    createCloud(x, y) {
+        const cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.9);
+        cloud.fillCircle(0, 0, 30);
+        cloud.fillCircle(25, 0, 40);
+        cloud.fillCircle(50, 0, 30);
+        cloud.fillCircle(25, -20, 25);
+        cloud.setPosition(x, y);
+        this.tweens.add({
+            targets: cloud, x: x + 50,
+            duration: Phaser.Math.Between(3000, 6000),
+            yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+
+    createTitle() {
+        const width = this.cameras.main.width;
+        this.titleText = this.add.text(width / 2, 130, '\u6124\u6012\u7684\u5c0f\u9e1f', {
+            fontSize: '64px', fontFamily: 'Arial Black',
+            color: '#FF0000', stroke: '#5D0000', strokeThickness: 8
+        }).setOrigin(0.5);
+        this.tweens.add({
+            targets: this.titleText, y: 120,
+            duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+        this.add.text(width / 2, 190, 'Angry Birds', {
+            fontSize: '24px', fontFamily: 'Arial',
+            color: '#FFFFFF', stroke: '#333333', strokeThickness: 3
+        }).setOrigin(0.5);
+    }
+
+    createMenuButtons() {
+        const width = this.cameras.main.width;
+        this.menuContainer = this.add.container(0, 0);
+        this.menuContainer.add(this.createButton(width / 2, 280, '\ud83c\udfae \u5f00\u59cb\u6e38\u620f', '#4CAF50', () => {
+            this.scene.start(SCENE_KEYS.GAME, { level: 1 });
+        }));
+        this.menuContainer.add(this.createButton(width / 2, 350, '\ud83d\udccb \u5173\u5361\u9009\u62e9', '#2196F3', () => {
+            this.showLevelSelectPanel();
+        }));
+        this.menuContainer.add(this.createButton(width / 2, 420, '\ud83d\udcd6 \u64cd\u4f5c\u8bf4\u660e', '#FF9800', () => {
+            this.showHelpPanel();
+        }));
+    }
+
+    createButton(x, y, text, bgColor, callback) {
+        const btn = this.add.text(x, y, text, {
+            fontSize: '26px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: bgColor, padding: { x: 25, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        btn.on('pointerover', () => btn.setScale(1.08));
+        btn.on('pointerout', () => btn.setScale(1));
+        btn.on('pointerdown', callback);
+        return btn;
+    }
+
+    _parseProgress(progress) {
+        let unlocked = 1;
+        for (let i = 1; i <= LevelsConfig.length; i++) {
+            if (progress[i] !== undefined) unlocked = i + 1;
+        }
+        if (unlocked > LevelsConfig.length) unlocked = LevelsConfig.length;
+        return unlocked;
+    }
+
+    showLevelSelectPanel() {
+        if (this.levelPanel) return;
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        let progress = {};
+        try { progress = JSON.parse(localStorage.getItem('angrybird_progress') || '{}'); } catch(e) {}
+        const maxLevel = this._parseProgress(progress);
+        this.levelPanel = this.add.container(0, 0).setDepth(50);
+        const overlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.6);
+        overlay.setInteractive();
+        overlay.on('pointerdown', () => this.hideLevelSelectPanel());
+        this.levelPanel.add(overlay);
+        const panelBg = this.add.graphics();
+        panelBg.fillStyle(0x1A1A2E, 0.95);
+        panelBg.fillRoundedRect(width/2-250, height/2-200, 500, 400, 20);
+        panelBg.lineStyle(3, 0xFFD700, 1);
+        panelBg.strokeRoundedRect(width/2-250, height/2-200, 500, 400, 20);
+        this.levelPanel.add(panelBg);
+        this.levelPanel.add(this.add.text(width/2, height/2-170, '\u9009\u62e9\u5173\u5361', {
+            fontSize: '36px', fontFamily: 'Arial', color: '#FFD700'
+        }).setOrigin(0.5));
+        const cols = 3, startX = width/2 - 150, startY = height/2 - 100;
+        LevelsConfig.forEach((level, index) => {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const bx = startX + col * 150;
+            const by = startY + row * 120;
+            const lvlNum = index + 1;
+            const isUnlocked = lvlNum <= maxLevel;
+            const stars = (typeof progress[lvlNum] === 'number' && progress[lvlNum] > 0) ? progress[lvlNum] : 0;
+            const lvlBtn = this.add.container(bx, by);
+            const bg = this.add.graphics();
+            bg.fillStyle(isUnlocked ? 0x2E7D32 : 0x424242, 0.9);
+            bg.fillRoundedRect(-55, -40, 110, 80, 12);
+            bg.lineStyle(2, isUnlocked ? 0x66BB6A : 0x616161, 1);
+            bg.strokeRoundedRect(-55, -40, 110, 80, 12);
+            lvlBtn.add(bg);
+            lvlBtn.add(this.add.text(0, -18, level.name, {
+                fontSize: '16px', fontFamily: 'Arial',
+                color: isUnlocked ? '#FFFFFF' : '#999999'
+            }).setOrigin(0.5));
+            const starText = isUnlocked ? '\u2b50'.repeat(stars) + '\u2606'.repeat(3-stars) : '\ud83d\udd12';
+            lvlBtn.add(this.add.text(0, 12, starText, { fontSize: '14px' }).setOrigin(0.5));
+            lvlBtn.setSize(110, 80);
+            if (isUnlocked) {
+                lvlBtn.setInteractive({ useHandCursor: true });
+                lvlBtn.on('pointerdown', () => { this.scene.start(SCENE_KEYS.GAME, { level: lvlNum }); });
+                lvlBtn.on('pointerover', () => lvlBtn.setScale(1.05));
+                lvlBtn.on('pointerout', () => lvlBtn.setScale(1));
+            }
+            this.levelPanel.add(lvlBtn);
+        });
+        const backBtn = this.add.text(width/2, height/2+170, '\u8fd4\u56de', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#F44336', padding: { x: 25, y: 8 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        backBtn.on('pointerdown', () => this.hideLevelSelectPanel());
+        this.levelPanel.add(backBtn);
+    }
+
+    hideLevelSelectPanel() {
+        if (this.levelPanel) { this.levelPanel.destroy(true); this.levelPanel = null; }
+    }
+
+    showHelpPanel() {
+        if (this.helpPanel) return;
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        this.helpPanel = this.add.container(0, 0).setDepth(50);
+        const overlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.6);
+        overlay.setInteractive();
+        overlay.on('pointerdown', () => this.hideHelpPanel());
+        this.helpPanel.add(overlay);
+        const panelBg = this.add.graphics();
+        panelBg.fillStyle(0x1A1A2E, 0.95);
+        panelBg.fillRoundedRect(width/2-220, height/2-180, 440, 360, 16);
+        this.helpPanel.add(panelBg);
+        this.helpPanel.add(this.add.text(width/2, height/2-140, '\u64cd\u4f5c\u8bf4\u660e', {
+            fontSize: '32px', fontFamily: 'Arial', color: '#FFD700'
+        }).setOrigin(0.5));
+        var lines = [
+            '1. \u70b9\u51fb\u5e76\u62d6\u62fd\u5f39\u5f13\u4e0a\u7684\u5c0f\u9e1f',
+            '2. \u7784\u51c6\u5e76\u91ca\u653e\u53d1\u5c04\u5c0f\u9e1f',
+            '3. \u6d88\u706d\u6240\u6709\u732a\u5373\u53ef\u901a\u5173',
+            '4. \u6839\u636e\u5f97\u5206\u83b7\u5f97\u661f\u7ea7\u8bc4\u4ef7'
+        ];
+        for (var i = 0; i < lines.length; i++) {
+            this.helpPanel.add(this.add.text(width/2, height/2-60+i*50, lines[i], {
+                fontSize: '20px', fontFamily: 'Arial', color: '#FFFFFF'
+            }).setOrigin(0.5));
+        }
+        var closeBtn = this.add.text(width/2, height/2+130, '\u5173\u95ed', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+            backgroundColor: '#FF9800', padding: { x: 25, y: 8 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.hideHelpPanel());
+        this.helpPanel.add(closeBtn);
+    }
+
+    hideHelpPanel() {
+        if (this.helpPanel) { this.helpPanel.destroy(true); this.helpPanel = null; }
+    }
+
+    createBirdDecorations() {
+        const height = this.cameras.main.height;
+        const birdColors = [0xFF0000, 0xFFD700, 0x1E90FF];
+        for (let i = 0; i < 3; i++) {
+            const bird = this.add.graphics();
+            bird.fillStyle(birdColors[i], 1);
+            bird.fillCircle(0, 0, 20);
+            bird.fillStyle(0xFFFFFF, 1);
+            bird.fillCircle(-6, -4, 6);
+            bird.fillCircle(6, -4, 6);
+            bird.fillStyle(0x000000, 1);
+            bird.fillCircle(-4, -4, 3);
+            bird.fillCircle(8, -4, 3);
+            bird.lineStyle(2, 0x000000, 1);
+            bird.lineBetween(-12, -12, -1, -10);
+            bird.lineBetween(1, -10, 12, -12);
+            bird.fillStyle(0xFFA500, 1);
+            bird.fillTriangle(16, 0, 28, 4, 28, -4);
+            bird.setPosition(100 + i * 80, height - 100);
+            this.tweens.add({
+                targets: bird, y: height - 110,
+                duration: 800 + i * 200, yoyo: true, repeat: -1,
+                ease: 'Sine.easeInOut', delay: i * 300
+            });
+        }
+    }
+}

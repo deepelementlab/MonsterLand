@@ -1,0 +1,417 @@
+--- src/systems/InputSystem.js L1-181 (181 lines) ---
+/**
+ * 输入处理系统模块
+ * 处理弹弓拖拽、小鸟发射和轨迹预测的所有输入逻辑
+ */
+import { GameConfig } from '../config/game.config.js';
+import { SIZES, TIMING, VISUAL } from '../utils/constants.js';
+
+export class InputSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.isDragging = false;
+        this.trajectoryPoints = [];
+        this.enabled = false;
+        
+        // 回调函数
+        this.onLaunch = null;
+        this.onRoundEnd = null;
+        this.onDragStart = null;
+        this.onDragMove = null;
+        this.onDragCancel = null;
+        
+        // 外部引用（通过init设置）
+        this.getSlingshot = null;
+        this.getCurrentBird = null;
+        this.getGameState = null;
+    }
+    
+    /**
+     * 初始化输入系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        if (config.onLaunch) this.onLaunch = config.onLaunch;
+        if (config.onRoundEnd) this.onRoundEnd = config.onRoundEnd;
+        if (config.onDragStart) this.onDragStart = config.onDragStart;
+        if (config.onDragMove) this.onDragMove = config.onDragMove;
+        if (config.onDragCancel) this.onDragCancel = config.onDragCancel;
+        if (config.getSlingshot) this.getSlingshot = config.getSlingshot;
+        if (config.getCurrentBird) this.getCurrentBird = config.getCurrentBird;
+        if (config.getGameState) this.getGameState = config.getGameState;
+    }
+    
+    /**
+     * 设置输入监听
+     */
+    setup() {
+        this.scene.input.on('pointerdown', (pointer) => this.handlePointerDown(pointer));
+        this.scene.input.on('pointermove', (pointer) => this.handlePointerMove(pointer));
+        this.scene.input.on('pointerup', () => this.handlePointerUp());
+        this.enabled = true;
+    }
+    
+    enable() { this.enabled = true; }
+    disable() { this.enabled = false; this.isDragging = false; }
+    
+    /**
+     * 获取弹弓的发射参考点（叉口中心）
+     */
+    _getLaunchPoint(slingshot) {
+        // launchPoint 是弹弓叉口中心，也是小鸟停靠位置
+        return slingshot.launchPoint || { x: slingshot.x, y: slingshot.y };
+    }
+    
+    handlePointerDown(pointer) {
+        if (!this.enabled) return;
+        const gameState = this.getGameState ? this.getGameState() : null;
+        if (gameState !== 'playing') return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird || currentBird.launched) return;
+        
+        // 以弹弓叉口中心为拖拽检测中心
+        const lp = this._getLaunchPoint(slingshot);
+        const distance = Phaser.Math.Distance.Between(
+            pointer.x, pointer.y, lp.x, lp.y
+        );
+        if (distance < SIZES.SLINGSHOT_ACTIVE_RADIUS) {
+            this.isDragging = true;
+            currentBird.startAiming();
+            if (this.onDragStart) this.onDragStart();
+        }
+    }
+    
+    handlePointerMove(pointer) {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        
+        // 以叉口中心为拖拽参考点
+        const lp = this._getLaunchPoint(slingshot);
+        const dx = lp.x - pointer.x;
+        const dy = lp.y - pointer.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = GameConfig.slingshot.maxDragDistance;
+        
+        let finalX, finalY;
+        if (distance > maxDist) {
+            const ratio = maxDist / distance;
+            finalX = lp.x - dx * ratio;
+            finalY = lp.y - dy * ratio;
+        } else {
+            finalX = pointer.x;
+            finalY = pointer.y;
+        }
+        
+        currentBird.setPosition(finalX, finalY);
+        slingshot.updateBand(finalX, finalY);
+        this.showTrajectory(dx, dy);
+        if (this.onDragMove) this.onDragMove(finalX, finalY);
+    }
+    
+    handlePointerUp() {
+        if (!this.isDragging) return;
+        const slingshot = this.getSlingshot ? this.getSlingshot() : null;
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!slingshot || !currentBird) return;
+        
+        this.isDragging = false;
+        
+        // 以叉口中心为发射参考点
+        const lp = this._getLaunchPoint(slingshot);
+        const dx = lp.x - currentBird.x;
+        const dy = lp.y - currentBird.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < GameConfig.slingshot.minDragDistance) {
+            // 拖拽距离太短，回到弹弓叉口
+            currentBird.moveToSlingshot(lp.x, lp.y);
+            slingshot.resetBand();
+            this.hideTrajectory();
+            if (this.onDragCancel) this.onDragCancel();
+            return;
+        }
+        
+        const power = GameConfig.slingshot.launchPower;
+        currentBird.launch(dx * power, dy * power);
+        slingshot.release();
+        this.hideTrajectory();
+        if (this.onLaunch) this.onLaunch(currentBird);
+        
+        this.scene.time.delayedCall(TIMING.NEXT_BIRD_DELAY, () => {
+            if (this.onRoundEnd) this.onRoundEnd();
+        });
+    }
+    
+    showTrajectory(dx, dy) {
+        this.hideTrajectory();
+        const currentBird = this.getCurrentBird ? this.getCurrentBird() : null;
+        if (!currentBird) return;
+        
+        const power = GameConfig.slingshot.launchPower;
+        const vx = dx * power;
+        const vy = dy * power;
+        const gravityY = this.scene.matter.world.engine.gravity.y;
+        
+        for (let i = 1; i <= VISUAL.TRAJECTORY_POINTS; i++) {
+            const t = i * VISUAL.TRAJECTORY_STEP;
+            const ts = t * 60;
+            const px = currentBird.x + vx * ts;
+            const py = currentBird.y + vy * ts + 0.5 * gravityY * ts * ts;
+            const alpha = 0.6 * (1 - i / 16);
+            this.trajectoryPoints.push(
+                this.scene.add.circle(px, py, VISUAL.TRAJECTORY_DOT_RADIUS, 0xFFFFFF, alpha)
+            );
+        }
+    }
+    
+    hideTrajectory() {
+        this.trajectoryPoints.forEach(dot => dot.destroy());
+        this.trajectoryPoints = [];
+    }
+    
+    destroy() {
+        this.hideTrajectory();
+        this.scene.input.off('pointerdown');
+        this.scene.input.off('pointermove');
+        this.scene.input.off('pointerup');
+        this.enabled = false;
+    }
+}
+
+--- src/objects/Bird.js L1-145 (145 lines) ---
+import { COLORS, BIRD_TYPES, COLLISION } from '../utils/constants.js';
+
+export class Bird {
+    constructor(scene, x, y, type = BIRD_TYPES.RED) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = 25;
+        this.launched = false;
+        this.aiming = false;
+        this.destroyed = false;
+        
+        this.create();
+    }
+    
+    create() {
+        // 获取颜色
+        const color = this.getColor();
+        
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 绘制小鸟身体
+        this.graphics.fillStyle(color, 1);
+        this.graphics.fillCircle(0, 0, this.radius);
+        
+        // 绘制眼睛
+        this.graphics.fillStyle(0xFFFFFF, 1);
+        this.graphics.fillCircle(-8, -5, 8);
+        this.graphics.fillCircle(8, -5, 8);
+        
+        // 绘制瞳孔
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-6, -5, 4);
+        this.graphics.fillCircle(10, -5, 4);
+        
+        // 绘制愤怒的眉毛
+        this.graphics.lineStyle(3, 0x000000, 1);
+        this.graphics.lineBetween(-15, -15, -2, -12);
+        this.graphics.lineBetween(2, -12, 15, -15);
+        
+        // 绘制嘴巴
+        this.graphics.fillStyle(0xFFA500, 1);
+        this.graphics.fillTriangle(20, 0, 35, 5, 35, -5);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        this.body = this.scene.matter.add.circle(this.x, this.y, this.radius, {
+            label: 'bird',
+            mass: 5,
+            restitution: 0.6,
+            friction: 0.3,
+            frictionAir: 0.01
+        });
+        
+        // 关联图形和物理体
+        this.body.gameObject = this;
+        
+        // 初始静止
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    getColor() {
+        switch (this.type) {
+            case BIRD_TYPES.RED:
+                return COLORS.BIRD_RED;
+            case BIRD_TYPES.YELLOW:
+                return COLORS.BIRD_YELLOW;
+            case BIRD_TYPES.BLUE:
+                return COLORS.BIRD_BLUE;
+            default:
+                return COLORS.BIRD_RED;
+        }
+    }
+    
+    moveToSlingshot(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    startAiming() {
+        this.aiming = true;
+    }
+    
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+    }
+    
+    launch(velocityX, velocityY) {
+        this.launched = true;
+        this.aiming = false;
+        
+        // 解除静止状态
+        this.scene.matter.body.setStatic(this.body, false);
+        
+        // 设置速度
+        this.scene.matter.body.setVelocity(this.body, {
+            x: velocityX,
+            y: velocityY
+        });
+        
+        // 添加旋转
+        this.scene.matter.body.setAngularVelocity(this.body, 0.1);
+    }
+    
+    update() {
+        if (this.launched && !this.destroyed) {
+            // 更新图形位置
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    onCollision(impactForce) {
+        // 碰撞处理
+        if (impactForce > COLLISION.BIRD_DAMAGE_THRESHOLD) {
+            this.takeDamage(impactForce);
+        }
+    }
+    
+    takeDamage(amount) {
+        // 小鸟可以承受一些伤害
+        if (amount > COLLISION.BIRD_DESTROY_THRESHOLD) {
+            this.destroy();
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+}
+
+--- src/objects/Slingshot.js L1-86 (86 lines) ---
+import { COLORS } from '../utils/constants.js';
+
+export class Slingshot {
+    constructor(scene, x, y) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        
+        // 弹弓叉口中心（小鸟放置和发射的参考点）
+        this.launchPoint = { x: x, y: y - 100 };
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建弹弓图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 左支架
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillRect(-30, -80, 15, 100);
+        
+        // 右支架
+        this.graphics.fillRect(15, -80, 15, 100);
+        
+        // Y形顶部
+        this.graphics.fillStyle(0x5D3A1A, 1);
+        this.graphics.fillTriangle(-30, -80, -15, -80, -22, -100);
+        this.graphics.fillTriangle(15, -80, 30, -80, 22, -100);
+        
+        // 底座
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillRect(-35, 20, 70, 15);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建皮筋
+        this.band = this.scene.add.graphics();
+        this.leftAnchor = { x: this.x - 22, y: this.y - 100 };
+        this.rightAnchor = { x: this.x + 22, y: this.y - 100 };
+        
+        this.resetBand();
+    }
+    
+    updateBand(birdX, birdY) {
+        this.band.clear();
+        
+        // 绘制皮筋
+        this.band.lineStyle(4, 0x8B4513, 1);
+        
+        // 左边皮筋
+        this.band.lineBetween(this.leftAnchor.x, this.leftAnchor.y, birdX, birdY);
+        
+        // 右边皮筋
+        this.band.lineBetween(this.rightAnchor.x, this.rightAnchor.y, birdX, birdY);
+    }
+    
+    resetBand() {
+        this.band.clear();
+        
+        // 绘制默认状态的皮筋
+        this.band.lineStyle(4, 0x8B4513, 1);
+        this.band.lineBetween(
+            this.leftAnchor.x, this.leftAnchor.y,
+            this.rightAnchor.x, this.rightAnchor.y
+        );
+    }
+    
+    release() {
+        // 释放动画效果
+        this.scene.tweens.add({
+            targets: this.band,
+            alpha: 0.5,
+            duration: 50,
+            yoyo: true,
+            onComplete: () => {
+                this.resetBand();
+            }
+        });
+    }
+    
+    destroy() {
+        this.graphics.destroy();
+        this.band.destroy();
+    }
+}

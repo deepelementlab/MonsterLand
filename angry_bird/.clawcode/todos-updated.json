@@ -1,0 +1,118 @@
+[
+  {
+    "id": "arch_refactor_plan",
+    "content": "制定详细的架构重构实施计划",
+    "status": "completed",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "team-lead"
+  },
+  {
+    "id": "physics_system_design",
+    "content": "设计物理系统模块接口和架构",
+    "status": "in_progress", 
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "physics-engineer",
+    "dependencies": ["arch_refactor_plan"]
+  },
+  {
+    "id": "ui_system_design",
+    "content": "设计UI组件系统架构",
+    "status": "in_progress",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "ui-engineer",
+    "dependencies": ["arch_refactor_plan"]
+  },
+  {
+    "id": "constant_extraction",
+    "content": "提取GameScene中的所有魔法数字为常量",
+    "status": "in_progress",
+    "created_at": 1775488396,
+    "priority": "medium",
+    "assignee": "senior-dev",
+    "dependencies": []
+  },
+  {
+    "id": "test_strategy_doc",
+    "content": "制定全面的测试策略文档",
+    "status": "in_progress",
+    "created_at": 1775488396,
+    "priority": "medium",
+    "assignee": "qa-engineer",
+    "dependencies": ["arch_refactor_plan"]
+  },
+  {
+    "id": "physics_system_impl",
+    "content": "实现PhysicsSystem.js核心功能",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "physics-engineer",
+    "dependencies": ["physics_system_design"]
+  },
+  {
+    "id": "collision_system_impl",
+    "content": "实现CollisionSystem.js碰撞处理",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "physics-engineer",
+    "dependencies": ["physics_system_impl"]
+  },
+  {
+    "id": "hud_component_impl",
+    "content": "实现HUD.js游戏界面组件",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "ui-engineer",
+    "dependencies": ["ui_system_design"]
+  },
+  {
+    "id": "button_component_impl",
+    "content": "实现Button.js通用按钮组件",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "medium",
+    "assignee": "ui-engineer",
+    "dependencies": ["ui_system_design"]
+  },
+  {
+    "id": "game_scene_refactor",
+    "content": "重构GameScene.js，分离职责到系统模块",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "critical",
+    "assignee": "senior-dev",
+    "dependencies": ["physics_system_impl", "collision_system_impl", "hud_component_impl", "constant_extraction"]
+  },
+  {
+    "id": "integration_testing",
+    "content": "执行集成测试，验证各模块协作",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "high",
+    "assignee": "qa-engineer",
+    "dependencies": ["game_scene_refactor", "test_strategy_doc"]
+  },
+  {
+    "id": "performance_benchmark",
+    "content": "运行性能基准测试",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "medium",
+    "assignee": "qa-engineer",
+    "dependencies": ["integration_testing"]
+  },
+  {
+    "id": "documentation_update",
+    "content": "更新所有相关文档",
+    "status": "pending",
+    "created_at": 1775488396,
+    "priority": "low",
+    "assignee": "team-lead",
+    "dependencies": ["integration_testing"]
+  }
+]

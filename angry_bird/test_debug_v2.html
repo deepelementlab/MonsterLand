@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Console Capture</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { padding: 10px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .err { color: #ff5a5f; }
+        .ok { color: #00a699; }
+        .warn { color: #ffb400; }
+        #game-container { width: 100%; height: calc(100vh - 320px); display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+<div id="log">=== Debug Console ===\n</div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Capture ALL console output
+    const origLog = console.log;
+    const origErr = console.error;
+    const origWarn = console.warn;
+    console.log = function() {
+        addLog(Array.from(arguments).join(' '));
+        origLog.apply(console, arguments);
+    };
+    console.error = function() {
+        addLog(Array.from(arguments).join(' '), 'err');
+        origErr.apply(console, arguments);
+    };
+    console.warn = function() {
+        addLog(Array.from(arguments).join(' '), 'warn');
+        origWarn.apply(console, arguments);
+    };
+
+    // Capture unhandled errors
+    window.onerror = function(msg, url, line, col, err) {
+        addLog('UNCAUGHT: ' + msg + ' at ' + url + ':' + line + ':' + col, 'err');
+        if (err && err.stack) addLog('Stack: ' + err.stack, 'err');
+        return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        addLog('UNHANDLED PROMISE: ' + (e.reason ? e.reason.message || e.reason : e), 'err');
+        if (e.reason && e.reason.stack) addLog('Stack: ' + e.reason.stack, 'err');
+    });
+
+    addLog('Console capture installed. Loading main.js...', 'ok');
+</script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

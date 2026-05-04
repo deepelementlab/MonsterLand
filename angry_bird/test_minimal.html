@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Test</title></head>
+<body>
+<div id="log" style="position:fixed;top:0;left:0;background:#000;color:#0f0;padding:10px;font-size:12px;z-index:9999;white-space:pre-wrap;"></div>
+<script type="module">
+import Phaser from 'phaser';
+const L = document.getElementById('log');
+L.textContent = 'Phaser ' + Phaser.VERSION + '\n';
+
+class TestScene extends Phaser.Scene {
+    constructor() { super('test'); }
+    create() {
+        L.textContent += 'Scene create() called!\n';
+        this.add.text(400, 300, 'HELLO', { fontSize: '64px', color: '#ff0000' }).setOrigin(0.5);
+        L.textContent += 'Text added!\n';
+    }
+}
+
+try {
+    const g = new Phaser.Game({
+        type: Phaser.AUTO, width: 800, height: 600,
+        parent: document.body,
+        backgroundColor: '#87CEEB',
+        scene: [TestScene]
+    });
+    L.textContent += 'Game created\n';
+} catch(e) {
+    L.textContent += 'ERR: ' + e.message + '\n' + e.stack + '\n';
+}
+</script>
+</body></html>

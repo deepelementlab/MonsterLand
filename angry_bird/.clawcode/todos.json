@@ -1,0 +1,26 @@
+[
+  {
+    "content": "分析鸟发射的完整算法：InputSystem.launch + Matter.js物理模拟",
+    "id": "1",
+    "status": "completed",
+    "created_at": 1777903872
+  },
+  {
+    "content": "分析当前showTrajectory的实现，找出与真实轨迹的偏差",
+    "id": "2",
+    "status": "completed",
+    "created_at": 1777903872
+  },
+  {
+    "content": "基于Matter.js真实物理模拟重写showTrajectory",
+    "id": "3",
+    "status": "completed",
+    "created_at": 1777903872
+  },
+  {
+    "content": "验证轨迹线与实际飞行路径一致",
+    "id": "4",
+    "status": "completed",
+    "created_at": 1777903872
+  }
+]

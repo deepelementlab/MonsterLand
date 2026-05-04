@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test - Direct Call</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { position: fixed; top: 0; right: 0; z-index: 999; background: rgba(0,0,0,0.9); padding: 10px; max-height: 50vh; overflow-y: auto; width: 400px; font-size: 13px; }
+        .ok { color: #00a699; } .err { color: #ff5a5f; } .warn { color: #ffb400; }
+        #game-container { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    const addLog = (msg, cls) => {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    };
+    window.onerror = (msg, url, line) => { addLog('ERR: ' + msg + ' L' + line, 'err'); };
+    window.addEventListener('unhandledrejection', e => { addLog('PROMISE: ' + (e.reason?.message || e.reason), 'err'); });
+</script>
+<script type="module">
+    import Phaser from 'phaser';
+    import { GameConfig, LevelsConfig } from './src/config/game.config.js';
+    import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, SIZES, BIRD_TYPES, COLLISION } from './src/utils/constants.js';
+    import { EntityManager } from './src/systems/EntityManager.js';
+    import { GameStateSystem } from './src/systems/GameStateSystem.js';
+    import { PhysicsSystem } from './src/systems/PhysicsSystem.js';
+    import { InputSystem } from './src/systems/InputSystem.js';
+    
+    addLog('Imports OK', 'ok');
+    
+    let testScene = null;
+    
+    class TestScene extends Phaser.Scene {
+        constructor() { super('test'); }
+        
+        init(data) {
+            this.stateSystem = new GameStateSystem(this);
+            this.stateSystem.init({ level: data.level || 1 });
+        }
+        
+        create() {
+            const w = this.cameras.main.width, h = this.cameras.main.height;
+            
+            // Background
+            const sky = this.add.graphics();
+            sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F0FF, 0xE0F0FF, 1);
+            sky.fillRect(0, 0, w, h);
+            const ground = this.add.graphics();
+            ground.fillStyle(0x8B4513, 1);
+            ground.fillRect(0, 640, w, h - 640);
+            ground.fillStyle(0x4CAF50, 1);
+            ground.fillRect(0, 640, w, 15);
+            this.matter.add.rectangle(w / 2, 680, w, 80, { isStatic: true, label: 'ground' });
+            
+            // Entities
+            this.entityManager = new EntityManager(this);
+            this.entityManager.init(this.stateSystem.levelData);
+            
+            this.physicsSystem = new PhysicsSystem(this);
+            
+            // Input
+            this.inputSystem = new InputSystem(this);
+            this.inputSystem.init({
+                getSlingshot: () => this.entityManager.getSlingshot(),
+                getCurrentBird: () => this.entityManager.getCurrentBird(),
+                getGameState: () => this.stateSystem.getState(),
+                onLaunch: (bird) => {
+                    addLog('LAUNCHED!', 'ok');
+                },
+                onRoundEnd: () => {
+                    addLog('ROUND END', 'warn');
+                }
+            });
+            this.inputSystem.setup();
+            
+            const sl = this.entityManager.getSlingshot();
+            const bi = this.entityManager.getCurrentBird();
+            addLog('Ready: lp=(' + sl.launchPoint.x + ',' + sl.launchPoint.y + ') bird=(' + bi.x + ',' + bi.y + ')', 'ok');
+            
+            testScene = this;
+            
+            // Direct test - simulate the pointer down/move/up directly
+            addLog('Running direct input test in 2s...', 'warn');
+            setTimeout(() => this.runDirectTest(), 2000);
+        }
+        
+        runDirectTest() {
+            const lp = this.entityManager.getSlingshot().launchPoint;
+            const bi = this.entityManager.getCurrentBird();
+            
+            addLog('TEST: Simulating click at launchPoint (' + lp.x + ',' + lp.y + ')');
+            addLog('enabled=' + this.inputSystem.enabled + ' state=' + this.stateSystem.getState() + ' launched=' + bi.launched);
+            
+            // Simulate pointer down at launch point
+            const fakePointerDown = { x: lp.x, y: lp.y };
+            addLog('Calling handlePointerDown...');
+            this.inputSystem.handlePointerDown(fakePointerDown);
+            addLog('isDragging=' + this.inputSystem.isDragging, this.inputSystem.isDragging ? 'ok' : 'err');
+            
+            if (this.inputSystem.isDragging) {
+                // Simulate drag to bottom-left
+                const fakePointerMove = { x: lp.x - 80, y: lp.y + 60 };
+                addLog('Dragging to (' + fakePointerMove.x + ',' + fakePointerMove.y + ')...');
+                this.inputSystem.handlePointerMove(fakePointerMove);
+                
+                const birdAfterDrag = this.entityManager.getCurrentBird();
+                addLog('Bird after drag: (' + birdAfterDrag.x.toFixed(0) + ',' + birdAfterDrag.y.toFixed(0) + ')', 'ok');
+                
+                // Simulate release
+                addLog('Releasing...');
+                this.inputSystem.handlePointerUp();
+                
+                const birdAfterLaunch = this.entityManager.getCurrentBird();
+                addLog('Bird launched=' + birdAfterLaunch.launched, birdAfterLaunch.launched ? 'ok' : 'err');
+                if (birdAfterLaunch.launched) {
+                    addLog('SUCCESS! Bird is launched and flying!', 'ok');
+                } else {
+                    addLog('FAIL - bird not launched', 'err');
+                }
+            } else {
+                addLog('FAIL - could not start dragging', 'err');
+                // Debug: check what went wrong
+                addLog('enabled=' + this.inputSystem.enabled);
+                addLog('getGameState()=' + (this.inputSystem.getGameState ? this.inputSystem.getGameState() : 'null'));
+                addLog('getSlingshot()=' + (this.inputSystem.getSlingshot ? 'ok' : 'null'));
+                addLog('getCurrentBird()=' + (this.inputSystem.getCurrentBird ? 'ok' : 'null'));
+                if (this.inputSystem.getCurrentBird) {
+                    const b = this.inputSystem.getCurrentBird();
+                    addLog('bird.launched=' + b.launched + ' bird.x=' + b.x + ' bird.y=' + b.y);
+                }
+            }
+        }
+        
+        update() {
+            if (this.entityManager) this.entityManager.update();
+        }
+    }
+    
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: { default: 'matter', matter: { gravity: GameConfig.physics.gravity, debug: false } },
+        scene: [TestScene],
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+    };
+    
+    new Phaser.Game(config);
+    addLog('Game created', 'ok');
+</script>
+</body>
+</html>

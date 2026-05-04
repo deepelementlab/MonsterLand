@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Scene Debug</title></head>
+<body>
+<div id="log" style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.9);color:#0f0;padding:10px;font-size:11px;z-index:9999;max-height:100vh;overflow:auto;white-space:pre-wrap;font-family:monospace;"></div>
+<script type="module">
+import Phaser from 'phaser';
+import { GameConfig } from './src/config/game.config.js';
+import { SCENE_KEYS } from './src/utils/constants.js';
+import { BootScene } from './src/scenes/BootScene.js';
+import { PreloadScene } from './src/scenes/PreloadScene.js';
+import { MenuScene } from './src/scenes/MenuScene.js';
+import { GameScene } from './src/scenes/GameScene.js';
+
+const L = document.getElementById('log');
+const log = (msg) => { L.textContent += msg + '\n'; };
+const origErr = console.error;
+console.error = function() {
+    const args = Array.from(arguments);
+    log('CONSOLE.ERROR: ' + args.map(a => {
+        if (a instanceof Error) return a.message + '\n' + a.stack;
+        return String(a);
+    }).join(' '));
+    origErr.apply(console, arguments);
+};
+window.onerror = (msg, url, line, col, err) => {
+    log('UNCAUGHT: ' + msg + ' at ' + line + ':' + col);
+    if (err && err.stack) log(err.stack);
+};
+
+log('Phaser ' + Phaser.VERSION);
+log('GameConfig: ' + GameConfig.width + 'x' + GameConfig.height);
+log('Physics gravity: ' + JSON.stringify(GameConfig.physics.gravity));
+
+// Patch scenes to log lifecycle
+[BootScene, PreloadScene, MenuScene, GameScene].forEach(SceneClass => {
+    const origInit = SceneClass.prototype.init;
+    const origPreload = SceneClass.prototype.preload;
+    const origCreate = SceneClass.prototype.create;
+    const key = SceneClass.prototype.constructor.name || 'unknown';
+    
+    SceneClass.prototype.init = function() {
+        log('[LIFECYCLE] init() called for ' + this.scene.key);
+        if (origInit) origInit.apply(this, arguments);
+    };
+    SceneClass.prototype.preload = function() {
+        log('[LIFECYCLE] preload() called for ' + this.scene.key);
+        if (origPreload) origPreload.apply(this, arguments);
+    };
+    SceneClass.prototype.create = function() {
+        log('[LIFECYCLE] create() called for ' + this.scene.key);
+        try {
+            origCreate.apply(this, arguments);
+            log('[LIFECYCLE] create() SUCCESS for ' + this.scene.key);
+        } catch(e) {
+            log('[LIFECYCLE] create() ERROR in ' + this.scene.key + ': ' + e.message);
+            log(e.stack);
+        }
+    };
+});
+
+log('Creating game...');
+try {
+    const game = new Phaser.Game({
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: document.body.appendChild(document.createElement('div')),
+        backgroundColor: '#87CEEB',
+        physics: {
+            default: 'matter',
+            matter: { gravity: GameConfig.physics.gravity, debug: false }
+        },
+        scene: [BootScene, PreloadScene, MenuScene, GameScene],
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+    });
+    log('Game created OK');
+    setTimeout(() => {
+        const scenes = game.scene.getScenes(true);
+        log('Active scenes after 3s:');
+        scenes.forEach(s => {
+            log('  ' + s.scene.key + ' status=' + s.scene.status + ' visible=' + s.scene.settings.active);
+        });
+    }, 3000);
+} catch(e) {
+    log('FATAL: ' + e.message + '\n' + e.stack);
+}
+</script>
+</body></html>

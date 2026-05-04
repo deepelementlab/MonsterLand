@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debug Full Game</title>
+<style>
+body{margin:0;background:#111;color:#eee;font-family:monospace}
+#log{padding:10px;font-size:12px;line-height:1.4;white-space:pre-wrap;max-height:250px;overflow-y:auto}
+.err{color:#ff5a5f}.ok{color:#00a699}.warn{color:#ffb400}
+#game-container{width:100%;height:calc(100vh - 260px);display:flex;justify-content:center;align-items:center;background:#87CEEB}
+</style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+var logEl=document.getElementById('log');
+function addLog(m,c){var d=document.createElement('div');if(c)d.className=c;d.textContent='['+new Date().toLocaleTimeString()+'] '+m;logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight}
+window.onerror=function(m,u,l,co,e){addLog('ERR:'+m+' L'+l,'err');if(e&&e.stack)addLog(e.stack,'err')};
+window.addEventListener('unhandledrejection',function(e){addLog('PROMISE:'+(e.reason?e.reason.message||e.reason:e),'err')});
+</script>
+<script type="module">
+import Phaser from 'phaser';
+import{GameConfig}from'./src/config/game.config.js';
+import{SCENE_KEYS,COLORS,SIZES}from'./src/utils/constants.js';
+import{BootScene}from'./src/scenes/BootScene.js';
+import{PreloadScene}from'./src/scenes/PreloadScene.js';
+import{MenuScene}from'./src/scenes/MenuScene.js';
+import{GameScene}from'./src/scenes/GameScene.js';
+addLog('Phaser:'+Phaser.VERSION,'ok');
+
+// Patch MenuScene
+var origMenuCreate=MenuScene.prototype.create;
+MenuScene.prototype.create=function(){
+  addLog('Menu.create START','ok');
+  try{
+    origMenuCreate.call(this);
+    addLog('Menu.create DONE','ok');
+  }catch(e){
+    addLog('Menu ERR:'+e.message,'err');
+    addLog(e.stack,'err');
+  }
+};
+
+// Patch BootScene
+var origBootCreate=BootScene.prototype.create;
+BootScene.prototype.create=function(){
+  addLog('Boot.create','ok');
+  origBootCreate.call(this);
+};
+
+// Patch PreloadScene
+var origPreloadCreate=PreloadScene.prototype.create;
+PreloadScene.prototype.create=function(){
+  addLog('Preload.create','ok');
+  origPreloadCreate.call(this);
+};
+var origPreloadPreload=PreloadScene.prototype.preload;
+PreloadScene.prototype.preload=function(){
+  addLog('Preload.preload','ok');
+  origPreloadPreload.call(this);
+};
+
+// Patch GameScene
+var origGSInit=GameScene.prototype.init;
+var origGSCreate=GameScene.prototype.create;
+GameScene.prototype.init=function(data){
+  addLog('GS.init level='+(data.level||1),'ok');
+  try{origGSInit.call(this,data);addLog('  state='+this.stateSystem.getState(),'ok')}
+  catch(e){addLog('GS.init ERR:'+e.message,'err');addLog(e.stack,'err')}
+};
+GameScene.prototype.create=function(){
+  addLog('GS.create START','ok');
+  try{
+    origGSCreate.call(this);
+    addLog('GS.create DONE','ok');
+    var em=this.entityManager;
+    if(em.slingshot)addLog('  lp:'+JSON.stringify(em.slingshot.launchPoint),'ok');
+    if(em.currentBird)addLog('  bird:'+em.currentBird.x+','+em.currentBird.y,'ok');
+    addLog('  state='+this.stateSystem.getState(),'ok');
+    // Patch input handlers for debugging
+    var is=this.inputSystem;
+    var origDown=is.handlePointerDown.bind(is);
+    is.handlePointerDown=function(ptr){
+      addLog('ptrDown '+ptr.x.toFixed(0)+','+ptr.y.toFixed(0),'warn');
+      var gs=is.getGameState();
+      var sl=is.getSlingshot();
+      var bd=is.getCurrentBird();
+      addLog('  gs='+gs+' sl='+(sl?'Y':'N')+' bd='+(bd?'Y':'N')+' launched='+(bd?bd.launched:'?'),'warn');
+      if(sl&&bd){
+        var lp=is._getLaunchPoint(sl);
+        var dist=Phaser.Math.Distance.Between(ptr.x,ptr.y,lp.x,lp.y);
+        addLog('  lp='+lp.x.toFixed(0)+','+lp.y.toFixed(0)+' dist='+dist.toFixed(0),'warn');
+      }
+      origDown(ptr);
+      addLog('  isDragging='+is.isDragging,'warn');
+    };
+    var origShow=is.showTrajectory.bind(is);
+    is.showTrajectory=function(dx,dy){
+      addLog('showTraj dx='+dx.toFixed(1)+' dy='+dy.toFixed(1),'ok');
+      origShow(dx,dy);
+      addLog('  dots='+is.trajectoryPoints.length,'ok');
+    };
+  }catch(e){addLog('GS.create ERR:'+e.message,'err');addLog(e.stack,'err')}
+};
+
+var config={
+  type:Phaser.AUTO,width:GameConfig.width,height:GameConfig.height,
+  parent:'game-container',backgroundColor:'#87CEEB',
+  physics:{default:'matter',matter:{gravity:GameConfig.physics.gravity,debug:false}},
+  scene:[BootScene,PreloadScene,MenuScene,GameScene],
+  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH}
+};
+addLog('Creating game...','warn');
+window.game=new Phaser.Game(config);
+</script>
+</body>
+</html>

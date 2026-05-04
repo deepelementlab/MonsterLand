@@ -1,0 +1,516 @@
+--- src/objects/Bird.js L1-145 (145 lines) ---
+import { COLORS, BIRD_TYPES } from '../utils/constants.js';
+
+export class Bird {
+    constructor(scene, x, y, type = BIRD_TYPES.RED) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = 25;
+        this.launched = false;
+        this.aiming = false;
+        this.destroyed = false;
+        
+        this.create();
+    }
+    
+    create() {
+        // 获取颜色
+        const color = this.getColor();
+        
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 绘制小鸟身体
+        this.graphics.fillStyle(color, 1);
+        this.graphics.fillCircle(0, 0, this.radius);
+        
+        // 绘制眼睛
+        this.graphics.fillStyle(0xFFFFFF, 1);
+        this.graphics.fillCircle(-8, -5, 8);
+        this.graphics.fillCircle(8, -5, 8);
+        
+        // 绘制瞳孔
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-6, -5, 4);
+        this.graphics.fillCircle(10, -5, 4);
+        
+        // 绘制愤怒的眉毛
+        this.graphics.lineStyle(3, 0x000000, 1);
+        this.graphics.lineBetween(-15, -15, -2, -12);
+        this.graphics.lineBetween(2, -12, 15, -15);
+        
+        // 绘制嘴巴
+        this.graphics.fillStyle(0xFFA500, 1);
+        this.graphics.fillTriangle(20, 0, 35, 5, 35, -5);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        this.body = this.scene.matter.add.circle(this.x, this.y, this.radius, {
+            label: 'bird',
+            mass: 5,
+            restitution: 0.6,
+            friction: 0.3,
+            frictionAir: 0.01
+        });
+        
+        // 关联图形和物理体
+        this.body.gameObject = this;
+        
+        // 初始静止
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    getColor() {
+        switch (this.type) {
+            case BIRD_TYPES.RED:
+                return COLORS.BIRD_RED;
+            case BIRD_TYPES.YELLOW:
+                return COLORS.BIRD_YELLOW;
+            case BIRD_TYPES.BLUE:
+                return COLORS.BIRD_BLUE;
+            default:
+                return COLORS.BIRD_RED;
+        }
+    }
+    
+    moveToSlingshot(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    startAiming() {
+        this.aiming = true;
+    }
+    
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+    }
+    
+    launch(velocityX, velocityY) {
+        this.launched = true;
+        this.aiming = false;
+        
+        // 解除静止状态
+        this.scene.matter.body.setStatic(this.body, false);
+        
+        // 设置速度
+        this.scene.matter.body.setVelocity(this.body, {
+            x: velocityX,
+            y: velocityY
+        });
+        
+        // 添加旋转
+        this.scene.matter.body.setAngularVelocity(this.body, 0.1);
+    }
+    
+    update() {
+        if (this.launched && !this.destroyed) {
+            // 更新图形位置
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    onCollision(impactForce) {
+        // 碰撞处理
+        if (impactForce > 10) {
+            this.takeDamage(impactForce);
+        }
+    }
+    
+    takeDamage(amount) {
+        // 小鸟可以承受一些伤害
+        if (amount > 50) {
+            this.destroy();
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+}
+
+--- src/objects/Pig.js L1-131 (131 lines) ---
+import { COLORS } from '../utils/constants.js';
+
+export class Pig {
+    constructor(scene, x, y, radius = 25) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.health = 100;
+        this.destroyed = false;
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 绘制猪身体
+        this.graphics.fillStyle(COLORS.PIG, 1);
+        this.graphics.fillCircle(0, 0, this.radius);
+        
+        // 绘制耳朵
+        this.graphics.fillStyle(0x7CCD7C, 1);
+        this.graphics.fillEllipse(-20, -20, 15, 20);
+        this.graphics.fillEllipse(20, -20, 15, 20);
+        
+        // 绘制眼睛
+        this.graphics.fillStyle(0xFFFFFF, 1);
+        this.graphics.fillCircle(-8, -5, 8);
+        this.graphics.fillCircle(8, -5, 8);
+        
+        // 绘制瞳孔
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-6, -5, 4);
+        this.graphics.fillCircle(10, -5, 4);
+        
+        // 绘制猪鼻子
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillEllipse(0, 8, 12, 8);
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-3, 8, 2);
+        this.graphics.fillCircle(3, 8, 2);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        this.body = this.scene.matter.add.circle(this.x, this.y, this.radius, {
+            label: 'pig',
+            mass: 3,
+            restitution: 0.3,
+            friction: 0.5
+        });
+        
+        this.body.gameObject = this;
+    }
+    
+    takeDamage(amount) {
+        if (this.destroyed) return;
+        
+        this.health -= amount;
+        
+        // 视觉反馈 - 变红
+        if (this.health < 50) {
+            this.graphics.clear();
+            this.graphics.fillStyle(0xFFA07A, 1);
+            this.graphics.fillCircle(0, 0, this.radius);
+            
+            // 重绘眼睛
+            this.graphics.fillStyle(0xFFFFFF, 1);
+            this.graphics.fillCircle(-8, -5, 8);
+            this.graphics.fillCircle(8, -5, 8);
+            this.graphics.fillStyle(0x000000, 1);
+            this.graphics.fillCircle(-6, -5, 4);
+            this.graphics.fillCircle(10, -5, 4);
+            
+            // 受伤表情
+            this.graphics.lineStyle(2, 0x000000, 1);
+            this.graphics.lineBetween(-12, -5, -4, -5);
+            this.graphics.lineBetween(4, -5, 12, -5);
+        }
+        
+        if (this.health <= 0) {
+            this.destroy();
+        }
+    }
+    
+    update() {
+        if (!this.destroyed) {
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        
+        // 破坏效果
+        this.createDestroyEffect();
+        
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+    
+    createDestroyEffect() {
+        // 创建粒子效果
+        for (let i = 0; i < 8; i++) {
+            const particle = this.scene.add.graphics();
+            particle.fillStyle(COLORS.PIG, 1);
+            particle.fillCircle(0, 0, 5);
+            particle.setPosition(this.x, this.y);
+            
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = Phaser.Math.Between(30, 60);
+            
+            this.scene.tweens.add({
+                targets: particle,
+                x: this.x + Math.cos(angle) * distance,
+                y: this.y + Math.sin(angle) * distance - 30,
+                alpha: 0,
+                scale: 0.5,
+                duration: 500,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+    }
+}
+
+--- src/objects/Block.js L1-150 (150 lines) ---
+import { COLORS, MATERIAL_TYPES } from '../utils/constants.js';
+import { GameConfig } from '../config/game.config.js';
+
+export class Block {
+    constructor(scene, x, y, material = MATERIAL_TYPES.WOOD, width = 40, height = 80) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.material = material;
+        this.width = width;
+        this.height = height;
+        this.destroyed = false;
+        
+        // 获取材质属性
+        const materialConfig = GameConfig.materials[material];
+        this.health = materialConfig?.health || 100;
+        this.maxHealth = this.health;
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 获取颜色
+        const color = this.getColor();
+        
+        // 绘制方块
+        this.graphics.fillStyle(color, 1);
+        this.graphics.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        // 添加边框
+        this.graphics.lineStyle(2, this.getBorderColor(), 1);
+        this.graphics.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        // 添加纹理线条
+        this.addTextureLines();
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        const materialConfig = GameConfig.materials[this.material];
+        
+        this.body = this.scene.matter.add.rectangle(this.x, this.y, this.width, this.height, {
+            label: 'block',
+            mass: this.width * this.height * (materialConfig?.density || 0.001),
+            restitution: materialConfig?.restitution || 0.3,
+            friction: materialConfig?.friction || 0.5
+        });
+        
+        this.body.gameObject = this;
+    }
+    
+    getColor() {
+        switch (this.material) {
+            case MATERIAL_TYPES.WOOD:
+                return COLORS.WOOD;
+            case MATERIAL_TYPES.STONE:
+                return COLORS.STONE;
+            case MATERIAL_TYPES.GLASS:
+                return COLORS.GLASS;
+            default:
+                return COLORS.WOOD;
+        }
+    }
+    
+    getBorderColor() {
+        switch (this.material) {
+            case MATERIAL_TYPES.WOOD:
+                return 0x5D3A1A;
+            case MATERIAL_TYPES.STONE:
+                return 0x4A4A5A;
+            case MATERIAL_TYPES.GLASS:
+                return 0x87CEEB;
+            default:
+                return 0x000000;
+        }
+    }
+    
+    addTextureLines() {
+        this.graphics.lineStyle(1, this.getBorderColor(), 0.5);
+        
+        if (this.material === MATERIAL_TYPES.WOOD) {
+            // 木纹
+            for (let i = 0; i < 3; i++) {
+                const y = -this.height / 2 + (i + 1) * (this.height / 4);
+                this.graphics.lineBetween(-this.width / 2 + 5, y, this.width / 2 - 5, y);
+            }
+        } else if (this.material === MATERIAL_TYPES.STONE) {
+            // 石头裂纹
+            this.graphics.lineBetween(-10, -this.height / 4, 5, this.height / 4);
+            this.graphics.lineBetween(5, -this.height / 3, 15, 0);
+        }
+    }
+    
+    takeDamage(amount) {
+        if (this.destroyed) return;
+        
+        this.health -= amount;
+        
+        // 视觉反馈
+        if (this.health < this.maxHealth * 0.5) {
+            this.showDamage();
+        }
+        
+        if (this.health <= 0) {
+            this.destroy();
+        }
+    }
+    
+    showDamage() {
+        // 显示裂纹效果
+        this.graphics.lineStyle(2, 0x000000, 0.8);
+        
+        // 添加裂纹
+        this.graphics.lineBetween(
+            -this.width / 4, -this.height / 4,
+            this.width / 4, this.height / 4
+        );
+        this.graphics.lineBetween(
+            this.width / 4, -this.height / 4,
+            -this.width / 4, 0
+        );
+    }
+    
+    update() {
+        if (!this.destroyed) {
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        
+        // 创建破坏效果
+        this.createDestroyEffect();
+        
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+    
+    createDestroyEffect() {
+        // 创建碎片
+        const fragmentCount = this.material === MATERIAL_TYPES.GLASS ? 6 : 4;
+        const color = this.getColor();
+
+--- src/objects/Slingshot.js L1-83 (83 lines) ---
+import { COLORS } from '../utils/constants.js';
+
+export class Slingshot {
+    constructor(scene, x, y) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建弹弓图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 左支架
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillRect(-30, -80, 15, 100);
+        
+        // 右支架
+        this.graphics.fillRect(15, -80, 15, 100);
+        
+        // Y形顶部
+        this.graphics.fillStyle(0x5D3A1A, 1);
+        this.graphics.fillTriangle(-30, -80, -15, -80, -22, -100);
+        this.graphics.fillTriangle(15, -80, 30, -80, 22, -100);
+        
+        // 底座
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillRect(-35, 20, 70, 15);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建皮筋
+        this.band = this.scene.add.graphics();
+        this.leftAnchor = { x: this.x - 22, y: this.y - 100 };
+        this.rightAnchor = { x: this.x + 22, y: this.y - 100 };
+        
+        this.resetBand();
+    }
+    
+    updateBand(birdX, birdY) {
+        this.band.clear();
+        
+        // 绘制皮筋
+        this.band.lineStyle(4, 0x8B4513, 1);
+        
+        // 左边皮筋
+        this.band.lineBetween(this.leftAnchor.x, this.leftAnchor.y, birdX, birdY);
+        
+        // 右边皮筋
+        this.band.lineBetween(this.rightAnchor.x, this.rightAnchor.y, birdX, birdY);
+    }
+    
+    resetBand() {
+        this.band.clear();
+        
+        // 绘制默认状态的皮筋
+        this.band.lineStyle(4, 0x8B4513, 1);
+        this.band.lineBetween(
+            this.leftAnchor.x, this.leftAnchor.y,
+            this.rightAnchor.x, this.rightAnchor.y
+        );
+    }
+    
+    release() {
+        // 释放动画效果
+        this.scene.tweens.add({
+            targets: this.band,
+            alpha: 0.5,
+            duration: 50,
+            yoyo: true,
+            onComplete: () => {
+                this.resetBand();
+            }
+        });
+    }
+    
+    destroy() {
+        this.graphics.destroy();
+        this.band.destroy();
+    }
+}

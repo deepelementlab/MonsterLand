@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Game Test</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { padding: 8px; font-size: 12px; line-height: 1.4; white-space: pre-wrap; max-height: 250px; overflow-y: auto; }
+        .err { color: #ff5a5f; } .ok { color: #00a699; } .warn { color: #ffb400; }
+        #game-container { width: 100%; height: calc(100vh - 260px); display: flex; justify-content: center; align-items: center; background: #87CEEB; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    window.onerror = function(msg, url, line, col, err) {
+        addLog('UNCAUGHT: ' + msg + ' L' + line, 'err');
+        if (err && err.stack) addLog(err.stack, 'err');
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        addLog('PROMISE: ' + (e.reason ? e.reason.message || e.reason : e), 'err');
+    });
+</script>
+<script type="module">
+    const Phaser = (await import('phaser')).default;
+    const { GameConfig, LevelsConfig } = await import('./src/config/game.config.js');
+    const { SCENE_KEYS, COLORS } = await import('./src/utils/constants.js');
+    const { BootScene } = await import('./src/scenes/BootScene.js');
+    const { PreloadScene } = await import('./src/scenes/PreloadScene.js');
+    const { MenuScene } = await import('./src/scenes/MenuScene.js');
+    const { GameScene } = await import('./src/scenes/GameScene.js');
+    
+    addLog('All modules loaded OK', 'ok');
+    
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: {
+            default: 'matter',
+            matter: { gravity: GameConfig.physics.gravity, debug: false }
+        },
+        scene: [BootScene, PreloadScene, MenuScene, GameScene],
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        }
+    };
+    
+    addLog('Creating Phaser game...', 'warn');
+    const game = new Phaser.Game(config);
+    window.game = game;
+    
+    game.events.on('ready', () => addLog('Game READY', 'ok'));
+    
+    setTimeout(() => {
+        const scenes = game.scene.getScenes(true);
+        addLog('Active scenes: ' + scenes.map(s => s.scene.key).join(', '), 'ok');
+        const menu = game.scene.getScene('MenuScene');
+        if (menu && menu.scene.isActive()) {
+            addLog('MenuScene is active!', 'ok');
+            const children = menu.children.getChildren();
+            addLog('MenuScene children: ' + children.length, 'ok');
+        } else {
+            addLog('MenuScene NOT active!', 'err');
+        }
+    }, 3000);
+</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "project_root": "D:\\opensource_project\\opencode-main\\opencode-main\\test\\angry_bird",
+  "updated_at": 1775492547.8211384,
+  "source": "llm",
+  "model_info": {
+    "available": true,
+    "provider": "openai",
+    "provider_key": "openai_deepseek",
+    "model": "deepseek-reasoner",
+    "last_attempt_at": 1775490178.4288192,
+    "stage1_outline_stats": {
+      "truncated": false,
+      "notes": [],
+      "max_depth": 3,
+      "max_total_paths": 400,
+      "max_children_per_dir": 30,
+      "sampled_paths": 11
+    },
+    "two_stage": true
+  },
+  "layers": {
+    "Documentation": [
+      "docs"
+    ],
+    "Application": [
+      "src",
+      "src/systems"
+    ],
+    "Infrastructure": [
+      "src/config",
+      "src/utils"
+    ],
+    "Domain": [
+      "src/objects"
+    ],
+    "Presentation": [
+      "src/scenes",
+      "src/ui"
+    ],
+    "Testing": [
+      "tests",
+      "tests/unit",
+      "tests/unit/objects"
+    ]
+  },
+  "dir_to_layer": {
+    "docs": "Documentation",
+    "src": "Application",
+    "src/config": "Infrastructure",
+    "src/objects": "Domain",
+    "src/scenes": "Presentation",
+    "src/systems": "Application",
+    "src/ui": "Presentation",
+    "src/utils": "Infrastructure",
+    "tests": "Testing",
+    "tests/unit": "Testing",
+    "tests/unit/objects": "Testing"
+  },
+  "layer_descriptions": {
+    "Presentation": "Handles game scenes (e.g., BootScene, GameScene) and UI elements, managing user interaction and visual rendering",
+    "Application": "Implements game rules, scoring, physics interactions, and manages game state through systems",
+    "Domain": "Defines game entities like birds, pigs, and blocks with their attributes and behaviors",
+    "Infrastructure": "Provides game configuration, constants, utility functions, and integrates with Phaser and Matter.js",
+    "Testing": "Contains unit tests for validating game objects, logic, and systems",
+    "Documentation": "Stores product requirements, architecture notes, and design documents for the project"
+  },
+  "layer_order": [
+    "Presentation",
+    "Application",
+    "Domain",
+    "Infrastructure",
+    "Testing",
+    "Documentation"
+  ],
+  "file_events": [
+    {
+      "timestamp": 1774868531.0132878,
+      "path": "docs/architecture.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774868855.184949,
+      "path": "docs/ui-ux-design.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774868981.0263863,
+      "path": "package.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869036.1434655,
+      "path": "vite.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869048.3844476,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869059.735469,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869098.904811,
+      "path": "src/config/game.config.js",
+      "directory": "src/config",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869182.900917,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Source Core",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869238.192513,
+      "path": "src/scenes/BootScene.js",
+      "directory": "src/scenes",
+      "layer": "Features",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869280.1274195,
+      "path": "src/scenes/PreloadScene.js",
+      "directory": "src/scenes",
+      "layer": "Presentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869462.3968532,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.7395172,
+      "path": "package.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.7469444,
+      "path": "vite.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869621.755172,
+      "path": "index.html",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5363085,
+      "path": "src/config/game.config.js",
+      "directory": "src/config",
+      "layer": "Configuration",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5480452,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utils",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869702.5593944,
+      "path": "src/main.js",
+      "directory": "src",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869766.967714,
+      "path": "src/scenes/BootScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869767.1795297,
+      "path": "src/scenes/PreloadScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774869767.191972,
+      "path": "src/scenes/MenuScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870057.2454789,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.3173857,
+      "path": "src/objects/Bird.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.5151722,
+      "path": "src/objects/Pig.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.5274594,
+      "path": "src/objects/Block.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870190.542791,
+      "path": "src/objects/Slingshot.js",
+      "directory": "src/objects",
+      "layer": "Objects",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774870484.8832126,
+      "path": "README.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774876182.3646839,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1774969747.5617938,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scene Management",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775009523.9443638,
+      "path": "TESTING_STRATEGY.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775138922.8372786,
+      "path": "docs/test-strategy.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775145038.559714,
+      "path": "docs/test-strategy.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775470089.14022,
+      "path": "docs/code-quality-report.md",
+      "directory": "docs",
+      "layer": "Documentation",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775470825.5297768,
+      "path": "src/utils/constants.js",
+      "directory": "src/utils",
+      "layer": "Utilities",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775471139.140721,
+      "path": "src/scenes/GameScene.js",
+      "directory": "src/scenes",
+      "layer": "Scenes",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489355.752987,
+      "path": "src/systems/PhysicsSystem.js",
+      "directory": "src/systems",
+      "layer": "Physics",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489579.7302368,
+      "path": "src/systems/UISystem.js",
+      "directory": "src/systems",
+      "layer": "Physics",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489845.5309212,
+      "path": "TESTING_STRATEGY_CN.md",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489922.8915224,
+      "path": "jest.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489933.9411564,
+      "path": "playwright.config.js",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775489959.465151,
+      "path": "tests/README.md",
+      "directory": "tests",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775490059.4511197,
+      "path": "package-test.json",
+      "directory": "",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775490059.4629734,
+      "path": "tests/unit/objects/Bird.test.js",
+      "directory": "tests/unit/objects",
+      "layer": "Other",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775491478.817487,
+      "path": "src/systems/EntityManager.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492263.9625473,
+      "path": "src/systems/InputSystem.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492328.4424686,
+      "path": "src/systems/GameStateSystem.js",
+      "directory": "src/systems",
+      "layer": "Application",
+      "kind": "modified"
+    },
+    {
+      "timestamp": 1775492547.821133,
+      "path": "src/scenes/GameScene_refactored.js",
+      "directory": "src/scenes",
+      "layer": "Presentation",
+      "kind": "modified"
+    }
+  ]
+}

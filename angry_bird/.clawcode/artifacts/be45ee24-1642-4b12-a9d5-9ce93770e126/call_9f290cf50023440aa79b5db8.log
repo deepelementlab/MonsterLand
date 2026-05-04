@@ -1,0 +1,401 @@
+--- src/main.js L1-34 (34 lines) ---
+import Phaser from 'phaser';
+import { GameConfig } from './config/game.config.js';
+import { SCENE_KEYS } from './utils/constants.js';
+import { BootScene } from './scenes/BootScene.js';
+import { PreloadScene } from './scenes/PreloadScene.js';
+import { MenuScene } from './scenes/MenuScene.js';
+import { GameScene } from './scenes/GameScene.js';
+
+// Phaser游戏配置
+const config = {
+    type: Phaser.AUTO,
+    width: GameConfig.width,
+    height: GameConfig.height,
+    parent: 'game-container',
+    backgroundColor: '#87CEEB',
+    physics: {
+        default: 'matter',
+        matter: {
+            gravity: GameConfig.physics.gravity,
+            debug: GameConfig.physics.debug
+        }
+    },
+    scene: [BootScene, PreloadScene, MenuScene, GameScene],
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+// 创建游戏实例
+const game = new Phaser.Game(config);
+
+// 导出游戏实例供调试使用
+window.game = game;
+
+--- src/scenes/BootScene.js L1-19 (19 lines) ---
+import { SCENE_KEYS } from '../utils/constants.js';
+
+export class BootScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.BOOT });
+    }
+
+    preload() {
+        // Boot场景不需要加载资源
+    }
+
+    create() {
+        // 设置游戏标题
+        this.game.config.backgroundColor = '#87CEEB';
+        
+        // 跳转到资源加载场景
+        this.scene.start(SCENE_KEYS.PRELOAD);
+    }
+}
+
+--- src/scenes/PreloadScene.js L1-42 (42 lines) ---
+import { SCENE_KEYS } from '../utils/constants.js';
+
+export class PreloadScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.PRELOAD });
+    }
+
+    preload() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 创建加载进度条
+        const progressBar = this.add.graphics();
+        const progressBox = this.add.graphics();
+        
+        progressBox.fillStyle(0x222222, 0.8);
+        progressBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+        
+        // 加载文字
+        const loadingText = this.add.text(width / 2, height / 2 - 50, '加载中...', {
+            font: '24px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // 加载进度事件
+        this.load.on('progress', (value) => {
+            progressBar.clear();
+            progressBar.fillStyle(0x4CAF50, 1);
+            progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
+        });
+        
+        this.load.on('complete', () => {
+            progressBar.destroy();
+            progressBox.destroy();
+            loadingText.destroy();
+        });
+    }
+
+    create() {
+        this.scene.start(SCENE_KEYS.MENU);
+    }
+}
+
+--- src/scenes/MenuScene.js L1-174 (174 lines) ---
+import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+
+export class MenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.MENU });
+    }
+
+    create() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 背景
+        this.createBackground();
+        
+        // 游戏标题
+        const title = this.add.text(width / 2, 150, '愤怒的小鸟', {
+            fontSize: '64px',
+            fontFamily: 'Arial Black',
+            color: '#FF0000',
+            stroke: '#000000',
+            strokeThickness: 8
+        }).setOrigin(0.5);
+        
+        // 添加标题动画
+        this.tweens.add({
+            targets: title,
+            y: 140,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // 开始游戏按钮
+        this.createButton(width / 2, 320, '开始游戏', () => {
+            this.scene.start(SCENE_KEYS.GAME, { level: 1 });
+        });
+        
+        // 小鸟装饰
+        this.createBirdDecorations();
+    }
+    
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 天空渐变
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        
+        // 云朵
+        for (let i = 0; i < 5; i++) {
+            const x = Phaser.Math.Between(100, width - 100);
+            const y = Phaser.Math.Between(50, 200);
+            this.createCloud(x, y);
+        }
+        
+        // 地面
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 80, width, 80);
+        
+        // 草地装饰
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 20);
+    }
+    
+    createCloud(x, y) {
+        const cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.9);
+        cloud.fillCircle(0, 0, 30);
+        cloud.fillCircle(25, 0, 40);
+        cloud.fillCircle(50, 0, 30);
+        cloud.fillCircle(25, -20, 25);
+        cloud.setPosition(x, y);
+        
+        // 云朵移动动画
+        this.tweens.add({
+            targets: cloud,
+            x: x + 50,
+            duration: Phaser.Math.Between(3000, 6000),
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+    
+    createButton(x, y, text, callback) {
+        const button = this.add.container(x, y);
+        
+        // 按钮背景
+        const bg = this.add.graphics();
+        bg.fillStyle(COLORS.UI_PRIMARY, 1);
+        bg.fillRoundedRect(-100, -30, 200, 60, 30);
+        
+        // 按钮文字
+        const label = this.add.text(0, 0, text, {
+            fontSize: '28px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF'
+        }).setOrigin(0.5);
+        
+        button.add([bg, label]);
+        button.setSize(200, 60);
+        button.setInteractive({ useHandCursor: true });
+        
+        // 悬停效果
+        button.on('pointerover', () => {
+            this.tweens.add({
+                targets: button,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 100
+            });
+        });
+        
+        button.on('pointerout', () => {
+            this.tweens.add({
+                targets: button,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 100
+            });
+        });
+        
+        button.on('pointerdown', callback);
+        
+        return button;
+    }
+    
+    createBirdDecorations() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 创建几只小鸟装饰
+        const birdColors = [COLORS.BIRD_RED, COLORS.BIRD_YELLOW, COLORS.BIRD_BLUE];
+        
+        for (let i = 0; i < 3; i++) {
+            const bird = this.add.graphics();
+            bird.fillStyle(birdColors[i], 1);
+            bird.fillCircle(0, 0, 25);
+            
+            // 眼睛
+            bird.fillStyle(0xFFFFFF, 1);
+            bird.fillCircle(-8, -5, 8);
+            bird.fillCircle(8, -5, 8);
+            bird.fillStyle(0x000000, 1);
+            bird.fillCircle(-6, -5, 4);
+            bird.fillCircle(10, -5, 4);
+            
+            // 眉毛
+            bird.lineStyle(3, 0x000000, 1);
+            bird.lineBetween(-15, -15, -2, -12);
+            bird.lineBetween(2, -12, 15, -15);
+            
+            // 嘴巴
+            bird.fillStyle(0xFFA500, 1);
+            bird.fillTriangle(20, 0, 35, 5, 35, -5);
+            
+            bird.setPosition(width / 2 - 100 + i * 100, height - 150);
+            
+            // 弹跳动画
+            this.tweens.add({
+                targets: bird,
+                y: height - 160,
+                duration: 500 + i * 200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Bounce.easeOut'
+            });
+        }
+    }
+}
+
+--- src/config/game.config.js L1-123 (123 lines) ---
+// 游戏配置
+export const GameConfig = {
+    // 游戏尺寸
+    width: 1280,
+    height: 720,
+    
+    // 物理配置
+    physics: {
+        gravity: { x: 0, y: 1 },
+        debug: false
+    },
+    
+    // 弹弓配置
+    slingshot: {
+        x: 200,
+        y: 550,
+        maxDragDistance: 150,
+        minDragDistance: 30,
+        launchPower: 0.15
+    },
+    
+    // 得分配置
+    scores: {
+        pig: 5000,
+        wood: 500,
+        stone: 1000,
+        glass: 300,
+        birdBonus: 10000
+    },
+    
+    // 材质属性
+    materials: {
+        wood: {
+            health: 100,
+            density: 0.001,
+            friction: 0.5,
+            restitution: 0.3
+        },
+        stone: {
+            health: 300,
+            density: 0.003,
+            friction: 0.8,
+            restitution: 0.1
+        },
+        glass: {
+            health: 50,
+            density: 0.001,
+            friction: 0.2,
+            restitution: 0.5
+        }
+    }
+};
+
+// 关卡配置
+export const LevelsConfig = [
+    // 关卡 1 - 简单入门
+    {
+        id: 1,
+        name: "第一课",
+        starScores: [5000, 15000, 30000],
+        birds: ['red', 'red', 'red'],
+        structures: [
+            // 地面方块
+            { type: 'block', material: 'wood', x: 800, y: 640, width: 80, height: 40 },
+            { type: 'block', material: 'wood', x: 880, y: 640, width: 80, height: 40 },
+            { type: 'block', material: 'wood', x: 960, y: 640, width: 80, height: 40 },
+            // 垂直支撑
+            { type: 'block', material: 'wood', x: 800, y: 580, width: 40, height: 80 },
+            { type: 'block', material: 'wood', x: 960, y: 580, width: 40, height: 80 },
+            // 横梁
+            { type: 'block', material: 'wood', x: 880, y: 520, width: 200, height: 40 },
+            // 猪
+            { type: 'pig', x: 880, y: 640, radius: 25 }
+        ]
+    },
+    // 关卡 2 - 稍微复杂
+    {
+        id: 2,
+        name: "双重打击",
+        starScores: [8000, 25000, 45000],
+        birds: ['red', 'red', 'red', 'red'],
+        structures: [
+            // 左边结构
+            { type: 'block', material: 'wood', x: 700, y: 640, width: 40, height: 80 },
+            { type: 'block', material: 'wood', x: 700, y: 560, width: 80, height: 40 },
+            { type: 'pig', x: 700, y: 640, radius: 25 },
+            // 中间结构
+            { type: 'block', material: 'stone', x: 900, y: 640, width: 80, height: 40 },
+            { type: 'block', material: 'stone', x: 900, y: 580, width: 40, height: 80 },
+            { type: 'block', material: 'wood', x: 900, y: 520, width: 120, height: 40 },
+            { type: 'pig', x: 900, y: 640, radius: 25 },
+            // 右边结构
+            { type: 'block', material: 'glass', x: 1100, y: 640, width: 40, height: 80 },
+            { type: 'block', material: 'glass', x: 1100, y: 560, width: 80, height: 40 },
+            { type: 'pig', x: 1100, y: 640, radius: 25 }
+        ]
+    },
+    // 关卡 3 - 石头堡垒
+    {
+        id: 3,
+        name: "石头堡垒",
+        starScores: [15000, 40000, 70000],
+        birds: ['red', 'red', 'red', 'red', 'red'],
+        structures: [
+            // 底层
+            { type: 'block', material: 'stone', x: 850, y: 640, width: 80, height: 40 },
+            { type: 'block', material: 'stone', x: 950, y: 640, width: 80, height: 40 },
+            { type: 'block', material: 'stone', x: 1050, y: 640, width: 80, height: 40 },
+            // 第二层
+            { type: 'block', material: 'stone', x: 850, y: 580, width: 40, height: 80 },
+            { type: 'block', material: 'stone', x: 1050, y: 580, width: 40, height: 80 },
+            { type: 'block', material: 'wood', x: 950, y: 580, width: 40, height: 80 },
+            // 第三层
+            { type: 'block', material: 'wood', x: 950, y: 500, width: 240, height: 40 },
+            // 顶部
+            { type: 'block', material: 'glass', x: 950, y: 440, width: 80, height: 40 },
+            // 猪们
+            { type: 'pig', x: 950, y: 640, radius: 25 },
+            { type: 'pig', x: 900, y: 520, radius: 25 },
+            { type: 'pig', x: 1000, y: 520, radius: 25 }
+        ]
+    }
+];

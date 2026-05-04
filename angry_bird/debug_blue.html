@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug - Blue Screen Test</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #1a1a1a; color: #fff; font-family: monospace; }
+        #log { white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
+        .err { color: #ff5a5f; }
+        .ok { color: #00a699; }
+        .warn { color: #ffb400; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<script type="module">
+    const log = document.getElementById('log');
+    const addLog = (msg, cls) => {
+        const div = document.createElement('div');
+        div.className = cls || '';
+        div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        log.appendChild(div);
+    };
+
+    try {
+        addLog('=== Angry Bird Debug Test ===', 'ok');
+        
+        addLog('Step 1: Importing Phaser...');
+        const Phaser = await import('https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.esm.js');
+        addLog(`Phaser loaded: v${Phaser.default.VERSION}`, 'ok');
+        
+        addLog('Step 2: Testing Phaser scene chain...');
+        
+        class TestBoot extends Phaser.default.Scene {
+            constructor() { super('TestBoot'); }
+            create() {
+                addLog('TestBoot.create() OK', 'ok');
+                this.scene.start('TestPreload');
+            }
+        }
+        
+        class TestPreload extends Phaser.default.Scene {
+            constructor() { super('TestPreload'); }
+            preload() {
+                addLog('TestPreload.preload() OK', 'ok');
+            }
+            create() {
+                addLog('TestPreload.create() OK', 'ok');
+                this.scene.start('TestMenu');
+            }
+        }
+        
+        class TestMenu extends Phaser.default.Scene {
+            constructor() { super('TestMenu'); }
+            create() {
+                addLog('TestMenu.create() OK', 'ok');
+                const width = this.cameras.main.width;
+                const height = this.cameras.main.height;
+                this.add.text(width/2, height/2, 'Menu Works!', { fontSize: '48px', color: '#fff' }).setOrigin(0.5);
+                addLog('If you see "Menu Works!" above, Phaser is fine.', 'ok');
+                addLog('Problem is likely in project scene code.', 'warn');
+            }
+        }
+        
+        const config = {
+            type: Phaser.default.AUTO,
+            width: 480,
+            height: 320,
+            parent: 'game-test',
+            backgroundColor: '#87CEEB',
+            scene: [TestBoot, TestPreload, TestMenu]
+        };
+        
+        new Phaser.default.Game(config);
+        addLog('Game instance created', 'ok');
+        
+    } catch (e) {
+        addLog(`ERROR: ${e.message}`, 'err');
+        addLog(`Stack: ${e.stack}`, 'err');
+    }
+</script>
+<div id="game-test" style="margin-top: 20px;"></div>
+</body>
+</html>

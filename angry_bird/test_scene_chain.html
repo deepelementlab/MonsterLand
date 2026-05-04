@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Scene Chain</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { padding: 10px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; max-height: 350px; overflow-y: auto; }
+        .err { color: #ff5a5f; } .ok { color: #00a699; } .warn { color: #ffb400; }
+        #game-container { width: 100%; height: calc(100vh - 350px); display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+        console.log(msg);
+    }
+    window.onerror = function(msg, url, line, col, err) {
+        addLog('UNCAUGHT: ' + msg + ' L' + line, 'err');
+        if (err && err.stack) addLog(err.stack, 'err');
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        addLog('PROMISE ERR: ' + (e.reason ? e.reason.message || e.reason : e), 'err');
+    });
+</script>
+<script type="module">
+    import Phaser from 'phaser';
+    import { SCENE_KEYS, COLORS } from './src/utils/constants.js';
+    import { GameConfig, LevelsConfig } from './src/config/game.config.js';
+    
+    addLog('Phaser: ' + Phaser.VERSION, 'ok');
+    addLog('GameConfig: w=' + GameConfig.width + ' h=' + GameConfig.height, 'ok');
+    addLog('SCENE_KEYS: ' + JSON.stringify(SCENE_KEYS), 'ok');
+    
+    // Manually import each scene to test
+    addLog('Importing BootScene...');
+    const { BootScene } = await import('./src/scenes/BootScene.js');
+    addLog('BootScene: OK', 'ok');
+    
+    addLog('Importing PreloadScene...');
+    const { PreloadScene } = await import('./src/scenes/PreloadScene.js');
+    addLog('PreloadScene: OK', 'ok');
+    
+    addLog('Importing MenuScene...');
+    let MenuScene;
+    try {
+        const mod = await import('./src/scenes/MenuScene.js');
+        MenuScene = mod.MenuScene;
+        addLog('MenuScene: OK', 'ok');
+    } catch(e) {
+        addLog('MenuScene import ERROR: ' + e.message, 'err');
+        addLog(e.stack, 'err');
+    }
+    
+    addLog('Importing GameScene...');
+    let GameScene;
+    try {
+        const mod = await import('./src/scenes/GameScene.js');
+        GameScene = mod.GameScene;
+        addLog('GameScene: OK', 'ok');
+    } catch(e) {
+        addLog('GameScene import ERROR: ' + e.message, 'err');
+        addLog(e.stack, 'err');
+    }
+
+    // Create game with instrumented scenes
+    class DebugBoot extends Phaser.Scene {
+        constructor() { super({ key: SCENE_KEYS.BOOT }); }
+        preload() { addLog('BootScene.preload()', 'ok'); }
+        create() {
+            addLog('BootScene.create() -> starting PRELOAD', 'ok');
+            this.scene.start(SCENE_KEYS.PRELOAD);
+        }
+    }
+    
+    class DebugPreload extends Phaser.Scene {
+        constructor() { super({ key: SCENE_KEYS.PRELOAD }); }
+        preload() { addLog('PreloadScene.preload() - NO assets', 'warn'); }
+        create() {
+            addLog('PreloadScene.create() -> starting MENU', 'ok');
+            this.scene.start(SCENE_KEYS.MENU);
+        }
+    }
+    
+    class DebugMenu extends Phaser.Scene {
+        constructor() { super({ key: SCENE_KEYS.MENU }); }
+        create() {
+            addLog('MenuScene.create() START', 'ok');
+            try {
+                // Call the real MenuScene create
+                this.createBackground();
+                this.createTitle();
+                this.createMenuButtons();
+                this.createBirdDecorations();
+                addLog('MenuScene.create() COMPLETE', 'ok');
+            } catch(e) {
+                addLog('MenuScene.create() ERROR: ' + e.message, 'err');
+                addLog(e.stack, 'err');
+            }
+        }
+    }
+    
+    // Copy methods from MenuScene prototype
+    DebugMenu.prototype.createBackground = MenuScene.prototype.createBackground;
+    DebugMenu.prototype.createCloud = MenuScene.prototype.createCloud;
+    DebugMenu.prototype.createTitle = MenuScene.prototype.createTitle;
+    DebugMenu.prototype.createMenuButtons = MenuScene.prototype.createMenuButtons;
+    DebugMenu.prototype._makeBtn = MenuScene.prototype._makeBtn;
+    DebugMenu.prototype._parseProgress = MenuScene.prototype._parseProgress;
+    DebugMenu.prototype.createBirdDecorations = MenuScene.prototype.createBirdDecorations;
+    DebugMenu.prototype.showLevelSelectPanel = MenuScene.prototype.showLevelSelectPanel;
+    DebugMenu.prototype.hideLevelSelectPanel = MenuScene.prototype.hideLevelSelectPanel;
+    DebugMenu.prototype.showHelpPanel = MenuScene.prototype.showHelpPanel;
+    DebugMenu.prototype.hideHelpPanel = MenuScene.prototype.hideHelpPanel;
+    
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: {
+            default: 'matter',
+            matter: { gravity: GameConfig.physics.gravity, debug: GameConfig.physics.debug }
+        },
+        scene: [DebugBoot, DebugPreload, DebugMenu],
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        }
+    };
+    
+    addLog('Creating game...', 'warn');
+    const game = new Phaser.Game(config);
+    window.game = game;
+    addLog('Game created', 'ok');
+    
+    game.events.on('ready', () => addLog('Game READY event', 'ok'));
+    game.events.on('error', (err) => addLog('Game ERROR event: ' + err, 'err'));
+</script>
+</body>
+</html>

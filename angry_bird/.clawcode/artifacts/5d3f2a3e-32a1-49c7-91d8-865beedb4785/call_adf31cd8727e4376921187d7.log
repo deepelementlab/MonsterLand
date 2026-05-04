@@ -1,0 +1,341 @@
+--- src/objects/Bird.js L51-145 (95 lines) ---
+            label: 'bird',
+            mass: 5,
+            restitution: 0.6,
+            friction: 0.3,
+            frictionAir: 0.01
+        });
+        
+        // 关联图形和物理体
+        this.body.gameObject = this;
+        
+        // 初始静止
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    getColor() {
+        switch (this.type) {
+            case BIRD_TYPES.RED:
+                return COLORS.BIRD_RED;
+            case BIRD_TYPES.YELLOW:
+                return COLORS.BIRD_YELLOW;
+            case BIRD_TYPES.BLUE:
+                return COLORS.BIRD_BLUE;
+            default:
+                return COLORS.BIRD_RED;
+        }
+    }
+    
+    moveToSlingshot(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+        this.scene.matter.body.setStatic(this.body, true);
+    }
+    
+    startAiming() {
+        this.aiming = true;
+    }
+    
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphics.setPosition(x, y);
+        this.scene.matter.body.setPosition(this.body, { x, y });
+    }
+    
+    launch(velocityX, velocityY) {
+        this.launched = true;
+        this.aiming = false;
+        
+        // 解除静止状态
+        this.scene.matter.body.setStatic(this.body, false);
+        
+        // 设置速度
+        this.scene.matter.body.setVelocity(this.body, {
+            x: velocityX,
+            y: velocityY
+        });
+        
+        // 添加旋转
+        this.scene.matter.body.setAngularVelocity(this.body, 0.1);
+    }
+    
+    update() {
+        if (this.launched && !this.destroyed) {
+            // 更新图形位置
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    onCollision(impactForce) {
+        // 碰撞处理
+        if (impactForce > COLLISION.BIRD_DAMAGE_THRESHOLD) {
+            this.takeDamage(impactForce);
+        }
+    }
+    
+    takeDamage(amount) {
+        // 小鸟可以承受一些伤害
+        if (amount > COLLISION.BIRD_DESTROY_THRESHOLD) {
+            this.destroy();
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+}
+
+--- src/objects/Pig.js L51-131 (81 lines) ---
+            restitution: 0.3,
+            friction: 0.5
+        });
+        
+        this.body.gameObject = this;
+    }
+    
+    takeDamage(amount) {
+        if (this.destroyed) return;
+        
+        this.health -= amount;
+        
+        // 视觉反馈 - 变红
+        if (this.health < 50) {
+            this.graphics.clear();
+            this.graphics.fillStyle(0xFFA07A, 1);
+            this.graphics.fillCircle(0, 0, this.radius);
+            
+            // 重绘眼睛
+            this.graphics.fillStyle(0xFFFFFF, 1);
+            this.graphics.fillCircle(-8, -5, 8);
+            this.graphics.fillCircle(8, -5, 8);
+            this.graphics.fillStyle(0x000000, 1);
+            this.graphics.fillCircle(-6, -5, 4);
+            this.graphics.fillCircle(10, -5, 4);
+            
+            // 受伤表情
+            this.graphics.lineStyle(2, 0x000000, 1);
+            this.graphics.lineBetween(-12, -5, -4, -5);
+            this.graphics.lineBetween(4, -5, 12, -5);
+        }
+        
+        if (this.health <= 0) {
+            this.destroy();
+        }
+    }
+    
+    update() {
+        if (!this.destroyed) {
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        
+        // 破坏效果
+        this.createDestroyEffect();
+        
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+    
+    createDestroyEffect() {
+        // 创建粒子效果
+        for (let i = 0; i < 8; i++) {
+            const particle = this.scene.add.graphics();
+            particle.fillStyle(COLORS.PIG, 1);
+            particle.fillCircle(0, 0, 5);
+            particle.setPosition(this.x, this.y);
+            
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = Phaser.Math.Between(30, 60);
+            
+            this.scene.tweens.add({
+                targets: particle,
+                x: this.x + Math.cos(angle) * distance,
+                y: this.y + Math.sin(angle) * distance - 30,
+                alpha: 0,
+                scale: 0.5,
+                duration: 500,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+    }
+}
+
+--- src/objects/Block.js L51-175 (125 lines) ---
+        
+        this.body.gameObject = this;
+    }
+    
+    getColor() {
+        switch (this.material) {
+            case MATERIAL_TYPES.WOOD:
+                return COLORS.WOOD;
+            case MATERIAL_TYPES.STONE:
+                return COLORS.STONE;
+            case MATERIAL_TYPES.GLASS:
+                return COLORS.GLASS;
+            default:
+                return COLORS.WOOD;
+        }
+    }
+    
+    getBorderColor() {
+        switch (this.material) {
+            case MATERIAL_TYPES.WOOD:
+                return 0x5D3A1A;
+            case MATERIAL_TYPES.STONE:
+                return 0x4A4A5A;
+            case MATERIAL_TYPES.GLASS:
+                return 0x87CEEB;
+            default:
+                return 0x000000;
+        }
+    }
+    
+    addTextureLines() {
+        this.graphics.lineStyle(1, this.getBorderColor(), 0.5);
+        
+        if (this.material === MATERIAL_TYPES.WOOD) {
+            // 木纹
+            for (let i = 0; i < 3; i++) {
+                const y = -this.height / 2 + (i + 1) * (this.height / 4);
+                this.graphics.lineBetween(-this.width / 2 + 5, y, this.width / 2 - 5, y);
+            }
+        } else if (this.material === MATERIAL_TYPES.STONE) {
+            // 石头裂纹
+            this.graphics.lineBetween(-10, -this.height / 4, 5, this.height / 4);
+            this.graphics.lineBetween(5, -this.height / 3, 15, 0);
+        }
+    }
+    
+    takeDamage(amount) {
+        if (this.destroyed) return;
+        
+        this.health -= amount;
+        
+        // 视觉反馈
+        if (this.health < this.maxHealth * 0.5) {
+            this.showDamage();
+        }
+        
+        if (this.health <= 0) {
+            this.destroy();
+        }
+    }
+    
+    showDamage() {
+        // 显示裂纹效果
+        this.graphics.lineStyle(2, 0x000000, 0.8);
+        
+        // 添加裂纹
+        this.graphics.lineBetween(
+            -this.width / 4, -this.height / 4,
+            this.width / 4, this.height / 4
+        );
+        this.graphics.lineBetween(
+            this.width / 4, -this.height / 4,
+            -this.width / 4, 0
+        );
+    }
+    
+    update() {
+        if (!this.destroyed) {
+            this.graphics.setPosition(this.body.position.x, this.body.position.y);
+            this.graphics.rotation = this.body.angle;
+            this.x = this.body.position.x;
+            this.y = this.body.position.y;
+        }
+    }
+    
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        
+        // 创建破坏效果
+        this.createDestroyEffect();
+        
+        this.graphics.destroy();
+        this.scene.matter.world.remove(this.body);
+    }
+    
+    createDestroyEffect() {
+        // 创建碎片
+        const fragmentCount = this.material === MATERIAL_TYPES.GLASS ? 6 : 4;
+        const color = this.getColor();
+        
+        for (let i = 0; i < fragmentCount; i++) {
+            const fragment = this.scene.add.graphics();
+            fragment.fillStyle(color, 1);
+            
+            const size = Phaser.Math.Between(5, 15);
+            fragment.fillRect(-size / 2, -size / 2, size, size);
+            fragment.setPosition(this.x, this.y);
+            
+            const angle = (i / fragmentCount) * Math.PI * 2;
+            const distance = Phaser.Math.Between(20, 50);
+            
+            this.scene.tweens.add({
+                targets: fragment,
+                x: this.x + Math.cos(angle) * distance,
+                y: this.y + Math.sin(angle) * distance + 50,
+                rotation: Phaser.Math.Between(1, 6),
+                alpha: 0,
+                duration: 600,
+                ease: 'Power2',
+                onComplete: () => fragment.destroy()
+            });
+        }
+    }
+}
+
+--- src/objects/Slingshot.js L51-83 (33 lines) ---
+        // 右边皮筋
+        this.band.lineBetween(this.rightAnchor.x, this.rightAnchor.y, birdX, birdY);
+    }
+    
+    resetBand() {
+        this.band.clear();
+        
+        // 绘制默认状态的皮筋
+        this.band.lineStyle(4, 0x8B4513, 1);
+        this.band.lineBetween(
+            this.leftAnchor.x, this.leftAnchor.y,
+            this.rightAnchor.x, this.rightAnchor.y
+        );
+    }
+    
+    release() {
+        // 释放动画效果
+        this.scene.tweens.add({
+            targets: this.band,
+            alpha: 0.5,
+            duration: 50,
+            yoyo: true,
+            onComplete: () => {
+                this.resetBand();
+            }
+        });
+    }
+    
+    destroy() {
+        this.graphics.destroy();
+        this.band.destroy();
+    }
+}

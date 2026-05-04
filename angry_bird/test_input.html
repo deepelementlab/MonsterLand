@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Birds - Input Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #111; overflow: hidden; }
+        #game-container { display: flex; justify-content: center; align-items: center; width: 100vw; height: 80vh; }
+        #log { padding: 10px; font-size: 13px; color: #eee; font-family: monospace; max-height: 20vh; overflow-y: auto; white-space: pre-wrap; }
+        .ok { color: #00a699; } .err { color: #ff5a5f; } .warn { color: #ffb400; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    function addLog(msg, cls) {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    window.onerror = function(msg, url, line) {
+        addLog('ERROR: ' + msg + ' L' + line, 'err');
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        addLog('PROMISE: ' + (e.reason ? e.reason.message || e.reason : e), 'err');
+    });
+</script>
+<script type="module">
+    import Phaser from 'phaser';
+    import { GameConfig, LevelsConfig } from './src/config/game.config.js';
+    import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, COLLISION, SIZES } from './src/utils/constants.js';
+    import { BootScene } from './src/scenes/BootScene.js';
+    import { PreloadScene } from './src/scenes/PreloadScene.js';
+    import { MenuScene } from './src/scenes/MenuScene.js';
+    import { PhysicsSystem } from './src/systems/PhysicsSystem.js';
+    import { GameStateSystem } from './src/systems/GameStateSystem.js';
+    import { InputSystem } from './src/systems/InputSystem.js';
+    import { EntityManager } from './src/systems/EntityManager.js';
+    import { UISystem } from './src/systems/UISystem.js';
+    
+    addLog('All modules imported OK', 'ok');
+    
+    // Create instrumented GameScene
+    class TestGameScene extends Phaser.Scene {
+        constructor() { super({ key: SCENE_KEYS.GAME }); }
+        
+        init(data) {
+            addLog('GameScene.init() level=' + (data.level || 1), 'ok');
+            this.stateSystem = new GameStateSystem(this);
+            this.stateSystem.init({
+                level: data.level || 1,
+                onWin: (score, stars) => this.onGameWin(score, stars),
+                onLose: (score) => this.onGameLose(score)
+            });
+            addLog('GameState: ' + this.stateSystem.getState(), 'ok');
+        }
+        
+        create() {
+            addLog('GameScene.create() START', 'ok');
+            
+            this.createBackground();
+            this.createGround();
+            addLog('Background+Ground created', 'ok');
+            
+            this.entityManager = new EntityManager(this);
+            this.entityManager.init(this.stateSystem.levelData);
+            addLog('EntityManager init OK, birds=' + this.entityManager.birds.length + ' pigs=' + this.entityManager.pigs.length, 'ok');
+            
+            this.physicsSystem = new PhysicsSystem(this);
+            this.physicsSystem.onCollision((bodyA, bodyB, impactForce) => {
+                this.handleCollision(bodyA, bodyB, impactForce);
+            });
+            addLog('PhysicsSystem OK', 'ok');
+            
+            this.uiSystem = new UISystem(this);
+            this.uiSystem.init({
+                level: this.stateSystem.currentLevel,
+                levelData: this.stateSystem.levelData
+            });
+            this.uiSystem.createGameUI();
+            addLog('UISystem OK', 'ok');
+            
+            this.inputSystem = new InputSystem(this);
+            this.inputSystem.init({
+                getSlingshot: () => this.entityManager.getSlingshot(),
+                getCurrentBird: () => this.entityManager.getCurrentBird(),
+                getGameState: () => this.stateSystem.getState(),
+                onLaunch: (bird) => { addLog('BIRD LAUNCHED!', 'ok'); this.onBirdLaunched(bird); },
+                onRoundEnd: () => { addLog('ROUND END check', 'warn'); this.checkRoundEnd(); }
+            });
+            this.inputSystem.setup();
+            addLog('InputSystem setup OK, state=' + this.stateSystem.getState(), 'ok');
+            
+            const bird = this.entityManager.getCurrentBird();
+            const slingshot = this.entityManager.getSlingshot();
+            addLog('Current bird: x=' + bird.x + ' y=' + bird.y + ' launched=' + bird.launched, 'ok');
+            addLog('Slingshot: x=' + slingshot.x + ' y=' + slingshot.y + ' launchPoint: x=' + slingshot.launchPoint.x + ' y=' + slingshot.launchPoint.y, 'ok');
+            addLog('State check: state=' + this.stateSystem.getState() + ' isPlaying=' + this.stateSystem.isPlaying(), 'ok');
+            addLog('READY for drag test - click near bird to drag', 'warn');
+        }
+        
+        createBackground() {
+            const width = this.cameras.main.width;
+            const height = this.cameras.main.height;
+            const sky = this.add.graphics();
+            sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+            sky.fillRect(0, 0, width, height);
+        }
+        
+        createGround() {
+            const width = this.cameras.main.width;
+            const ground = this.add.graphics();
+            ground.fillStyle(COLORS.GROUND, 1);
+            ground.fillRect(0, 640, width, 80);
+            ground.fillStyle(COLORS.GRASS, 1);
+            ground.fillRect(0, 640, width, 15);
+            this.matter.add.rectangle(width / 2, 680, width, 80, { isStatic: true, label: 'ground' });
+        }
+        
+        handleCollision(bodyA, bodyB, impactForce) {
+            if (this.stateSystem.getState() !== GAME_STATES.PLAYING) return;
+            addLog('Collision: ' + bodyA.label + ' <-> ' + bodyB.label + ' force=' + impactForce.toFixed(1), 'warn');
+        }
+        
+        onBirdLaunched(bird) {
+            this.stateSystem.startPlaying();
+            addLog('State -> ' + this.stateSystem.getState(), 'ok');
+        }
+        
+        checkRoundEnd() {
+            if (!this.stateSystem.isPlaying()) return;
+            const allSleeping = this.entityManager.isAllSleeping();
+            if (!allSleeping) {
+                this.time.delayedCall(500, () => this.checkRoundEnd());
+                return;
+            }
+            addLog('All sleeping! Checking game state...', 'ok');
+        }
+        
+        onGameWin() { addLog('WIN!', 'ok'); }
+        onGameLose() { addLog('LOSE', 'err'); }
+        
+        update() {
+            if (this.entityManager) this.entityManager.update();
+        }
+    }
+    
+    // Use minimal scene chain to go directly to game
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: { default: 'matter', matter: { gravity: GameConfig.physics.gravity, debug: false } },
+        scene: [TestGameScene],
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+    };
+    
+    new Phaser.Game(config);
+    addLog('Game instance created', 'ok');
+</script>
+</body>
+</html>

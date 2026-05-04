@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Menu Visual Debug</title>
+<style>
+body{margin:0;background:#111;color:#eee;font-family:monospace}
+#log{padding:10px;font-size:12px;line-height:1.4;max-height:200px;overflow-y:auto}
+.err{color:#ff5a5f}.ok{color:#00a699}.warn{color:#ffb400}
+#game-container{width:100%;height:calc(100vh-200px);display:flex;justify-content:center;align-items:center;border:2px solid yellow}
+canvas{border:3px solid lime !important}
+</style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+var logEl=document.getElementById('log');
+function addLog(m,c){var d=document.createElement('div');if(c)d.className=c;d.textContent=m;logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight}
+window.onerror=function(m,u,l){addLog('ERR:'+m+' L'+l,'err')};
+</script>
+<script type="module">
+import Phaser from 'phaser';
+import{GameConfig}from'./src/config/game.config.js';
+import{SCENE_KEYS,COLORS}from'./src/utils/constants.js';
+import{BootScene}from'./src/scenes/BootScene.js';
+import{PreloadScene}from'./src/scenes/PreloadScene.js';
+import{MenuScene}from'./src/scenes/MenuScene.js';
+import{GameScene}from'./src/scenes/GameScene.js';
+
+addLog('Menu visual test','ok');
+
+// Check if MenuScene creates visible objects
+var origCreate=MenuScene.prototype.create;
+MenuScene.prototype.create=function(){
+  addLog('Menu.create START','ok');
+  try{
+    origCreate.call(this);
+    addLog('Menu.create DONE','ok');
+    // Check display list
+    var list=this.children.list;
+    addLog('  displayList.length='+list.length,'ok');
+    // Check first few objects
+    for(var i=0;i<Math.min(list.length,10);i++){
+      var obj=list[i];
+      addLog('  ['+i+'] type='+obj.type+' x='+obj.x+' y='+obj.y+' alpha='+obj.alpha+' visible='+obj.visible,'ok');
+    }
+    // Log canvas size
+    var canvas=document.querySelector('canvas');
+    addLog('  canvas: '+canvas.width+'x'+canvas.height,'ok');
+  }catch(e){
+    addLog('Menu ERR:'+e.message,'err');
+    addLog(e.stack,'err');
+  }
+};
+
+var config={
+  type:Phaser.AUTO,width:GameConfig.width,height:GameConfig.height,
+  parent:'game-container',backgroundColor:'#87CEEB',
+  physics:{default:'matter',matter:{gravity:GameConfig.physics.gravity,debug:false}},
+  scene:[BootScene,PreloadScene,MenuScene,GameScene],
+  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH}
+};
+window.game=new Phaser.Game(config);
+addLog('Game created','ok');
+</script>
+</body>
+</html>

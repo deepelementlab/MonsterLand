@@ -1,0 +1,198 @@
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:11:     constructor(scene) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:35:         this.config = null;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:40:      * @param {Object} config - 配置对象
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:42:     init(config = {}) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:43:         this.config = config;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:44:         this.setupCollisionListeners();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:51:     setupCollisionListeners() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:54:         this.scene.matter.world.on('collisionstart', (event) => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:55:             event.pairs.forEach(pair => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:56:                 this.handleCollision(pair.bodyA, pair.bodyB);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:64:      * @param {Object} options - 实体参数
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:67:     createEntity(type, options) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:68:         const EntityClass = this.entityTypes[type];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:70:             console.error(`未知的实体类型: ${type}`);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:78:                 entity = new EntityClass(this.scene, options.x, options.y, options.birdType);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:83:                 entity = new EntityClass(this.scene, options.x, options.y, options.radius);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:88:                 entity = new EntityClass(this.scene, options.x, options.y, options.material, options.width, options.height);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:124:         const entities = this.getEntities(type);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:143:             if (!entity.destroyed && typeof entity.update === 'function') {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:160:         for (const type of ['birds', 'pigs', 'blocks']) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:172:         if (typeof entity.destroy === 'function') {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:185:         const entity = this.findEntityByBody(body);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:197:             if (typeof entity.destroy === 'function') {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:217:     handleCollision(bodyA, bodyB, force = null) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:220:             const velocityA = bodyA.velocity;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:221:             const velocityB = bodyB.velocity;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:222:             const relativeVelocity = Math.sqrt(
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:228:         const entityA = this.findEntityByBody(bodyA);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:229:         const entityB = this.findEntityByBody(bodyB);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:233:             this.dispatchCollisionEvent(entityA, entityB, force);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:234:             this.dispatchCollisionEvent(entityB, entityA, force);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:238:         this.handleSpecificCollisions(bodyA, bodyB, force);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:247:     dispatchCollisionEvent(entity, otherEntity, force) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:248:         if (typeof entity.onCollision === 'function') {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:249:             entity.onCollision(otherEntity, force);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:259:     handleSpecificCollisions(bodyA, bodyB, force) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:262:             const pigBody = bodyA.label === 'pig' ? bodyA : bodyB;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:265:                 const pig = this.findEntityByBody(pigBody);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:279:             const blockBody = bodyA.label === 'block' ? bodyA : bodyB;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:282:                 const block = this.findEntityByBody(blockBody);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:350:         const result = {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:358:             const birdStartX = 100;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:360:                 const bird = this.createEntity('bird', {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:373:                     const block = this.createEntity('block', {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\EntityManager.js:382:                     const pig = this.createEntity('pig', {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:5: import { COLORS, POSITIONS, TEXT_STYLES, GAME_STATES } from '../utils/constants.js';
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:8:     constructor(scene) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:18:         this.pauseButton = null;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:26:         this.resultButtons = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:34:      * @param {Object} config - 配置参数
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:36:     init(config = {}) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:37:         if (config.level) this.currentLevel = config.level;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:38:         if (config.levelData) this.levelData = config.levelData;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:39:         if (config.score) this.score = config.score;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:40:         if (config.gameState) this.gameState = config.gameState;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:47:         const width = this.scene.cameras.main.width;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:48:         const height = this.scene.cameras.main.height;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:51:         this.pauseButton = this.scene.add.text(
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:52:             POSITIONS.PAUSE_BUTTON_X, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:53:             POSITIONS.PAUSE_BUTTON_Y, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:55:             TEXT_STYLES.PAUSE_BUTTON
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:59:         .on('pointerdown', () => this.onPause());
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:64:             POSITIONS.LEVEL_TEXT_Y, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:71:             POSITIONS.SCORE_TEXT_X, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:72:             POSITIONS.SCORE_TEXT_Y, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:101:             const remaining = 1; // 这里需要根据游戏状态计算
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:112:             POSITIONS.BIRD_QUEUE_X, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:113:             POSITIONS.BIRD_QUEUE_Y, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:126:         const popup = this.scene.add.text(x, y, `+${points}`, TEXT_STYLES.SCORE_POPUP)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:134:             duration: 800,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:136:             onComplete: () => popup.destroy()
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:150:         const width = this.scene.cameras.main.width;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:151:         const height = this.scene.cameras.main.height;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:171:         const titleText = resultType === 'win' ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢';
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:172:         const titleColor = resultType === 'win' ? '#FFD700' : '#FF6B6B';
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:176:             height / 2 + POSITIONS.RESULT_TITLE_Y_OFFSET, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:184:             height / 2 + POSITIONS.RESULT_SCORE_Y_OFFSET, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:193:                 height / 2 + POSITIONS.RESULT_STARS_Y_OFFSET, 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:200:         this.createResultButtons(width / 2, height / 2, resultType);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:209:     createResultButtons(centerX, centerY, resultType) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:210:         const buttons = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:213:         buttons.push({
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:215:             yOffset: POSITIONS.RESULT_BUTTON_Y_START,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:216:             callback: () => this.onRestartLevel()
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:221:             buttons.push({
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:223:                 yOffset: POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:224:                 callback: () => this.onNextLevel()
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:229:         const menuYOffset = resultType === 'win' 
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:230:             ? POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING * 2
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:231:             : POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:233:         buttons.push({
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:236:             callback: () => this.onMainMenu()
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:240:         buttons.forEach(button => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:241:             const btn = this.createButton(
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:242:                 button.text,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:244:                 centerY + button.yOffset,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:245:                 button.callback
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:247:             this.resultButtons.push(btn);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:256:      * @param {Function} callback - 点击回调
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:259:     createButton(text, x, y, callback) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:260:         const button = this.scene.add.text(x, y, text, TEXT_STYLES.RESULT_BUTTON)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:264:         button.on('pointerdown', callback);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:267:         button.on('pointerover', () => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:268:             button.setBackgroundColor('#45a049');
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:271:         button.on('pointerout', () => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:272:             button.setBackgroundColor('#4CAF50');
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:275:         return button;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:287:         this.resultButtons.forEach(button => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:288:             if (button) button.destroy();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:291:         this.resultButtons = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:303:         if (this.pauseButton) this.pauseButton.destroy();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:321:     onPause() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:323:         if (this.scene.onPause) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:324:             this.scene.onPause();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:331:     onRestartLevel() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:333:         if (this.scene.onRestartLevel) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:334:             this.scene.onRestartLevel(this.currentLevel);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:341:     onNextLevel() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:343:         if (this.scene.onNextLevel) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:344:             this.scene.onNextLevel(this.currentLevel + 1);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:351:     onMainMenu() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:353:         if (this.scene.onMainMenu) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\UISystem.js:354:             this.scene.onMainMenu();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:6:     constructor(scene) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:13:         this.collisionCallbacks = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:16:         this.config = {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:23:                     friction: 0.5,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:24:                     restitution: 0.3
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:26:                 stone: {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:29:                     friction: 0.8,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:30:                     restitution: 0.1
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:35:                     friction: 0.2,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:36:                     restitution: 0.5
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:42:         this.init({ gravity: this.config.gravity });
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:47:      * @param {Object} config - 配置参数
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:49:     init(config = {}) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:51:         if (config.gravity) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:52:             this.world.setGravity(config.gravity.x, config.gravity.y);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:56:         if (config.friction !== undefined) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:57:             this.engine.world.friction = config.friction;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:60:         if (config.restitution !== undefined) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:61:             this.engine.world.restitution = config.restitution;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:65:         this.setupCollisions();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:67:         console.log('PhysicsSystem initialized');
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:72:      * @param {Object} options - 物体选项
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:73:      * @param {string} options.type - 物体类型: 'rectangle', 'circle', 'polygon'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:74:      * @param {number} options.x - X坐标
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:75:      * @param {number} options.y - Y坐标
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:76:      * @param {number} options.width - 宽度(矩形)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:77:      * @param {number} options.height - 高度(矩形)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:78:      * @param {number} options.radius - 半径(圆形)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:79:      * @param {Object} options.vertices - 顶点数组(多边形)
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:80:      * @param {Object} options.material - 材质配置
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:81:      * @param {boolean} options.isStatic - 是否静态
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:82:      * @param {string} options.label - 物体标签
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:85:     createBody(options) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:86:         const { type = 'rectangle', x, y, material = 'wood', isStatic = false, label = 'body' } = options;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:89:         const materialProps = this.config.materials[material] || this.config.materials.wood;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:92:         const bodyOptions = {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:94:             friction: materialProps.friction,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:95:             restitution: materialProps.restitution,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:106:                 body = this.matter.add.rectangle(x, y, options.width, options.height, bodyOptions);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:110:                 body = this.matter.add.circle(x, y, options.radius, bodyOptions);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:113:             case 'polygon':
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:114:                 body = this.matter.add.polygon(x, y, options.sides || 3, options.radius || 50, bodyOptions);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:118:                 console.warn(`Unknown body type: ${type}, defaulting to rectangle`);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:119:                 body = this.matter.add.rectangle(x, y, options.width || 50, options.height || 50, bodyOptions);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:131:      * @param {Function} callback - 碰撞回调函数
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:133:     onCollision(callback) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:134:         if (typeof callback === 'function') {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:135:             this.collisionCallbacks.push(callback);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:146:             Matter.Body.applyForce(body, body.position, {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:161:         const points = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:162:         const gravity = this.config.gravity.y;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:163:         const launchPower = this.config.launchPower;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:166:         const vx = velocity.x * launchPower;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:167:         const vy = velocity.y * launchPower;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:170:             const t = i * 0.1; // 时间步长
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:171:             const x = startPos.x + vx * t * 60; // 假设60FPS
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:172:             const y = startPos.y + vy * t * 60 + 0.5 * gravity * t * t * 3600;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:202:         const velocityA = bodyA.velocity;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:203:         const velocityB = bodyB.velocity;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:204:         const relativeVelocity = Math.sqrt(
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:215:     getMaterialConfig(materialName) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:216:         return this.config.materials[materialName] || this.config.materials.wood;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:226:         this.config.gravity = { x, y };
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:234:         return this.config.gravity;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:240:     setupCollisions() {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:242:         this.world.off('collisionstart');
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:245:         this.world.on('collisionstart', (event) => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:246:             event.pairs.forEach(pair => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:247:                 const bodyA = pair.bodyA;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:248:                 const bodyB = pair.bodyB;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:251:                 const impactForce = this.calculateImpactForce(bodyA, bodyB);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:254:                 this.collisionCallbacks.forEach(callback => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:285:         this.collisionCallbacks = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:288:         const bodies = this.getAllBodies();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\systems\PhysicsSystem.js:295:         console.log('PhysicsSystem cleaned up');

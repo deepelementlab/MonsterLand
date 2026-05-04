@@ -1,0 +1,228 @@
+import { SCENE_KEYS, COLORS, GAME_STATES } from '../utils/constants.js';
+import { GameConfig, LevelsConfig } from '../config/game.config.js';
+import { Bird } from '../objects/Bird.js';
+import { Pig } from '../objects/Pig.js';
+import { Block } from '../objects/Block.js';
+import { Slingshot } from '../objects/Slingshot.js';
+
+export class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.GAME });
+        
+        this.currentLevel = 1;
+        this.levelData = null;
+        this.gameState = GAME_STATES.PLAYING;
+        this.birds = [];
+        this.currentBirdIndex = 0;
+        this.pigs = [];
+        this.blocks = [];
+        this.slingshot = null;
+        this.score = 0;
+        this.trajectoryPoints = [];
+        this.isDragging = false;
+        this.currentBird = null;
+        this.scoreText = null;
+        this.birdQueueText = null;
+    }
+
+    init(data) {
+        this.currentLevel = data.level || 1;
+        this.levelData = LevelsConfig[this.currentLevel - 1];
+        this.score = 0;
+        this.currentBirdIndex = 0;
+        this.gameState = GAME_STATES.PLAYING;
+    }
+
+    create() {
+        this.createBackground();
+        this.createGround();
+        this.createLevel();
+        this.createUI();
+        this.setupCollisions();
+        this.setupInput();
+    }
+    
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        
+        const hills = this.add.graphics();
+        hills.fillStyle(0x6B8E23, 0.5);
+        hills.fillTriangle(0, 500, 300, 350, 600, 500);
+        hills.fillTriangle(400, 500, 700, 300, 1000, 500);
+        
+        for (let i = 0; i < 4; i++) {
+            const x = Phaser.Math.Between(100, 1100);
+            const y = Phaser.Math.Between(50, 200);
+            const cloud = this.add.graphics();
+            cloud.fillStyle(0xFFFFFF, 0.8);
+            cloud.fillCircle(0, 0, 25);
+            cloud.fillCircle(20, 0, 35);
+            cloud.fillCircle(40, 0, 25);
+            cloud.setPosition(x, y);
+        }
+    }
+    
+    createGround() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        this.matter.add.rectangle(width / 2, height - 40, width, 80, {
+            isStatic: true,
+            friction: 0.9,
+            restitution: 0.1,
+            label: 'ground'
+        });
+        
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 80, width, 80);
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 15);
+    }
+    
+    createLevel() {
+        if (!this.levelData) return;
+        
+        this.slingshot = new Slingshot(this, GameConfig.slingshot.x, GameConfig.slingshot.y);
+        
+        this.birds = [];
+        const birdStartX = 100;
+        this.levelData.birds.forEach((birdType, index) => {
+            const bird = new Bird(this, birdStartX - index * 40, 650, birdType);
+            this.birds.push(bird);
+        });
+        
+        this.prepareNextBird();
+        
+        this.levelData.structures.forEach(structure => {
+            if (structure.type === 'block') {
+                const block = new Block(this, structure.x, structure.y, structure.material, structure.width, structure.height);
+                this.blocks.push(block);
+            } else if (structure.type === 'pig') {
+                const pig = new Pig(this, structure.x, structure.y, structure.radius);
+                this.pigs.push(pig);
+            }
+        });
+    }
+    
+    prepareNextBird() {
+        if (this.currentBirdIndex >= this.birds.length) return false;
+        const bird = this.birds[this.currentBirdIndex];
+        bird.moveToSlingshot(this.slingshot.x, this.slingshot.y);
+        this.currentBird = bird;
+        return true;
+    }
+    
+    createUI() {
+        const width = this.cameras.main.width;
+        
+        this.add.text(50, 30, '⏸', { fontSize: '32px' })
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.pauseGame());
+        
+        this.add.text(width / 2, 30, `关卡 ${this.currentLevel}`, {
+            fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+        }).setOrigin(0.5);
+        
+        this.scoreText = this.add.text(width - 50, 30, '⭐ 0', {
+            fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+        }).setOrigin(0.5);
+        
+        this.updateBirdQueue();
+    }
+    
+    updateBirdQueue() {
+        const remaining = this.birds.length - this.currentBirdIndex - 1;
+        if (this.birdQueueText) this.birdQueueText.destroy();
+        this.birdQueueText = this.add.text(50, 680, `🐦 x ${remaining + 1}`, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#333333'
+        });
+    }
+    
+    setupCollisions() {
+        this.matter.world.on('collisionstart', (event) => {
+            event.pairs.forEach(pair => this.handleCollision(pair.bodyA, pair.bodyB));
+        });
+    }
+    
+    handleCollision(bodyA, bodyB) {
+        const velocityA = bodyA.velocity || { x: 0, y: 0 };
+        const velocityB = bodyB.velocity || { x: 0, y: 0 };
+        const relativeVelocity = Math.sqrt(
+            Math.pow(velocityA.x - velocityB.x, 2) + Math.pow(velocityA.y - velocityB.y, 2)
+        );
+        const impactForce = relativeVelocity * (bodyA.mass + bodyB.mass) / 2;
+        
+        // 猪被撞击
+        if (bodyA.label === 'pig' || bodyB.label === 'pig') {
+            const pigBody = bodyA.label === 'pig' ? bodyA : bodyB;
+            
+            if (impactForce > 3) {
+                const pig = this.pigs.find(p => p.body === pigBody);
+                if (pig && !pig.destroyed) {
+                    pig.takeDamage(impactForce * 10);
+                    if (pig.destroyed) {
+                        this.addScore(GameConfig.scores.pig, pig.x, pig.y);
+                    }
+                }
+            }
+        }
+        
+        // 方块碰撞
+        if (bodyA.label === 'block' || bodyB.label === 'block') {
+            const blockBody = bodyA.label === 'block' ? bodyA : bodyB;
+            
+            if (impactForce > 2) {
+                const block = this.blocks.find(b => b.body === blockBody);
+                if (block && !block.destroyed) {
+                    block.takeDamage(impactForce * 5);
+                    if (block.destroyed) {
+                        const points = GameConfig.scores[block.material] || 100;
+                        this.addScore(points, block.x, block.y);
+                    }
+                }
+            }
+        }
+    }
+    
+    addScore(points, x, y) {
+        this.score += points;
+        this.scoreText.setText(`⭐ ${this.score}`);
+        this.showScorePopup(points, x, y);
+    }
+    
+    showScorePopup(points, x, y) {
+        const popup = this.add.text(x, y, `+${points}`, {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FFD700',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: popup, y: y - 50, alpha: 0, duration: 800, ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+    }
+    
+    setupInput() {
+        this.input.on('pointerdown', (pointer) => {
+            if (this.gameState !== GAME_STATES.PLAYING) return;
+            if (!this.currentBird || this.currentBird.launched) return;
+            
+            const distance = Phaser.Math.Distance.Between(
+                pointer.x, pointer.y, this.slingshot.x, this.slingshot.y
+            );
+            
+            if (distance < 80) {
+                this.isDragging = true;
+                this.currentBird.startAiming();
+            }
+        });
+        
+        this.input.on('pointermove', (pointer) => {
+            if (!this.isDragging || !this.cur

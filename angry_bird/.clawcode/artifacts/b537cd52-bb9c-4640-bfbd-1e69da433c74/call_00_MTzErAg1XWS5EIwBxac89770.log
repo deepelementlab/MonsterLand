@@ -1,0 +1,1196 @@
+--- src/config/game.config.js L1-232 (232 lines) ---
+// 游戏配置
+export const GameConfig = {
+    // 游戏尺寸
+    width: 1280,
+    height: 720,
+    
+    // 物理配置
+    physics: {
+        gravity: { x: 0, y: 1 },
+        debug: false
+    },
+    
+    // 弹弓配置
+    slingshot: {
+        x: 200,
+        y: 550,
+        maxDragDistance: 150,
+        minDragDistance: 30,
+        launchPower: 0.15
+    },
+    
+    // 得分配置
+    scores: {
+        pig: 5000,
+        wood: 500,
+        stone: 1000,
+        glass: 300,
+        birdBonus: 10000
+    },
+    
+    // 材质属性
+    materials: {
+        wood: {
+            health: 100,
+            density: 0.001,
+            friction: 0.5,
+            restitution: 0.3
+        },
+        stone: {
+            health: 300,
+            density: 0.003,
+            friction: 0.8,
+            restitution: 0.1
+        },
+        glass: {
+            health: 50,
+            density: 0.001,
+            friction: 0.2,
+            restitution: 0.5
+        }
+    }
+};
+
+// 关卡配置
+// 坐标说明：游戏画面1280x720，地面顶部y=640
+// 方块的y坐标是方块中心点，高40方块放地面上 → y=620
+// 猪的y坐标是猪中心点，半径25的猪放地面上 → y=615
+// 重要：猪和方块不能放在相同坐标，否则物理体互相穿透
+
+export const LevelsConfig = [
+    // ===== 关卡 1 - 简单入门 =====
+    {
+        id: 1,
+        name: "第一课",
+        description: "消灭所有小猪！",
+        starScores: [5000, 15000, 30000],
+        birds: ['red', 'red', 'red'],
+        structures: [
+            // 地面平台
+            { type: 'block', material: 'wood', x: 800, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'wood', x: 880, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'wood', x: 960, y: 620, width: 80, height: 40 },
+            // 垂直支撑柱（左右各一根）
+            { type: 'block', material: 'wood', x: 810, y: 555, width: 25, height: 90 },
+            { type: 'block', material: 'wood', x: 950, y: 555, width: 25, height: 90 },
+            // 屋顶横梁
+            { type: 'block', material: 'wood', x: 880, y: 505, width: 180, height: 20 },
+            // 猪 - 在平台上面（平台顶面y=600，猪半径25，中心y=575）
+            { type: 'pig', x: 880, y: 575, radius: 25 }
+        ]
+    },
+
+    // ===== 关卡 2 - 双重打击 =====
+    {
+        id: 2,
+        name: "双重打击",
+        description: "三座堡垒，三只小猪！",
+        starScores: [10000, 25000, 50000],
+        birds: ['red', 'red', 'red', 'red'],
+        structures: [
+            // --- 左侧木屋 ---
+            { type: 'block', material: 'wood', x: 650, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'wood', x: 625, y: 560, width: 20, height: 80 },
+            { type: 'block', material: 'wood', x: 675, y: 560, width: 20, height: 80 },
+            { type: 'block', material: 'wood', x: 650, y: 510, width: 80, height: 20 },
+            { type: 'pig', x: 650, y: 572, radius: 20 },
+
+            // --- 中间石塔 ---
+            { type: 'block', material: 'stone', x: 850, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'stone', x: 825, y: 560, width: 25, height: 80 },
+            { type: 'block', material: 'stone', x: 875, y: 560, width: 25, height: 80 },
+            { type: 'block', material: 'wood', x: 850, y: 510, width: 100, height: 20 },
+            { type: 'pig', x: 850, y: 572, radius: 22 },
+
+            // --- 右侧玻璃房 ---
+            { type: 'block', material: 'glass', x: 1060, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'glass', x: 1035, y: 560, width: 20, height: 80 },
+            { type: 'block', material: 'glass', x: 1085, y: 560, width: 20, height: 80 },
+            { type: 'block', material: 'glass', x: 1060, y: 510, width: 80, height: 20 },
+            { type: 'pig', x: 1060, y: 572, radius: 20 }
+        ]
+    },
+
+    // ===== 关卡 3 - 石头堡垒 =====
+    {
+        id: 3,
+        name: "石头堡垒",
+        description: "坚固的石头城堡！",
+        starScores: [15000, 40000, 70000],
+        birds: ['red', 'red', 'red', 'red', 'red'],
+        structures: [
+            // --- 底层平台 ---
+            { type: 'block', material: 'stone', x: 850, y: 620, width: 80, height: 40 },
+            { type: 'block', material: 'stone', x: 920, y: 620, width: 60, height: 40 },
+            { type: 'block', material: 'stone', x: 990, y: 620, width: 60, height: 40 },
+            { type: 'block', material: 'stone', x: 1060, y: 620, width: 80, height: 40 },
+
+            // --- 底层猪 ---
+            { type: 'pig', x: 955, y: 575, radius: 20 },
+
+            // --- 一层墙壁 ---
+            { type: 'block', material: 'stone', x: 855, y: 560, width: 30, height: 80 },
+            { type: 'block', material: 'stone', x: 1055, y: 560, width: 30, height: 80 },
+            // 中间木柱（弱点！）
+            { type: 'block', material: 'wood', x: 955, y: 560, width: 25, height: 80 },
+
+            // --- 二层平台 ---
+            { type: 'block', material: 'wood', x: 955, y: 510, width: 250, height: 20 },
+
+            // --- 二层猪 ---
+            { type: 'pig', x: 910, y: 472, radius: 18 },
+            { type: 'pig', x: 1000, y: 472, radius: 18 },
+
+            // --- 顶部装饰 ---
+            { type: 'block', material: 'glass', x: 955, y: 445, width: 60, height: 30 },
+            { type: 'block', material: 'glass', x: 930, y: 415, width: 30, height: 30 },
+            { type: 'block', material: 'glass', x: 980, y: 415, width: 30, height: 30 }
+        ]
+    },
+
+    // ===== 关卡 4 - 高塔危机 =====
+    {
+        id: 4,
+        name: "高塔危机",
+        description: "层层设防的高塔！",
+        starScores: [20000, 50000, 85000],
+        birds: ['red', 'red', 'red', 'red', 'red'],
+        structures: [
+            // --- 底层 ---
+            { type: 'block', material: 'stone', x: 900, y: 620, width: 120, height: 40 },
+            { type: 'block', material: 'stone', x: 850, y: 570, width: 25, height: 60 },
+            { type: 'block', material: 'stone', x: 950, y: 570, width: 25, height: 60 },
+            { type: 'pig', x: 900, y: 580, radius: 18 },
+
+            // --- 二层 ---
+            { type: 'block', material: 'wood', x: 900, y: 530, width: 140, height: 20 },
+            { type: 'block', material: 'wood', x: 845, y: 490, width: 20, height: 60 },
+            { type: 'block', material: 'wood', x: 955, y: 490, width: 20, height: 60 },
+            { type: 'pig', x: 900, y: 500, radius: 18 },
+
+            // --- 三层 ---
+            { type: 'block', material: 'glass', x: 900, y: 450, width: 140, height: 20 },
+            { type: 'block', material: 'glass', x: 860, y: 415, width: 20, height: 50 },
+            { type: 'block', material: 'glass', x: 940, y: 415, width: 20, height: 50 },
+            { type: 'pig', x: 900, y: 425, radius: 18 },
+
+            // --- 顶部 ---
+            { type: 'block', material: 'wood', x: 900, y: 380, width: 100, height: 15 },
+            { type: 'block', material: 'wood', x: 880, y: 360, width: 30, height: 25 },
+            { type: 'block', material: 'wood', x: 920, y: 360, width: 30, height: 25 }
+        ]
+    },
+
+    // ===== 关卡 5 - 最终决战 =====
+    {
+        id: 5,
+        name: "最终决战",
+        description: "摧毁猪王的城堡！",
+        starScores: [25000, 60000, 100000],
+        birds: ['red', 'red', 'red', 'red', 'red', 'red'],
+        structures: [
+            // --- 左翼 ---
+            { type: 'block', material: 'wood', x: 780, y: 620, width: 100, height: 40 },
+            { type: 'block', material: 'wood', x: 755, y: 565, width: 20, height: 70 },
+            { type: 'block', material: 'wood', x: 805, y: 565, width: 20, height: 70 },
+            { type: 'block', material: 'wood', x: 780, y: 520, width: 90, height: 20 },
+            { type: 'pig', x: 780, y: 575, radius: 20 },
+
+            // --- 中央城堡底层 ---
+            { type: 'block', material: 'stone', x: 900, y: 620, width: 60, height: 40 },
+            { type: 'block', material: 'stone', x: 960, y: 620, width: 60, height: 40 },
+            { type: 'block', material: 'stone', x: 1020, y: 620, width: 60, height: 40 },
+
+            // --- 中央城堡一层墙 ---
+            { type: 'block', material: 'stone', x: 910, y: 560, width: 25, height: 80 },
+            { type: 'block', material: 'stone', x: 1010, y: 560, width: 25, height: 80 },
+            { type: 'block', material: 'glass', x: 960, y: 560, width: 30, height: 80 },
+
+            // --- 中央猪王 ---
+            { type: 'pig', x: 960, y: 575, radius: 28 },
+
+            // --- central top ---
+            { type: "block", material: "wood", x: 960, y: 510, width: 140, height: 20 },
+
+            // --- right wing ---
+            { type: "block", material: "wood", x: 1100, y: 620, width: 100, height: 40 },
+            { type: "block", material: "wood", x: 1075, y: 565, width: 20, height: 70 },
+            { type: "block", material: "wood", x: 1125, y: 565, width: 20, height: 70 },
+            { type: "block", material: "wood", x: 1100, y: 520, width: 90, height: 20 },
+            { type: "pig", x: 1100, y: 575, radius: 20 },
+
+            // --- top pig ---
+            { type: "pig", x: 960, y: 475, radius: 20 },
+
+            // --- top deco ---
+            { type: "block", material: "glass", x: 960, y: 445, width: 80, height: 20 },
+            { type: "block", material: "stone", x: 930, y: 420, width: 25, height: 30 },
+            { type: "block", material: "stone", x: 990, y: 420, width: 25, height: 30 },
+            { type: "block", material: "wood", x: 960, y: 400, width: 60, height: 15 }
+        ]
+    }
+];
+
+--- src/utils/constants.js L1-356 (356 lines) ---
+// 游戏常量
+
+// Airbnb风格配色
+// 核心颜色：primary=#ff385c, background=#ffffff, text=#222222
+const AIRBNB_COLORS = {
+    PRIMARY: 0xFF385C,    // #ff385c - Airbnb标志性粉红色
+    PRIMARY_LIGHT: 0xFF6B8B,  // 浅粉色
+    BACKGROUND: 0xFFFFFF,    // 白色背景
+    TEXT_DARK: 0x222222,    // 深灰色文字
+    TEXT_MEDIUM: 0x717171,  // 中灰色
+    TEXT_LIGHT: 0xB0B0B0,   // 浅灰色
+    SUCCESS: 0x00A699,      // 青绿色
+    WARNING: 0xFFB400,      // 琥珀色
+    DANGER: 0xFF5A5F,       // 珊瑚红色
+    SURFACE: 0xF7F7F7,      // 浅灰色表面
+    SURFACE_DARK: 0xDDDDDD, // 深灰色表面
+};
+
+// 颜色常量
+export const COLORS = {
+    // Airbnb风格UI颜色
+    ...AIRBNB_COLORS,
+    
+    // 角色
+    BIRD_RED: 0xFF385C,    // 使用Airbnb主色
+    BIRD_YELLOW: 0xFFB400, // 使用Airbnb琥珀色
+    BIRD_BLUE: 0x00A699,   // 使用Airbnb青绿色
+    PIG: 0x90EE90,         // 保持绿色猪
+    
+    // 材质
+    WOOD: 0x8B4513,
+    STONE: 0x708090,
+    GLASS: 0xADD8E6,
+    
+    // 环境
+    SKY_TOP: 0x87CEEB,
+    SKY_BOTTOM: 0xB0E0E6,
+    GROUND: 0x228B22,
+    GRASS: 0x32CD32,
+    
+    // UI (旧颜色 - 保持向后兼容)
+    UI_PRIMARY: 0xFF385C,    // Airbnb主色
+    UI_DANGER: 0xFF5A5F,     // Airbnb危险色
+    UI_ACCENT: 0xFFB400,     // Airbnb强调色
+    UI_TEXT: 0x222222,       // Airbnb深灰文字
+    UI_WHITE: 0xFFFFFF
+};
+
+// Airbnb风格阴影定义
+const AIRBNB_SHADOWS = {
+    // 多层轻微阴影，符合rounded_soft风格
+    SOFT: {
+        shadowColor: 0x000000,
+        shadowAlpha: 0.1,
+        shadowOffsetX: 0,
+        shadowOffsetY: 2,
+        shadowBlur: 6
+    },
+    MEDIUM: {
+        shadowColor: 0x000000,
+        shadowAlpha: 0.15,
+        shadowOffsetX: 0,
+        shadowOffsetY: 4,
+        shadowBlur: 8
+    },
+    ELEVATED: {
+        shadowColor: 0x000000,
+        shadowAlpha: 0.2,
+        shadowOffsetX: 0,
+        shadowOffsetY: 8,
+        shadowBlur: 16
+    }
+};
+
+// 位置常量
+export const POSITIONS = {
+    // 游戏区域
+    SLINGSHOT_X: 200,
+    SLINGSHOT_Y: 550,
+    
+    // 小鸟队列起始位置
+    BIRD_START_X: 100,
+    BIRD_START_Y: 650,
+    BIRD_SPACING: 40,  // 小鸟之间的间距
+    
+    // UI位置
+    PAUSE_BUTTON_X: 50,
+    PAUSE_BUTTON_Y: 30,
+    LEVEL_TEXT_X: 640,  // 屏幕中心(1280/2)
+    LEVEL_TEXT_Y: 30,
+    SCORE_TEXT_X: 1230, // 1280-50
+    SCORE_TEXT_Y: 30,
+    BIRD_QUEUE_X: 50,
+    BIRD_QUEUE_Y: 680,
+    
+    // 结果界面
+    RESULT_TITLE_Y_OFFSET: -100,
+    RESULT_SCORE_Y_OFFSET: -20,
+    RESULT_STARS_Y_OFFSET: 30,
+    RESULT_BUTTON_Y_START: 100,
+    RESULT_BUTTON_SPACING: 60
+};
+
+// 尺寸常量
+export const SIZES = {
+    // 游戏区域
+    GROUND_HEIGHT: 80,
+    GRASS_HEIGHT: 15,
+    
+    // 物理体
+    GROUND_WIDTH_PADDING: 0,  // 地面宽度会动态计算为屏幕宽度
+    
+    // 背景元素
+    HILL_HEIGHT_REDUCTION: 150,  // 山丘比地面高多少
+    CLOUD_RADIUS_SMALL: 25,
+    CLOUD_RADIUS_LARGE: 35,
+    CLOUD_SPACING: 20,
+    
+    // 交互区域
+    SLINGSHOT_ACTIVE_RADIUS: 80,
+    MIN_DRAG_DISTANCE: 30,
+    MAX_DRAG_DISTANCE: 150
+};
+
+// 视觉效果常量
+export const VISUAL = {
+    // 云朵
+    CLOUD_COUNT: 4,
+    CLOUD_MIN_X: 100,
+    CLOUD_MAX_X: 1100,
+    CLOUD_MIN_Y: 50,
+    CLOUD_MAX_Y: 200,
+    CLOUD_ALPHA: 0.8,
+    
+    // 山丘
+    HILL_ALPHA: 0.5,
+    HILL_COLOR: 0x6B8E23,
+    
+    // 弹道预测
+    TRAJECTORY_POINTS: 10,
+    TRAJECTORY_STEP: 0.1,  // 时间步长
+    TRAJECTORY_DOT_RADIUS: 4,
+    TRAJECTORY_DOT_ALPHA: 0.5,
+    
+    // 得分弹出
+    POPUP_ANIMATION_DURATION: 800,
+    POPUP_MOVE_DISTANCE: 50
+};
+
+// 碰撞阈值常量
+export const COLLISION = {
+    PIG_DAMAGE_THRESHOLD: 3,
+    BLOCK_DAMAGE_THRESHOLD: 2,
+    PIG_DAMAGE_MULTIPLIER: 10,
+    BLOCK_DAMAGE_MULTIPLIER: 5,
+    BIRD_DAMAGE_THRESHOLD: 10,
+    BIRD_DESTROY_THRESHOLD: 50,
+    SLEEP_SPEED_THRESHOLD: 0.5
+};
+
+export const TIMING = {
+    // 游戏逻辑
+    ROUND_END_CHECK_DELAY: 500,  // 毫秒
+    NEXT_BIRD_DELAY: 3000,        // 发射后等待检查
+    
+    // 动画
+    FADE_DURATION: 800
+};
+
+// 碰撞分类
+export const COLLISION_CATEGORIES = {
+    BIRD: 0x0001,
+    PIG: 0x0002,
+    BLOCK: 0x0004,
+    GROUND: 0x0008,
+    SLINGSHOT: 0x0010
+};
+
+// 游戏状态
+export const GAME_STATES = {
+    MENU: 'menu',
+    PLAYING: 'playing',
+    PAUSED: 'paused',
+    WIN: 'win',
+    LOSE: 'lose'
+};
+
+// 小鸟类型
+export const BIRD_TYPES = {
+    RED: 'red',
+    YELLOW: 'yellow',
+    BLUE: 'blue'
+};
+
+// 材质类型
+export const MATERIAL_TYPES = {
+    WOOD: 'wood',
+    STONE: 'stone',
+    GLASS: 'glass'
+};
+
+// 场景键名
+export const SCENE_KEYS = {
+    BOOT: 'BootScene',
+    PRELOAD: 'PreloadScene',
+    MENU: 'MenuScene',
+    LEVEL_SELECT: 'LevelSelectScene',
+    GAME: 'GameScene',
+    RESULT: 'ResultScene'
+};
+
+// Airbnb风格文本样式常量
+export const TEXT_STYLES = {
+    // 主标题 - 温暖邀请风格
+    MAIN_TITLE: { 
+        fontSize: '64px', 
+        fontFamily: 'Arial Black', 
+        color: '#FF385C',
+        stroke: '#FFFFFF',
+        strokeThickness: 8,
+        shadow: { color: '#000000', fill: true, offsetX: 2, offsetY: 2, blur: 4 }
+    },
+    
+    // 副标题
+    SUBTITLE: { 
+        fontSize: '32px', 
+        fontFamily: 'Arial', 
+        color: '#222222',
+        shadow: { color: '#000000', fill: true, offsetX: 1, offsetY: 1, blur: 2 }
+    },
+    
+    // 暂停按钮
+    PAUSE_BUTTON: { 
+        fontSize: '32px',
+        fontFamily: 'Arial',
+        color: '#FFFFFF',
+        backgroundColor: '#FF385C',
+        borderRadius: 20,
+        padding: { x: 15, y: 8 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 6 }
+    },
+    
+    // 关卡标题
+    LEVEL_TITLE: { 
+        fontSize: '28px', 
+        fontFamily: 'Arial', 
+        color: '#222222',
+        backgroundColor: '#F7F7F7',
+        borderRadius: 16,
+        padding: { x: 12, y: 6 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 4 }
+    },
+    
+    // 得分显示
+    SCORE: { 
+        fontSize: '28px', 
+        fontFamily: 'Arial', 
+        color: '#222222',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: { x: 12, y: 6 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 6 }
+    },
+    
+    // 小鸟队列
+    BIRD_QUEUE: { 
+        fontSize: '24px', 
+        fontFamily: 'Arial', 
+        color: '#222222',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: { x: 10, y: 5 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 4 }
+    },
+    
+    // 结果标题
+    RESULT_TITLE: { 
+        fontSize: '48px', 
+        fontFamily: 'Arial Black',
+        color: '#FFFFFF',
+        stroke: '#FF385C',
+        strokeThickness: 6,
+        shadow: { color: '#000000', fill: true, offsetX: 2, offsetY: 2, blur: 8 }
+    },
+    
+    // 结果得分
+    RESULT_SCORE: { 
+        fontSize: '32px', 
+        fontFamily: 'Arial', 
+        color: '#FFFFFF',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 20,
+        padding: { x: 20, y: 10 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 4, blur: 8 }
+    },
+    
+    // 结果星级
+    RESULT_STARS: { 
+        fontSize: '40px',
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 4 }
+    },
+    
+    // 结果按钮
+    RESULT_BUTTON: { 
+        fontSize: '24px', 
+        fontFamily: 'Arial', 
+        color: '#FFFFFF',
+        backgroundColor: '#FF385C',
+        borderRadius: 20,
+        padding: { x: 24, y: 12 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 4, blur: 8 }
+    },
+    
+    // 得分弹窗
+    SCORE_POPUP: { 
+        fontSize: '24px', 
+        fontFamily: 'Arial', 
+        color: '#FFB400',
+        stroke: '#222222', 
+        strokeThickness: 3,
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 2, blur: 4 }
+    },
+    
+    // 菜单按钮
+    MENU_BUTTON: {
+        fontSize: '28px',
+        fontFamily: 'Arial',
+        color: '#FFFFFF',
+        backgroundColor: '#FF385C',
+        borderRadius: 20,
+        padding: { x: 30, y: 15 },
+        shadow: { color: '#000000', fill: true, offsetX: 0, offsetY: 4, blur: 8 }
+    }
+};
+
+// Airbnb风格按钮状态
+export const BUTTON_STATES = {
+    NORMAL: {
+        backgroundColor: '#FF385C',
+        color: '#FFFFFF',
+        scale: 1,
+        alpha: 1
+    },
+    HOVER: {
+        backgroundColor: '#FF6B8B', // 浅粉色
+        color: '#FFFFFF',
+        scale: 1.05,
+        alpha: 0.9
+    },
+    DOWN: {
+        backgroundColor: '#D81E5B', // 深粉色
+        color: '#FFFFFF',
+        scale: 0.95,
+        alpha: 1
+    }
+};
+
+--- src/scenes/BootScene.js L1-19 (19 lines) ---
+import { SCENE_KEYS } from '../utils/constants.js';
+
+export class BootScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.BOOT });
+    }
+
+    preload() {
+        // Boot场景不需要加载资源
+    }
+
+    create() {
+        // 设置游戏标题
+        this.game.config.backgroundColor = '#87CEEB';
+        
+        // 跳转到资源加载场景
+        this.scene.start(SCENE_KEYS.PRELOAD);
+    }
+}
+
+--- src/scenes/PreloadScene.js L1-42 (42 lines) ---
+import { SCENE_KEYS } from '../utils/constants.js';
+
+export class PreloadScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.PRELOAD });
+    }
+
+    preload() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 创建加载进度条
+        const progressBar = this.add.graphics();
+        const progressBox = this.add.graphics();
+        
+        progressBox.fillStyle(0x222222, 0.8);
+        progressBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+        
+        // 加载文字
+        const loadingText = this.add.text(width / 2, height / 2 - 50, '加载中...', {
+            font: '24px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // 加载进度事件
+        this.load.on('progress', (value) => {
+            progressBar.clear();
+            progressBar.fillStyle(0x4CAF50, 1);
+            progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
+        });
+        
+        this.load.on('complete', () => {
+            progressBar.destroy();
+            progressBox.destroy();
+            loadingText.destroy();
+        });
+    }
+
+    create() {
+        this.scene.start(SCENE_KEYS.MENU);
+    }
+}
+
+--- src/scenes/MenuScene.js L1-305 (305 lines) ---
+import { SCENE_KEYS, COLORS } from '../utils/constants.js';
+import { LevelsConfig } from '../config/game.config.js';
+
+export class MenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.MENU });
+    }
+
+    create() {
+        this.createBackground();
+        this.createTitle();
+        this.createMenuButtons();
+        this.createBirdDecorations();
+    }
+
+    createBackground() {
+        var width = this.cameras.main.width;
+        var height = this.cameras.main.height;
+        var sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        for (var i = 0; i < 5; i++) {
+            this.createCloud(Phaser.Math.Between(100, width - 100), Phaser.Math.Between(50, 200));
+        }
+        var ground = this.add.graphics();
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, height - 80, width, 20);
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, height - 60, width, 60);
+    }
+
+    createCloud(x, y) {
+        var cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.9);
+        cloud.fillCircle(0, 0, 30);
+        cloud.fillCircle(25, 0, 40);
+        cloud.fillCircle(50, 0, 30);
+        cloud.fillCircle(25, -20, 25);
+        cloud.setPosition(x, y);
+        this.tweens.add({
+            targets: cloud, x: x + 50,
+            duration: Phaser.Math.Between(3000, 6000),
+            yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+
+    createTitle() {
+        var width = this.cameras.main.width;
+        this.titleText = this.add.text(width / 2, 130, 'Angry Birds', {
+            fontSize: '64px', fontFamily: 'Arial Black',
+            color: '#FF385C', stroke: '#FFFFFF', strokeThickness: 8,
+            shadow: { color: '#000000', fill: true, offsetX: 2, offsetY: 3, blur: 6 }
+        }).setOrigin(0.5);
+        this.tweens.add({
+            targets: this.titleText, y: 120,
+            duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+
+    createMenuButtons() {
+        var width = this.cameras.main.width;
+        this.menuContainer = this.add.container(0, 0);
+        var self = this;
+        this.menuContainer.add(this._makeBtn(
+            width / 2, 280, 'Start Game', '#FF385C',
+            function() { self.scene.start(SCENE_KEYS.GAME, { level: 1 }); }
+        ));
+        this.menuContainer.add(this._makeBtn(
+            width / 2, 355, 'Level Select', '#00A699',
+            function() { self.showLevelSelectPanel(); }
+        ));
+        this.menuContainer.add(this._makeBtn(
+            width / 2, 430, 'How to Play', '#FFB400', '#222222',
+            function() { self.showHelpPanel(); }
+        ));
+    }
+
+    _makeBtn(x, y, text, bgColor, callback, textColor) {
+        var tc = textColor || '#FFFFFF';
+        var container = this.add.container(x, y);
+        var tmpText = this.add.text(0, 0, text, { fontSize: '26px', fontFamily: 'Arial', color: tc });
+        var bw = tmpText.width + 60;
+        tmpText.destroy();
+        var bh = 52;
+        var color = Phaser.Display.Color.HexStringToColor(bgColor).color;
+
+        var shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.1);
+        shadow.fillRoundedRect(-bw/2, -bh/2 + 3, bw, bh, 20);
+        container.add(shadow);
+
+        var bg = this.add.graphics();
+        bg.fillStyle(color, 1);
+        bg.fillRoundedRect(-bw/2, -bh/2, bw, bh, 20);
+        container.add(bg);
+
+        var label = this.add.text(0, 0, text, { fontSize: '26px', fontFamily: 'Arial', color: tc }).setOrigin(0.5);
+        container.add(label);
+
+        var hit = this.add.rectangle(0, 0, bw, bh, 0x000000, 0);
+        hit.setInteractive({ useHandCursor: true });
+        container.add(hit);
+
+        var scene = this;
+        hit.on('pointerover', function() {
+            scene.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 150, ease: 'Back.easeOut' });
+        });
+        hit.on('pointerout', function() {
+            scene.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 150, ease: 'Back.easeOut' });
+        });
+        hit.on('pointerdown', function() {
+            scene.tweens.add({ targets: container, scaleX: 0.95, scaleY: 0.95, duration: 80 });
+        });
+        hit.on('pointerup', function() {
+            scene.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 100, ease: 'Back.easeOut' });
+        });
+        if (callback) hit.on('pointerdown', callback);
+        return container;
+    }
+
+    _parseProgress(progress) {
+        var unlocked = 1;
+        for (var i = 1; i <= LevelsConfig.length; i++) {
+            if (progress[i] !== undefined) unlocked = i + 1;
+        }
+        if (unlocked > LevelsConfig.length) unlocked = LevelsConfig.length;
+        return unlocked;
+    }
+
+    showLevelSelectPanel() {
+        if (this.levelPanel) return;
+        var width = this.cameras.main.width;
+        var height = this.cameras.main.height;
+        var progress = {};
+        try { progress = JSON.parse(localStorage.getItem('angrybird_progress') || '{}'); } catch(e) {}
+        var maxLevel = this._parseProgress(progress);
+        var self = this;
+        this.levelPanel = this.add.container(0, 0).setDepth(50);
+
+        var overlay = this.add.rectangle(width/2, height/2, width, height, 0x222222, 0.5);
+        overlay.setInteractive();
+        overlay.on('pointerdown', function() { self.hideLevelSelectPanel(); });
+        this.levelPanel.add(overlay);
+
+        var panelBg = this.add.graphics();
+        panelBg.fillStyle(0x000000, 0.08);
+        panelBg.fillRoundedRect(width/2 - 255, height/2 - 205, 510, 410, 24);
+        panelBg.fillStyle(0xFFFFFF, 0.97);
+        panelBg.fillRoundedRect(width/2 - 250, height/2 - 200, 500, 400, 24);
+        panelBg.fillStyle(0xFF385C, 1);
+        panelBg.fillRoundedRect(width/2 - 250, height/2 - 200, 500, 6, {tl:24, tr:24, bl:0, br:0});
+        this.levelPanel.add(panelBg);
+
+        this.levelPanel.add(this.add.text(width/2, height/2 - 170, 'Select Level', {
+            fontSize: '32px', fontFamily: 'Arial Black', color: '#222222'
+        }).setOrigin(0.5));
+
+        var cols = 3, startX = width/2 - 150, startY = height/2 - 100;
+        LevelsConfig.forEach(function(level, index) {
+            var col = index % cols;
+            var row = Math.floor(index / cols);
+            var bx = startX + col * 150;
+            var by = startY + row * 120;
+            var lvlNum = index + 1;
+            var isUnlocked = lvlNum <= maxLevel;
+            var stars = (typeof progress[lvlNum] === 'number' && progress[lvlNum] > 0) ? progress[lvlNum] : 0;
+
+            var lvlBtn = self.add.container(bx, by);
+            var bg = self.add.graphics();
+            bg.fillStyle(0x000000, 0.06);
+            bg.fillRoundedRect(-53, -37, 110, 80, 16);
+            if (isUnlocked) {
+                bg.fillStyle(0xFFFFFF, 0.97);
+            } else {
+                bg.fillStyle(0xF0F0F0, 0.9);
+            }
+            bg.fillRoundedRect(-55, -40, 110, 80, 16);
+            if (isUnlocked) {
+                bg.fillStyle(0xFF385C, 1);
+                bg.fillRoundedRect(-55, -40, 110, 5, {tl:16, tr:16, bl:0, br:0});
+            }
+            lvlBtn.add(bg);
+
+            lvlBtn.add(self.add.text(0, -18, level.name, {
+                fontSize: '15px', fontFamily: 'Arial',
+                color: isUnlocked ? '#222222' : '#B0B0B0'
+            }).setOrigin(0.5));
+
+            var starText = '';
+            if (isUnlocked) {
+                for (var si = 0; si < stars; si++) starText += '*';
+                for (var si2 = stars; si2 < 3; si2++) starText += 'o';
+            } else {
+                starText = 'LOCK';
+            }
+            lvlBtn.add(self.add.text(0, 12, starText, {
+                fontSize: '14px', color: isUnlocked ? '#FFB400' : '#999999'
+            }).setOrigin(0.5));
+
+            lvlBtn.setSize(110, 80);
+            if (isUnlocked) {
+                lvlBtn.setInteractive({ useHandCursor: true });
+                lvlBtn.on('pointerdown', function() {
+                    self.scene.start(SCENE_KEYS.GAME, { level: lvlNum });
+                });
+                lvlBtn.on('pointerover', function() {
+                    self.tweens.add({ targets: lvlBtn, scaleX: 1.06, scaleY: 1.06, duration: 150, ease: 'Back.easeOut' });
+                });
+                lvlBtn.on('pointerout', function() {
+                    self.tweens.add({ targets: lvlBtn, scaleX: 1, scaleY: 1, duration: 150 });
+                });
+            }
+            self.levelPanel.add(lvlBtn);
+        });
+
+        var backBtn = self._makeBtn(width/2, height/2 + 170, 'Back', '#717171',
+            function() { self.hideLevelSelectPanel(); });
+        this.levelPanel.add(backBtn);
+
+        panelBg.setScale(0.85);
+        panelBg.setAlpha(0);
+        this.tweens.add({ targets: panelBg, scaleX: 1, scaleY: 1, alpha: 1, duration: 350, ease: 'Back.easeOut' });
+    }
+
+    hideLevelSelectPanel() {
+        if (this.levelPanel) { this.levelPanel.destroy(true); this.levelPanel = null; }
+    }
+
+    showHelpPanel() {
+        if (this.helpPanel) return;
+        var width = this.cameras.main.width;
+        var height = this.cameras.main.height;
+        var self = this;
+        this.helpPanel = this.add.container(0, 0).setDepth(50);
+
+        var overlay = this.add.rectangle(width/2, height/2, width, height, 0x222222, 0.5);
+        overlay.setInteractive();
+        overlay.on('pointerdown', function() { self.hideHelpPanel(); });
+        this.helpPanel.add(overlay);
+
+        var panelBg = this.add.graphics();
+        panelBg.fillStyle(0x000000, 0.08);
+        panelBg.fillRoundedRect(width/2 - 225, height/2 - 185, 450, 370, 24);
+        panelBg.fillStyle(0xFFFFFF, 0.97);
+        panelBg.fillRoundedRect(width/2 - 220, height/2 - 180, 440, 360, 24);
+        panelBg.fillStyle(0xFF385C, 1);
+        panelBg.fillRoundedRect(width/2 - 220, height/2 - 180, 440, 6, {tl:24, tr:24, bl:0, br:0});
+        this.helpPanel.add(panelBg);
+
+        this.helpPanel.add(this.add.text(width/2, height/2 - 145, 'How to Play', {
+            fontSize: '30px', fontFamily: 'Arial Black', color: '#222222'
+        }).setOrigin(0.5));
+
+        var lines = [
+            '1. Drag the bird on slingshot',
+            '2. Aim and release to launch',
+            '3. Destroy all pigs to win',
+            '4. Earn stars based on score'
+        ];
+        for (var i = 0; i < lines.length; i++) {
+            this.helpPanel.add(this.add.text(width/2, height/2 - 70 + i * 50, lines[i], {
+                fontSize: '20px', fontFamily: 'Arial', color: '#222222'
+            }).setOrigin(0.5));
+        }
+
+        var closeBtn = self._makeBtn(width/2, height/2 + 130, 'Close', '#FF385C',
+            function() { self.hideHelpPanel(); });
+        this.helpPanel.add(closeBtn);
+
+        panelBg.setScale(0.85);
+        panelBg.setAlpha(0);
+        this.tweens.add({ targets: panelBg, scaleX: 1, scaleY: 1, alpha: 1, duration: 350, ease: 'Back.easeOut' });
+    }
+
+    hideHelpPanel() {
+        if (this.helpPanel) { this.helpPanel.destroy(true); this.helpPanel = null; }
+    }
+
+    createBirdDecorations() {
+        var height = this.cameras.main.height;
+        var birdColors = [0xFF385C, 0xFFB400, 0x00A699];
+        for (var i = 0; i < 3; i++) {
+            var bird = this.add.graphics();
+            bird.fillStyle(birdColors[i], 1);
+            bird.fillCircle(0, 0, 20);
+            bird.fillStyle(0xFFFFFF, 1);
+            bird.fillCircle(-6, -4, 6);
+            bird.fillCircle(6, -4, 6);
+            bird.fillStyle(0x000000, 1);
+            bird.fillCircle(-4, -4, 3);
+            bird.fillCircle(8, -4, 3);
+            bird.lineStyle(2, 0x000000, 1);
+            bird.lineBetween(-12, -12, -1, -10);
+            bird.lineBetween(1, -10, 12, -12);
+            bird.fillStyle(0xFFA500, 1);
+            bird.fillTriangle(16, 0, 28, 4, 28, -4);
+            bird.setPosition(100 + i * 80, height - 100);
+            this.tweens.add({
+                targets: bird, y: height - 110,
+                duration: 800 + i * 200, yoyo: true, repeat: -1,
+                ease: 'Sine.easeInOut', delay: i * 300
+            });
+        }
+    }
+}
+
+--- src/scenes/GameScene.js L1-231 (231 lines) ---
+/**
+ * 游戏主场景
+ * 职责：场景生命周期管理 + 各子系统协调
+ * 所有具体逻辑委托给系统模块处理
+ */
+import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, TEXT_STYLES, COLLISION } from '../utils/constants.js';
+import { GameConfig, LevelsConfig } from '../config/game.config.js';
+import { PhysicsSystem } from '../systems/PhysicsSystem.js';
+import { InputSystem } from '../systems/InputSystem.js';
+import { UISystem } from '../systems/UISystem.js';
+import { GameStateSystem } from '../systems/GameStateSystem.js';
+import { EntityManager } from '../systems/EntityManager.js';
+
+export class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: SCENE_KEYS.GAME });
+    }
+
+    init(data) {
+        // 初始化系统模块
+        this.stateSystem = new GameStateSystem(this);
+        this.stateSystem.init({
+            level: data.level || 1,
+            onWin: (score, stars) => this.onGameWin(score, stars),
+            onLose: (score) => this.onGameLose(score)
+        });
+    }
+
+    create() {
+        // 创建渲染环境
+        this.createBackground();
+        this.createGround();
+        
+        // 初始化实体管理器（创建关卡内容）
+        this.entityManager = new EntityManager(this);
+        this.entityManager.init(this.stateSystem.levelData);
+        
+        // 初始化物理系统
+        this.physicsSystem = new PhysicsSystem(this);
+        this.physicsSystem.onCollision((bodyA, bodyB, impactForce) => {
+            this.handleCollision(bodyA, bodyB, impactForce);
+        });
+        
+        // 初始化UI系统
+        this.uiSystem = new UISystem(this);
+        this.uiSystem.init({
+            level: this.stateSystem.currentLevel,
+            levelData: this.stateSystem.levelData
+        });
+        this.uiSystem.createGameUI();
+        
+        // 初始化输入系统
+        this.inputSystem = new InputSystem(this);
+        this.inputSystem.init({
+            getSlingshot: () => this.entityManager.getSlingshot(),
+            getCurrentBird: () => this.entityManager.getCurrentBird(),
+            getGameState: () => this.stateSystem.getState(),
+            onLaunch: (bird) => this.onBirdLaunched(bird),
+            onRoundEnd: () => this.checkRoundEnd()
+        });
+        this.inputSystem.setup();
+    }
+    
+    // ==================== 渲染相关 ====================
+    
+    createBackground() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+        sky.fillRect(0, 0, width, height);
+        
+        // 远景山丘
+        const hills = this.add.graphics();
+        hills.fillStyle(0x6B8E23, 0.5);
+        hills.fillCircle(200, 640, 150);
+        hills.fillCircle(600, 640, 200);
+        hills.fillCircle(1000, 640, 180);
+        
+        // 云朵
+        for (let i = 0; i < 4; i++) {
+            const cx = Phaser.Math.Between(100, 1100);
+            const cy = Phaser.Math.Between(50, 200);
+            this.createCloud(cx, cy);
+        }
+    }
+    
+    createCloud(x, y) {
+        const cloud = this.add.graphics();
+        cloud.fillStyle(0xFFFFFF, 0.8);
+        cloud.fillCircle(x, y, 25);
+        cloud.fillCircle(x + 20, y - 5, 35);
+        cloud.fillCircle(x + 45, y, 25);
+    }
+    
+    createGround() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // 草地
+        const ground = this.add.graphics();
+        ground.fillStyle(COLORS.GROUND, 1);
+        ground.fillRect(0, 640, width, height - 640);
+        
+        // 草地顶部装饰
+        ground.fillStyle(COLORS.GRASS, 1);
+        ground.fillRect(0, 640, width, 15);
+        
+        // 物理地面（不可见的静态体）
+        this.matter.add.rectangle(width / 2, 680, width, 80, { isStatic: true, label: 'ground' });
+    }
+    
+    // ==================== 碰撞处理 ====================
+    
+    handleCollision(bodyA, bodyB, impactForce) {
+        if (this.stateSystem.getState() !== GAME_STATES.PLAYING) return;
+        
+        // 猪被撞击
+        if (bodyA.label === 'pig' || bodyB.label === 'pig') {
+            const pigBody = bodyA.label === 'pig' ? bodyA : bodyB;
+            if (impactForce > COLLISION.PIG_DAMAGE_THRESHOLD) {
+                const pig = this.entityManager.pigs.find(p => p.body === pigBody);
+                if (pig && !pig.destroyed) {
+                    pig.takeDamage(impactForce * COLLISION.PIG_DAMAGE_MULTIPLIER);
+                    if (pig.destroyed) {
+                        const score = this.stateSystem.addScore(GameConfig.scores.pig);
+                        this.uiSystem.updateScore(score);
+                        this.uiSystem.showScorePopup(GameConfig.scores.pig, pig.x, pig.y);
+                    }
+                }
+            }
+        }
+        
+        // 方块碰撞
+        if (bodyA.label === 'block' || bodyB.label === 'block') {
+            const blockBody = bodyA.label === 'block' ? bodyA : bodyB;
+            if (impactForce > COLLISION.BLOCK_DAMAGE_THRESHOLD) {
+                const block = this.entityManager.blocks.find(b => b.body === blockBody);
+                if (block && !block.destroyed) {
+                    block.takeDamage(impactForce * COLLISION.BLOCK_DAMAGE_MULTIPLIER);
+                    if (block.destroyed) {
+                        const points = GameConfig.scores[block.material] || 100;
+                        const score = this.stateSystem.addScore(points);
+                        this.uiSystem.updateScore(score);
+                        this.uiSystem.showScorePopup(points, block.x, block.y);
+                    }
+                }
+            }
+        }
+    }
+    
+    // ==================== 游戏流程控制 ====================
+    
+    onBirdLaunched(bird) {
+        // 小鸟发射后的处理
+    }
+    
+    checkRoundEnd() {
+        if (!this.stateSystem.isPlaying()) return;
+        
+        const allSleeping = this.entityManager.isAllSleeping();
+        if (!allSleeping) {
+            this.time.delayedCall(500, () => this.checkRoundEnd());
+            return;
+        }
+        
+        const result = this.stateSystem.checkGameState(
+            this.entityManager.pigs,
+            this.entityManager.birds
+        );
+        
+        if (result === 'win') {
+            this.onGameWin();
+        } else if (result === 'lose') {
+            this.onGameLose();
+        } else {
+            // 下一只小鸟
+            this.stateSystem.advanceBird();
+            if (this.entityManager.advanceToNextBird()) {
+                this.uiSystem.updateBirdQueue(this.entityManager.getRemainingBirdCount());
+            } else {
+                this.onGameLose();
+            }
+        }
+    }
+    
+    onGameWin(score, stars) {
+        const result = this.stateSystem.handleWin(this.entityManager.birds.length);
+        this.uiSystem.updateScore(result.score);
+        this.inputSystem.disable();
+        this.uiSystem.showResult('win', result.score, result.stars, {
+            onRetry: () => this.scene.restart({ level: this.stateSystem.currentLevel }),
+            onNext: () => this.scene.restart({ level: this.stateSystem.currentLevel + 1 }),
+            onMenu: () => this.scene.start(SCENE_KEYS.MENU),
+            hasNextLevel: this.stateSystem.currentLevel < LevelsConfig.length
+        });
+    }
+    
+    onGameLose(score) {
+        this.stateSystem.handleLose();
+        this.inputSystem.disable();
+        this.uiSystem.showResult('fail', this.stateSystem.getScore(), null, {
+            onRetry: () => this.scene.restart({ level: this.stateSystem.currentLevel }),
+            onMenu: () => this.scene.start(SCENE_KEYS.MENU)
+        });
+    }
+    
+    // ==================== 暂停控制 ====================
+    
+    pauseGame() {
+        const isNowPaused = this.stateSystem.togglePause();
+        if (this.stateSystem.getState() === GAME_STATES.PAUSED) {
+            this.uiSystem.showPauseOverlay({
+                onResume: () => this.pauseGame(),
+                onRetry: () => { this.uiSystem.hidePauseOverlay(); this.scene.restart({ level: this.stateSystem.currentLevel }); },
+                onMenu: () => { this.uiSystem.hidePauseOverlay(); this.scene.start(SCENE_KEYS.MENU); }
+            });
+        } else {
+            this.uiSystem.hidePauseOverlay();
+        }
+    }
+    
+    // ==================== 场景更新 ====================
+    
+    update() {
+        if (this.entityManager) {
+            this.entityManager.update();
+        }
+    }
+}

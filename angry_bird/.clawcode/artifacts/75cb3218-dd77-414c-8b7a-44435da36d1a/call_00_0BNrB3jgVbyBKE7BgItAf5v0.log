@@ -1,0 +1,246 @@
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:12
+   11:         
+>> 12:         this.currentLevel = 1;
+   13:         this.levelData = null;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:16
+   15:         this.birds = [];
+>> 16:         this.currentBirdIndex = 0;
+   17:         this.pigs = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:20
+   19:         this.slingshot = null;
+>> 20:         this.score = 0;
+   21:         this.trajectoryPoints = [];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:30
+   29:     init(data) {
+>> 30:         this.currentLevel = data.level || 1;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:31
+>> 31:         this.levelData = LevelsConfig[this.currentLevel - 1];
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:32
+>> 32:         this.score = 0;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:33
+>> 33:         this.currentBirdIndex = 0;
+   34:         this.gameState = GAME_STATES.PLAYING;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:51
+   50:         const sky = this.add.graphics();
+>> 51:         sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:52
+>> 52:         sky.fillRect(0, 0, width, height);
+   53:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:56
+   55:         const hills = this.add.graphics();
+>> 56:         hills.fillStyle(0x6B8E23, 0.5);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:57
+>> 57:         hills.fillTriangle(0, 500, 300, 350, 600, 500);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:58
+>> 58:         hills.fillTriangle(400, 500, 700, 300, 1000, 500);
+   59:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:61
+   60:         // 云朵
+>> 61:         for (let i = 0; i < 4; i++) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:62
+>> 62:             const x = Phaser.Math.Between(100, 1100);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:63
+>> 63:             const y = Phaser.Math.Between(50, 200);
+   64:             const cloud = this.add.graphics();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:65
+   64:             const cloud = this.add.graphics();
+>> 65:             cloud.fillStyle(0xFFFFFF, 0.8);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:66
+>> 66:             cloud.fillCircle(0, 0, 25);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:67
+>> 67:             cloud.fillCircle(20, 0, 35);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:68
+>> 68:             cloud.fillCircle(40, 0, 25);
+   69:             cloud.setPosition(x, y);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:77
+   76:         
+>> 77:         this.matter.add.rectangle(width / 2, height - 40, width, 80, {
+   78:             isStatic: true,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:79
+   78:             isStatic: true,
+>> 79:             friction: 0.9,
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:80
+>> 80:             restitution: 0.1,
+   81:             label: 'ground'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:85
+   84:         const ground = this.add.graphics();
+>> 85:         ground.fillStyle(COLORS.GROUND, 1);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:86
+>> 86:         ground.fillRect(0, height - 80, width, 80);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:87
+>> 87:         ground.fillStyle(COLORS.GRASS, 1);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:88
+>> 88:         ground.fillRect(0, height - 80, width, 15);
+   89:     }
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:97
+   96:         this.birds = [];
+>> 97:         const birdStartX = 100;
+   98:         this.levelData.birds.forEach((birdType, index) => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:99
+   98:         this.levelData.birds.forEach((birdType, index) => {
+>> 99:             const bird = new Bird(this, birdStartX - index * 40, 650, birdType);
+   100:             this.birds.push(bird);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:127
+   126:         
+>> 127:         this.add.text(50, 30, '⏸', { fontSize: '32px' }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+   128:             .on('pointerdown', () => this.pauseGame());
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:130
+   129:         
+>> 130:         this.add.text(width / 2, 30, `关卡 ${this.currentLevel}`, {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:131
+>> 131:             fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:132
+>> 132:         }).setOrigin(0.5);
+   133:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:134
+   133:         
+>> 134:         this.scoreText = this.add.text(width - 50, 30, '⭐ 0', {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:135
+>> 135:             fontSize: '28px', fontFamily: 'Arial', color: '#333333'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:136
+>> 136:         }).setOrigin(0.5);
+   137:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:142
+   141:     updateBirdQueue() {
+>> 142:         const remaining = this.birds.length - this.currentBirdIndex - 1;
+   143:         if (this.birdQueueText) this.birdQueueText.destroy();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:144
+   143:         if (this.birdQueueText) this.birdQueueText.destroy();
+>> 144:         this.birdQueueText = this.add.text(50, 680, `🐦 x ${remaining + 1}`, {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:145
+>> 145:             fontSize: '24px', fontFamily: 'Arial', color: '#333333'
+   146:         });
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:159
+   158:         const relativeVelocity = Math.sqrt(
+>> 159:             Math.pow(velocityA.x - velocityB.x, 2) + Math.pow(velocityA.y - velocityB.y, 2)
+   160:         );
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:161
+   160:         );
+>> 161:         const impactForce = relativeVelocity * (bodyA.mass + bodyB.mass) / 2;
+   162:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:168
+   167:             
+>> 168:             if (impactForce > 3) {
+   169:                 const pig = this.pigs.find(p => p.body === pigBody);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:171
+   170:                 if (pig && !pig.destroyed) {
+>> 171:                     pig.takeDamage(impactForce * 10);
+   172:                     if (pig.destroyed) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:183
+   182:             
+>> 183:             if (impactForce > 2) {
+   184:                 const block = this.blocks.find(b => b.body === blockBody);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:186
+   185:                 if (block && !block.destroyed) {
+>> 186:                     block.takeDamage(impactForce * 5);
+   187:                     if (block.destroyed) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:188
+   187:                     if (block.destroyed) {
+>> 188:                         const points = GameConfig.scores[block.material] || 100;
+   189:                         this.addScore(points, block.x, block.y);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:205
+   204:             fontSize: '24px', fontFamily: 'Arial', color: '#FFD700',
+>> 205:             stroke: '#000000', strokeThickness: 3
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:206
+>> 206:         }).setOrigin(0.5);
+   207:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:209
+   208:         this.tweens.add({
+>> 209:             targets: popup, y: y - 50, alpha: 0, duration: 800, ease: 'Power2',
+   210:             onComplete: () => popup.destroy()
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:223
+   222:             
+>> 223:             if (distance < 80) {
+   224:                 this.isDragging = true;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:272
+   271:             
+>> 272:             this.time.delayedCall(3000, () => this.checkRoundEnd());
+   273:         });
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:282
+   281:         
+>> 282:         for (let i = 0; i < 10; i++) {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:283
+>> 283:             const t = i * 0.1;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:284
+>> 284:             const x = this.currentBird.x + vx * t * 60;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:285
+>> 285:             const y = this.currentBird.y + vy * t * 60 + 0.5 * 1 * t * t * 3600;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:286
+>> 286:             const dot = this.add.circle(x, y, 4, 0xFFFFFF, 0.5);
+   287:             this.trajectoryPoints.push(dot);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:300
+   299:         const allSleeping = this.matter.world.engine.world.bodies.every(
+>> 300:             body => body.isStatic || body.speed < 0.5
+   301:         );
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:304
+   303:         if (!allSleeping) {
+>> 304:             this.time.delayedCall(500, () => this.checkRoundEnd());
+   305:             return;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:314
+   313:         
+>> 314:         if (alivePigs.length === 0) {
+   315:             this.gameWin();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:316
+   315:             this.gameWin();
+>> 316:         } else if (this.currentBirdIndex >= this.birds.length - 1) {
+   317:             this.gameLose();
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:330
+   329:         this.gameState = GAME_STATES.WIN;
+>> 330:         const remainingBirds = this.birds.length - this.currentBirdIndex - 1;
+   331:         this.score += remainingBirds * GameConfig.scores.birdBonus;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:345
+   344:         
+>> 345:         this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.5);
+   346:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:347
+   346:         
+>> 347:         this.add.text(width / 2, height / 2 - 100, isWin ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢', {
+   348:             fontSize: '48px', fontFamily: 'Arial', color: isWin ? '#FFD700' : '#FF6B6B'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:349
+   348:             fontSize: '48px', fontFamily: 'Arial', color: isWin ? '#FFD700' : '#FF6B6B'
+>> 349:         }).setOrigin(0.5);
+   350:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:351
+   350:         
+>> 351:         this.add.text(width / 2, height / 2 - 20, `得分: ${this.score}`, {
+   352:             fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:353
+   352:             fontSize: '32px', fontFamily: 'Arial', color: '#FFFFFF'
+>> 353:         }).setOrigin(0.5);
+   354:         
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:357
+   356:             const stars = this.calculateStars();
+>> 357:             this.add.text(width / 2, height / 2 + 30, '⭐'.repeat(stars), {
+   358:                 fontSize: '40px'
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:359
+   358:                 fontSize: '40px'
+>> 359:             }).setOrigin(0.5);
+   360:         }
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:362
+   361:         
+>> 362:         this.createResultButton(width / 2, height / 2 + 100, '重玩', () => {
+   363:             this.scene.restart({ level: this.currentLevel });
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:367
+   366:         if (isWin && this.currentLevel < LevelsConfig.length) {
+>> 367:             this.createResultButton(width / 2, height / 2 + 160, '下一关', () => {
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:368
+>> 368:                 this.scene.restart({ level: this.currentLevel + 1 });
+   369:             });
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:372
+   371:         
+>> 372:         this.createResultButton(width / 2, height / 2 + (isWin ? 220 : 160), '主菜单', () => {
+   373:             this.scene.start(SCENE_KEYS.MENU);
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:379
+   378:         const starScores = this.levelData.starScores;
+>> 379:         if (this.score >= starScores[2]) return 3;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:380
+>> 380:         if (this.score >= starScores[1]) return 2;
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:381
+>> 381:         return 1;
+   382:     }
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:387
+   386:             fontSize: '24px', fontFamily: 'Arial', color: '#FFFFFF',
+>> 387:             backgroundColor: '#4CAF50', padding: { x: 20, y: 10 }
+D:\opensource_project\opencode-main\opencode-main\test\angry_bird\src\scenes\GameScene.js:388
+>> 388:         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+   389:         

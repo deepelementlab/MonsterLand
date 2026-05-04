@@ -1,0 +1,340 @@
+Successfully wrote 336 lines (13834 bytes) to docs/architecture.md
+
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -0,0 +1,335 @@
++# 愤怒的小鸟 - 技术架构设计文档
++
++**版本**: 1.0.0  
++**日期**: 2025-01-21  
++**状态**: 待评审
++
++---
++
++## 1. 技术选型
++
++### 1.1 核心技术栈
++
++| 层级 | 技术选择 | 版本要求 | 选型理由 |
++|------|----------|----------|----------|
++| 游戏框架 | Phaser 3 | 3.60+ | 成熟的HTML5游戏框架，内置物理引擎支持 |
++| 物理引擎 | Matter.js | 0.19+ | 轻量级2D物理引擎，完美适配弹射游戏 |
++| 渲染引擎 | WebGL/Canvas | - | Phaser内置，自动降级 |
++| 编程语言 | JavaScript (ES6+) | ES2020+ | 广泛兼容，开发效率高 |
++| 构建工具 | Vite | 4.0+ | 快速开发服务器，热更新支持 |
++| 包管理 | npm | 8.0+ | 标准Node.js包管理器 |
++
++### 1.2 技术选型理由
++
++#### Phaser 3 优势
++- ✅ 内置Arcade Physics和Matter.js集成
++- ✅ 丰富的游戏对象（Sprite, Graphics, TileSprite等）
++- ✅ 完善的输入系统（鼠标、触摸、键盘）
++- ✅ 内置场景管理和状态管理
++- ✅ 良好的性能和跨浏览器兼容
++- ✅ 活跃的社区和丰富的文档
++
++#### Matter.js 优势
++- ✅ 真实的2D物理模拟
++- ✅ 支持复合体和约束
++- ✅ 碰撞检测和响应
++- ✅ 轻量级，性能优秀
++- ✅ 与Phaser无缝集成
++
++### 1.3 后端服务（可选）
++
++MVP阶段采用纯前端方案，后续可扩展：
++
++| 服务 | 技术选择 | 用途 |
++|------|----------|------|
++| 排行榜 | LocalStorage | 本地高分榜 |
++| 存档系统 | LocalStorage | 游戏进度保存 |
++| 未来扩展 | Node.js + Express | 在线排行榜、云存档 |
++
++---
++
++## 2. 架构设计
++
++### 2.1 整体架构图
++
++```
++┌─────────────────────────────────────────────────────────────────┐
++│                        Game Application                          │
++├─────────────────────────────────────────────────────────────────┤
++│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
++│  │   Scenes    │  │   Systems   │  │      Game Objects       │  │
++│  │  Manager    │  │   Manager   │  │        Factory          │  │
++│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘  │
++│         │                │                      │                │
++│  ┌──────┴────────────────┴──────────────────────┴──────┐        │
++│  │                    Phaser 3 Core                     │        │
++│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐           │        │
++│  │  │  Input   │  │ Renderer │  │  Loader  │           │        │
++│  │  │  System  │  │  (WebGL) │  │  (Assets)│           │        │
++│  │  └──────────┘  └──────────┘  └──────────┘           │        │
++│  └─────────────────────────────────────────────────────┘        │
++│                              │                                   │
++│  ┌───────────────────────────┴───────────────────────────┐      │
++│  │                     Matter.js                          │      │
++│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐     │      │
++│  │  │  Engine  │  │  World   │  │  Collision Detect│     │      │
++│  │  └──────────┘  └──────────┘  └──────────────────┘     │      │
++│  └───────────────────────────────────────────────────────┘      │
++└─────────────────────────────────────────────────────────────────┘
++                               │
++                    ┌──────────┴──────────┐
++                    │    LocalStorage     │
++                    │  (Save/Settings)    │
++                    └─────────────────────┘
++```
++
++### 2.2 游戏循环设计
++
++```javascript
++// 游戏主循环 (由Phaser自动管理)
++gameLoop(time, delta) {
++    // 1. 输入处理
++    this.inputManager.update();
++    
++    // 2. 物理更新 (Matter.js)
++    // Phaser自动调用 Matter.Engine.update()
++    
++    // 3. 游戏逻辑更新
++    this.gameLogic.update(time, delta);
++    
++    // 4. 碰撞检测回调
++    // Matter.js触发碰撞事件
++    
++    // 5. 渲染
++    // Phaser自动渲染场景
++}
++```
++
++### 2.3 物理系统架构
++
++```
++┌─────────────────────────────────────────────────┐
++│               Physics World (Matter.js)          │
++├─────────────────────────────────────────────────┤
++│  ┌─────────────────────────────────────────┐    │
++│  │           Physics Bodies                 │    │
++│  │  ┌────────┐ ┌────────┐ ┌────────────┐   │    │
++│  │  │  Bird  │ │  Pig   │ │   Block    │   │    │
++│  │  │(Circle)│ │(Circle)│ │(Rectangle) │   │    │
++│  │  └────────┘ └────────┘ └────────────┘   │    │
++│  └─────────────────────────────────────────┘    │
++│                      │                           │
++│  ┌───────────────────┴───────────────────┐      │
++│  │         Collision Categories          │      │
++│  │  CATEGORY_BIRD    = 0x0001            │      │
++│  │  CATEGORY_PIG     = 0x0002            │      │
++│  │  CATEGORY_BLOCK   = 0x0004            │      │
++│  │  CATEGORY_GROUND  = 0x0008            │      │
++│  │  CATEGORY_SLING   = 0x0010            │      │
++│  └───────────────────────────────────────┘      │
++└─────────────────────────────────────────────────┘
++```
++
++### 2.4 渲染层设计
++
++```
++┌─────────────────────────────────────────────────┐
++│                  Render Pipeline                 │
++├─────────────────────────────────────────────────┤
++│  Layer 0: Background (Sky, Clouds)              │
++│  Layer 1: Ground & Terrain                      │
++│  Layer 2: Game Objects (Blocks, Pigs, Birds)    │
++│  Layer 3: Effects (Particles, Trails)           │
++│  Layer 4: UI (HUD)                              │
++└─────────────────────────────────────────────────┘
++```
++
++### 2.5 状态管理
++
++```javascript
++// 游戏状态结构
++const GameState = {
++    // 全局状态
++    global: {
++        currentLevel: 1,
++        unlockedLevels: [1],
++        highScores: {},
++        settings: {
++            soundVolume: 1.0,
++            musicVolume: 0.8
++        }
++    },
++    
++    // 关卡状态
++    level: {
++        score: 0,
++        birdsRemaining: 3,
++        pigsRemaining: 3,
++        isPlaying: false,
++        isPaused: false
++    }
++};
++```
++
++---
++
++## 3. 目录结构
++
++```
++angry_bird/
++├── index.html              # 入口HTML
++├── package.json            # 项目配置
++├── vite.config.js          # Vite配置
++├── README.md               # 项目说明
++│
++├── docs/                   # 文档目录
++│   ├── product-requirements.md
++│   ├── architecture.md
++│   └── ui-ux-design.md
++│
++├── src/                    # 源代码目录
++│   ├── main.js             # 应用入口
++│   ├── config/             # 配置文件
++│   │   ├── game.config.js  # 游戏配置
++│   │   └── levels.config.js# 关卡配置
++│   │
++│   ├── scenes/             # 游戏场景
++│   │   ├── BootScene.js    # 启动场景
++│   │   ├── PreloadScene.js # 资源加载
++│   │   ├── MenuScene.js    # 主菜单
++│   │   ├── LevelSelectScene.js # 关卡选择
++│   │   ├── GameScene.js    # 游戏主场景
++│   │   └── ResultScene.js  # 结算场景
++│   │
++│   ├── objects/            # 游戏对象
++│   │   ├── Bird.js         # 小鸟类
++│   │   ├── Pig.js          # 猪类
++│   │   ├── Block.js        # 方块类
++│   │   ├── Slingshot.js    # 弹弓类
++│   │   └── Ground.js       # 地面类
++│   │
++│   ├── systems/            # 游戏系统
++│   │   ├── PhysicsSystem.js    # 物理系统
++│   │   ├── ScoreSystem.js      # 得分系统
++│   │   ├── CollisionSystem.js  # 碰撞处理
++│   │   ├── InputSystem.js      # 输入处理
++│   │   └── AudioSystem.js      # 音频系统
++│   │
++│   ├── ui/                 # UI组件
++│   │   ├── HUD.js          # 游戏HUD
++│   │   ├── Button.js       # 按钮组件
++│   │   ├── ScorePopup.js   # 得分弹出
++│   │   └── StarRating.js   # 星级显示
++│   │
++│   ├── utils/              # 工具函数
++│   │   ├── math.js         # 数学工具
++│   │   ├── storage.js      # 存储工具
++│   │   └── constants.js    # 常量定义
++│   │
++│   └── assets/             # 资源文件
++│       ├── images/         # 图片资源
++│       ├── audio/          # 音频资源
++│       └── fonts/          # 字体文件
++│
++├── public/                 # 静态资源
++│   └── favicon.ico
++│
++└── tests/                  # 测试文件
++```
++
++---
++
++## 4. 核心模块接口
++
++### 4.1 游戏对象接口
++
++```javascript
++// 小鸟接口
++class Bird {
++    constructor(scene, x, y, type = 'red') {
++        this.type = type;
++        this.launched = false;
++    }
++    
++    launch(velocity) {}    // 发射小鸟
++    useAbility() {}        // 使用特殊能力
++}
++
++// 方块接口
++class Block {
++    constructor(scene, x, y, material = 'wood') {
++        this.material = material;
++        this.health = this.getHealth(material);
++    }
++    
++    takeDamage(amount) {}  // 受到伤害
++    checkDestruction() {}  // 检查是否破坏
++}
++```
++
++### 4.2 系统接口
++
++```javascript
++// 得分系统接口
++class ScoreSystem {
++    addScore(points, x, y) {}  // 添加分数
++    setMultiplier(value) {}    // 设置连击倍率
++    calculateStars() {}        // 计算星级
++}
++
++// 输入系统接口
++class InputSystem {
++    onDragStart(pointer) {}    // 处理拖拽开始
++    onDragMove(pointer) {}     // 处理拖拽移动
++    onDragEnd(pointer) {}      // 处理拖拽结束
++}
++```
++
++---
++
++## 5. 性能优化策略
++
++### 5.1 渲染优化
++- 使用纹理图集 (Texture Atlas) 减少draw call
++- 对象池 (Object Pooling) 复用游戏对象
++- 视口裁剪 (Culling) - Phaser自动处理
++- 批量渲染 - 使用Phaser的SpriteBatch
++
++### 5.2 物理计算优化
++- 睡眠机制 - 静止物体进入睡眠状态
++- 简化碰撞体 - 使用简单几何形状
++- 空间分区 - 减少碰撞检测计算
++
++### 5.3 资源加载优化
++- 资源预加载 - 场景切换时预加载
++- 懒加载 - 非关键资源延迟加载
++- 资源压缩 - 图片和音频压缩
++
++---
++
++## 6. 风险和权衡
++
++### 6.1 技术选型权衡
++
++| 选择 | 优势 | 劣势 | 缓解措施 |
++|------|------|------|----------|
++| Phaser 3 | 功能完整、社区活跃 | 学习曲线 | 参考官方示例 |
++| Matter.js | 物理真实 | 性能开销 | 优化碰撞检测 |
++| 纯前端 | 部署简单 | 无在线功能 | 后续扩展API |
++
++### 6.2 潜在技术风险
++
++| 风险 | 可能性 | 影响 | 缓解措施 |
++|------|--------|------|----------|
++| 物理引擎性能问题 | 中 | 高 | 早期性能测试，限制物体数量 |
++| 浏览器兼容性问题 | 低 | 中 | 跨浏览器测试，降级处理 |
++| 移动端性能不足 | 中 | 中 | 响应式设计，降低画质选项 |
++
++---
++
++**文档维护**: 本文档将随项目进展持续更新
++
++**变更记录**:
++| 版本 | 日期 | 变更内容 | 作者 |
++|------|------|----------|------|
++| 1.0.0 | 2025-01-21 | 初始版本 | Architecture Team |

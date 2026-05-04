@@ -1,0 +1,247 @@
+--- src/systems/EntityManager.js L1-80 (80 lines) ---
+/**
+ * 实体管理系统模块
+ * 集中管理所有游戏实体（小鸟、猪、方块）的创建、更新和销毁
+ */
+import { Bird } from '../objects/Bird.js';
+import { Pig } from '../objects/Pig.js';
+import { Block } from '../objects/Block.js';
+import { Slingshot } from '../objects/Slingshot.js';
+import { POSITIONS, BIRD_TYPES, COLLISION } from '../utils/constants.js';
+
+export class EntityManager {
+    constructor(scene) {
+        this.scene = scene;
+        
+        // 实体集合
+        this.birds = [];
+        this.pigs = [];
+        this.blocks = [];
+        this.slingshot = null;
+        
+        // 当前小鸟索引
+        this.currentBirdIndex = 0;
+        this.currentBird = null;
+    }
+    
+    /**
+     * 初始化实体管理器
+     * @param {Object} levelData - 关卡配置数据
+     */
+    init(levelData) {
+        this.clearAll();
+        
+        // 创建弹弓
+        this.slingshot = new Slingshot(this.scene, POSITIONS.SLINGSHOT_X, POSITIONS.SLINGSHOT_Y);
+        
+        // 创建小鸟队列（在弹弓左下方的等待区域）
+        levelData.birds.forEach((birdType, index) => {
+            const x = POSITIONS.BIRD_START_X + index * POSITIONS.BIRD_SPACING;
+            const bird = new Bird(this.scene, x, POSITIONS.BIRD_START_Y, birdType);
+            this.birds.push(bird);
+        });
+        
+        // 创建关卡结构（方块和猪）
+        levelData.structures.forEach(structure => {
+            if (structure.type === 'block') {
+                const block = new Block(
+                    this.scene, structure.x, structure.y,
+                    structure.material, structure.width, structure.height
+                );
+                this.blocks.push(block);
+            } else if (structure.type === 'pig') {
+                const pig = new Pig(this.scene, structure.x, structure.y, structure.radius);
+                this.pigs.push(pig);
+            }
+        });
+        
+        // 准备第一只小鸟到弹弓叉口
+        this.prepareNextBird();
+    }
+    
+    /**
+     * 准备下一只小鸟到弹弓叉口位置
+     * @returns {boolean} 是否成功准备
+     */
+    prepareNextBird() {
+        if (this.currentBirdIndex >= this.birds.length) return false;
+        const bird = this.birds[this.currentBirdIndex];
+        // 将小鸟移动到弹弓叉口（launchPoint），不是弹弓底部
+        const lp = this.slingshot.launchPoint;
+        bird.moveToSlingshot(lp.x, lp.y);
+        this.currentBird = bird;
+        return true;
+    }
+    
+    /**
+     * 前进到下一只小鸟
+     * @returns {boolean} 是否还有下一只
+     */
+    advanceToNextBird() {
+        this.currentBirdIndex++;
+
+--- src/systems/PhysicsSystem.js L1-60 (60 lines) ---
+/**
+ * 物理系统模块
+ * 处理所有物理引擎逻辑，包括Matter.js物理世界初始化、碰撞检测、物体创建和轨迹计算
+ */
+export class PhysicsSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.matter = scene.matter;
+        this.world = scene.matter.world;
+        this.engine = scene.matter.world.engine;
+        this.collisionCallbacks = [];
+        this._collisionSetup = false;
+        this._collisionHandler = null;
+        this.config = {
+            gravity: { x: 0, y: 1 },
+            launchPower: 0.15,
+            materials: {
+                wood: { health: 100, density: 0.001, friction: 0.5, restitution: 0.3 },
+                stone: { health: 300, density: 0.003, friction: 0.8, restitution: 0.1 },
+                glass: { health: 50, density: 0.001, friction: 0.2, restitution: 0.5 }
+            }
+        };
+        this.setupCollisions();
+    }
+
+    calculateImpactForce(bodyA, bodyB) {
+        const velocityA = bodyA.velocity;
+        const velocityB = bodyB.velocity;
+        const relativeVelocity = Math.sqrt(
+            Math.pow(velocityA.x - velocityB.x, 2) + Math.pow(velocityA.y - velocityB.y, 2)
+        );
+        return relativeVelocity * (bodyA.mass + bodyB.mass) / 2;
+    }
+
+    onCollision(callback) {
+        if (typeof callback === 'function') this.collisionCallbacks.push(callback);
+    }
+
+    setupCollisions() {
+        if (this._collisionSetup) return;
+        this._collisionSetup = true;
+        this._collisionHandler = (event) => {
+            event.pairs.forEach(pair => {
+                const impactForce = this.calculateImpactForce(pair.bodyA, pair.bodyB);
+                this.collisionCallbacks.forEach(cb => cb(pair.bodyA, pair.bodyB, impactForce));
+            });
+        };
+        this.world.on('collisionstart', this._collisionHandler);
+    }
+
+    createBody(options) {
+        const { type = 'rectangle', x, y, material = 'wood', isStatic = false, label = 'body' } = options;
+        const mp = this.config.materials[material] || this.config.materials.wood;
+        const bodyOpts = { isStatic, friction: mp.friction, restitution: mp.restitution, density: mp.density, label, material };
+        let body;
+        switch (type) {
+            case 'circle': body = this.matter.add.circle(x, y, options.radius, bodyOpts); break;
+            case 'polygon': body = this.matter.add.polygon(x, y, options.sides || 3, options.radius || 50, bodyOpts); break;
+            default: body = this.matter.add.rectangle(x, y, options.width, options.height, bodyOpts);
+        }
+
+--- src/objects/Pig.js L1-50 (50 lines) ---
+import { COLORS } from '../utils/constants.js';
+
+export class Pig {
+    constructor(scene, x, y, radius = 25) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.health = 100;
+        this.destroyed = false;
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 绘制猪身体
+        this.graphics.fillStyle(COLORS.PIG, 1);
+        this.graphics.fillCircle(0, 0, this.radius);
+        
+        // 绘制耳朵
+        this.graphics.fillStyle(0x7CCD7C, 1);
+        this.graphics.fillEllipse(-20, -20, 15, 20);
+        this.graphics.fillEllipse(20, -20, 15, 20);
+        
+        // 绘制眼睛
+        this.graphics.fillStyle(0xFFFFFF, 1);
+        this.graphics.fillCircle(-8, -5, 8);
+        this.graphics.fillCircle(8, -5, 8);
+        
+        // 绘制瞳孔
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-6, -5, 4);
+        this.graphics.fillCircle(10, -5, 4);
+        
+        // 绘制猪鼻子
+        this.graphics.fillStyle(0x8B4513, 1);
+        this.graphics.fillEllipse(0, 8, 12, 8);
+        this.graphics.fillStyle(0x000000, 1);
+        this.graphics.fillCircle(-3, 8, 2);
+        this.graphics.fillCircle(3, 8, 2);
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        this.body = this.scene.matter.add.circle(this.x, this.y, this.radius, {
+            label: 'pig',
+            mass: 3,
+
+--- src/objects/Block.js L1-50 (50 lines) ---
+import { COLORS, MATERIAL_TYPES } from '../utils/constants.js';
+import { GameConfig } from '../config/game.config.js';
+
+export class Block {
+    constructor(scene, x, y, material = MATERIAL_TYPES.WOOD, width = 40, height = 80) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.material = material;
+        this.width = width;
+        this.height = height;
+        this.destroyed = false;
+        
+        // 获取材质属性
+        const materialConfig = GameConfig.materials[material];
+        this.health = materialConfig?.health || 100;
+        this.maxHealth = this.health;
+        
+        this.create();
+    }
+    
+    create() {
+        // 创建图形
+        this.graphics = this.scene.add.graphics();
+        
+        // 获取颜色
+        const color = this.getColor();
+        
+        // 绘制方块
+        this.graphics.fillStyle(color, 1);
+        this.graphics.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        // 添加边框
+        this.graphics.lineStyle(2, this.getBorderColor(), 1);
+        this.graphics.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        // 添加纹理线条
+        this.addTextureLines();
+        
+        this.graphics.setPosition(this.x, this.y);
+        
+        // 创建物理体
+        const materialConfig = GameConfig.materials[this.material];
+        
+        this.body = this.scene.matter.add.rectangle(this.x, this.y, this.width, this.height, {
+            label: 'block',
+            mass: this.width * this.height * (materialConfig?.density || 0.001),
+            restitution: materialConfig?.restitution || 0.3,
+            friction: materialConfig?.friction || 0.5
+        });

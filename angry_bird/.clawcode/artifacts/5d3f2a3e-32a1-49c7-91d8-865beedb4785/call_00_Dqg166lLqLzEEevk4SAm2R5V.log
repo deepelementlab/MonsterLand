@@ -1,0 +1,657 @@
+Sub-agent (clawteam-system-architect) Result:
+Content: # 愤怒的小鸟项目架构重构方案
+
+## 1. GameScene.js当前职责和问题分析
+
+### 当前职责：
+- **场景管理**：Phaser场景生命周期管理
+- **渲染管理**：背景、地面、云朵等视觉效果绘制
+- **实体管理**：小鸟、猪、方块对象的创建、更新和销毁
+- **物理系统**：Matter.js物理引擎集成和碰撞处理
+- **输入处理**：鼠标/触摸交互，弹弓拖拽逻辑
+- **游戏逻辑**：游戏状态机（准备、发射、回合结束、胜利/失败判断）
+- **UI管理**：分数显示、小鸟队列、结果界面
+- **状态管理**：游戏得分、关卡数据、当前状态
+
+### 主要问题：
+1. **违反单一职责原则**：425行代码承担8个以上不同职责
+2. **高耦合度**：物理、渲染、输入、UI逻辑深度耦合
+3. **可测试性差**：难以对独立功能进行单元测试
+4. **可维护性低**：修改一个功能可能影响多个不相关的逻辑
+5. **扩展困难**：添加新功能需要修改庞大的类
+
+## 2. 系统模块设计
+
+需要创建以下独立系统模块：
+
+```
+src/systems/
+├── PhysicsSystem.js         # 物理系统
+├── InputSystem.js          # 输入处理系统
+├── UISystem.js             # UI管理系统
+├── GameStateSystem.js      # 游戏状态系统
+├── EntityManager.js        # 实体管理系统
+├── RenderSystem.js         # 渲染系统
+├── AudioSystem.js          # 音频系统
+└── EventSystem.js          # 事件系统
+```
+
+## 3. 各模块接口设计和职责划分
+
+### 3.1 PhysicsSystem - 物理系统
+```javascript
+class PhysicsSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.matter = scene.matter;
+        this.world = scene.matter.world;
+    }
+    
+    // 接口方法
+    init(config);           // 初始化物理世界
+    addEntity(entity);      // 添加物理实体
+    removeEntity(entity);   // 移除物理实体
+    setGravity(x, y);       // 设置重力
+    pause();               // 暂停物理模拟
+    resume();              // 恢复物理模拟
+    update();              // 物理更新
+    checkCollisions();     // 碰撞检测
+    applyForce(entity, force); // 施加力
+}
+```
+
+### 3.2 InputSystem - 输入系统
+```javascript
+class InputSystem {
+    constructor(scene, eventBus) {
+        this.scene = scene;
+        this.eventBus = eventBus;
+        this.isDragging = false;
+        this.currentTarget = null;
+    }
+    
+    // 接口方法
+    enable();               // 启用输入
+    disable();              // 禁用输入
+    registerDragArea(area, onDragStart, onDragMove, onDragEnd); // 注册拖拽区域
+    setCursor(cursorType);  // 设置鼠标光标
+    update();              // 更新输入状态
+    handlePointerDown(pointer); // 处理按下
+    handlePointerMove(pointer); // 处理移动
+    handlePointerUp(pointer);   // 处理释放
+}
+```
+
+### 3.3 UISystem - UI系统
+```javascript
+class UISystem {
+    constructor(scene, config) {
+        this.scene = scene;
+        this.config = config;
+        this.elements = new Map();
+    }
+    
+    // 接口方法
+    createScoreDisplay(position, style); // 创建分数显示
+    createBirdQueue(position, style);    // 创建小鸟队列
+    createLevelInfo(position, style);    // 创建关卡信息
+    createPauseButton(position, callback); // 创建暂停按钮
+    createResultScreen(isWin, score, stars, callbacks); // 创建结果屏幕
+    updateScore(score);                  // 更新分数
+    updateBirdQueue(count);              // 更新小鸟队列
+    showPopup(text, position, duration); // 显示弹出文本
+    hideAll();                          // 隐藏所有UI
+}
+```
+
+### 3.4 GameStateSystem - 游戏状态系统
+```javascript
+class GameStateSystem {
+    constructor(config) {
+        this.currentState = GAME_STATES.IDLE;
+        this.currentLevel = 1;
+        this.score = 0;
+        this.stars = 0;
+        this.birdsRemaining = 0;
+        this.pigsRemaining = 0;
+    }
+    
+    // 接口方法
+    setState(state);                // 设置游戏状态
+    getState();                     // 获取当前状态
+    setLevel(levelId);              // 设置当前关卡
+    getLevelData();                 // 获取关卡数据
+    addScore(points);               // 增加分数
+    birdLaunched();                 // 小鸟发射
+    pigDestroyed();                 // 猪被消灭
+    blockDestroyed();               // 方块被破坏
+    checkWinCondition();            // 检查胜利条件
+    checkLoseCondition();           // 检查失败条件
+    calculateStars();               // 计算星数
+    reset();                        // 重置状态
+}
+```
+
+### 3.5 EntityManager - 实体管理系统
+```javascript
+class EntityManager {
+    constructor(scene, physicsSystem) {
+        this.scene = scene;
+        this.physicsSystem = physicsSystem;
+        this.entities = {
+            birds: [],
+            pigs: [],
+            blocks: [],
+            projectiles: []
+        };
+    }
+    
+    // 接口方法
+    createBird(type, x, y);         // 创建小鸟
+    createPig(x, y, radius);        // 创建猪
+    createBlock(material, x, y, width, height); // 创建方块
+    removeEntity(entity);           // 移除实体
+    getEntityById(id);              // 通过ID获取实体
+    getEntitiesByType(type);        // 通过类型获取实体列表
+    updateAll();                    // 更新所有实体
+    clearAll();                     // 清空所有实体
+    spawnBirdAtSlingshot();         // 在弹弓处生成小鸟
+}
+```
+
+### 3.6 RenderSystem - 渲染系统
+```javascript
+class RenderSystem {
+    constructor(scene, config) {
+        this.scene = scene;
+        this.config = config;
+        this.layers = new Map();
+    }
+    
+    // 接口方法
+    createLayer(name, depth);       // 创建渲染层
+    renderBackground();             // 渲染背景
+    renderGround();                 // 渲染地面
+    renderTrajectory(points);       // 渲染弹道轨迹
+    renderParticles(effect, position, count); // 渲染粒子效果
+    renderShadow(entity);           // 渲染实体阴影
+    updateCamera(position);         // 更新摄像机位置
+    applyPostEffect(effect);        // 应用后期效果
+    clearLayer(layerName);          // 清空渲染层
+}
+```
+
+### 3.7 EventSystem - 事件系统
+```javascript
+class EventSystem {
+    constructor() {
+        this.events = new Phaser.Events.EventEmitter();
+        this.eventTypes = {
+            BIRD_LAUNCHED: 'bird-launched',
+            PIG_DESTROYED: 'pig-destroyed',
+            BLOCK_DESTROYED: 'block-destroyed',
+            SCORE_CHANGED: 'score-changed',
+            GAME_STATE_CHANGED: 'game-state-changed',
+            LEVEL_COMPLETE: 'level-complete',
+            GAME_OVER: 'game-over'
+        };
+    }
+    
+    // 接口方法
+    emit(event, data);              // 发射事件
+    on(event, callback, context);   // 监听事件
+    once(event, callback, context); // 监听一次事件
+    off(event, callback, context);  // 移除事件监听
+    clear();                        // 清空所有监听
+}
+```
+
+## 4. Phaser 3 + Matter.js集成模块化方案
+
+### 4.1 集成架构
+```
+GameScene (协调者)
+    ├── PhysicsSystem (封装Matter.js)
+    ├── EntityManager (管理物理实体)
+    ├── InputSystem (处理Phaser输入)
+    ├── UISystem (使用Phaser显示对象)
+    ├── RenderSystem (管理Phaser渲染)
+    ├── GameStateSystem (游戏逻辑)
+    └── EventSystem (事件通信)
+```
+
+### 4.2 集成要点：
+1. **PhysicsSystem封装Matter.js**：
+   - 提供统一的物理接口
+   - 处理Matter.js事件到游戏事件的转换
+   - 管理物理世界的生命周期
+
+2. **EntityManager与PhysicsSystem协同**：
+   - EntityManager负责逻辑创建
+   - PhysicsSystem负责物理体创建
+   - 双向引用保持同步
+
+3. **RenderSystem与Phaser集成**：
+   - 使用Phaser的Graphics和Text对象
+   - 管理渲染顺序和深度
+   - 处理视觉特效
+
+4. **事件驱动通信**：
+   - 所有系统通过EventSystem通信
+   - 避免直接依赖，降低耦合度
+
+## 5. 重构风险和缓解策略
+
+### 5.1 主要风险：
+1. **破坏现有功能**：重构可能导致游戏功能失效
+2. **性能下降**：过度模块化可能引入额外开销
+3. **集成复杂度**：多个系统间的协作复杂性
+4. **测试覆盖不足**：难以保证所有功能正常工作
+
+### 5.2 缓解策略：
+1. **增量重构**：
+   - 阶段1：提取PhysicsSystem和EventSystem
+   - 阶段2：提取InputSystem和UISystem
+   - 阶段3：提取EntityManager和GameStateSystem
+   - 阶段4：提取RenderSystem，完成重构
+
+2. **测试策略**：
+   - 保持现有端到端测试
+   - 为每个新系统添加单元测试
+   - 创建集成测试验证系统协作
+
+3. **回滚计划**：
+   - 每个阶段完成后进行完整测试
+   - 保留重构前的代码备份
+   - 使用Git分支管理重构过程
+
+## 6. 迁移计划
+
+### 阶段1：基础架构（1-2天）
+1. 创建EventSystem和PhysicsSystem
+2. 修改GameScene使用新系统
+3. 测试物理和事件功能
+
+### 阶段2：输入和UI（1-2天）
+1. 创建InputSystem和UISystem
+2. 迁移弹弓拖拽逻辑到InputSystem
+3. 迁移UI元素到UISystem
+
+### 阶段3：实体管理（1天）
+1. 创建EntityManager
+2. 迁移小鸟、猪、方块管理逻辑
+3. 更新创建和更新逻辑
+
+### 阶段4：状态和渲染（1-2天）
+1. 创建GameStateSystem和RenderSystem
+2. 迁移游戏状态管理逻辑
+3. 迁移背景渲染逻辑
+
+### 阶段5：集成测试（1天）
+1. 测试所有功能
+2. 性能优化
+3. 文档更新
+
+## 7. 架构图
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    GameScene (Coordinator)               │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │
+│  │ PhysicsSystem│ │ InputSystem  │ │  UISystem    │    │
+│  │              │ │              │ │              │    │
+│  └───────┬──────┘ └───────┬──────┘ └───────┬──────┘    │
+│          │                │                 │           │
+│  ┌───────▼──────┐ ┌───────▼──────┐ ┌───────▼──────┐    │
+│  │EntityManager │ │GameStateSystem│ │RenderSystem  │    │
+│  │              │ │               │ │              │    │
+│  └───────┬──────┘ └───────┬──────┘ └───────┬──────┘    │
+│          │                │                 │           │
+└──────────┼────────────────┼─────────────────┼───────────┘
+           │                │                 │
+    ┌──────▼────────────────▼─────────────────▼──────┐
+    │              EventSystem (Bus)                  │
+    │  ┌──────────────────────────────────────────┐  │
+    │  │ BIRD_LAUNCHED, PIG_DESTROYED, etc.       │  │
+    │  └──────────────────────────────────────────┘  │
+    └─────────────────────────────────────────────────┘
+```
+
+## 8. 预期的改进效果
+
+1. **代码可维护性**：每个系统<200行代码，职责清晰
+2. **可测试性**：每个系统可独立单元测试
+3. **可扩展性**：添加新功能只需扩展相应系统
+4. **团队协作**：不同开发者可并行开发不同系统
+5. **代码复用**：系统可在其他Phaser项目中复用
+
+这个架构方案将把425行的GameScene.js分解为7个专注的模块，每个模块约50-100行代码，显著提高项目的可维护性和可扩展性。# 愤怒的小鸟项目架构重构方案
+
+## 1. GameScene.js当前职责和问题分析
+
+### 当前职责：
+- **场景管理**：Phaser场景生命周期管理
+- **渲染管理**：背景、地面、云朵等视觉效果绘制
+- **实体管理**：小鸟、猪、方块对象的创建、更新和销毁
+- **物理系统**：Matter.js物理引擎集成和碰撞处理
+- **输入处理**：鼠标/触摸交互，弹弓拖拽逻辑
+- **游戏逻辑**：游戏状态机（准备、发射、回合结束、胜利/失败判断）
+- **UI管理**：分数显示、小鸟队列、结果界面
+- **状态管理**：游戏得分、关卡数据、当前状态
+
+### 主要问题：
+1. **违反单一职责原则**：425行代码承担8个以上不同职责
+2. **高耦合度**：物理、渲染、输入、UI逻辑深度耦合
+3. **可测试性差**：难以对独立功能进行单元测试
+4. **可维护性低**：修改一个功能可能影响多个不相关的逻辑
+5. **扩展困难**：添加新功能需要修改庞大的类
+
+## 2. 系统模块设计
+
+需要创建以下独立系统模块：
+
+```
+src/systems/
+├── PhysicsSystem.js         # 物理系统
+├── InputSystem.js          # 输入处理系统
+├── UISystem.js             # UI管理系统
+├── GameStateSystem.js      # 游戏状态系统
+├── EntityManager.js        # 实体管理系统
+├── RenderSystem.js         # 渲染系统
+├── AudioSystem.js          # 音频系统
+└── EventSystem.js          # 事件系统
+```
+
+## 3. 各模块接口设计和职责划分
+
+### 3.1 PhysicsSystem - 物理系统
+```javascript
+class PhysicsSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.matter = scene.matter;
+        this.world = scene.matter.world;
+    }
+    
+    // 接口方法
+    init(config);           // 初始化物理世界
+    addEntity(entity);      // 添加物理实体
+    removeEntity(entity);   // 移除物理实体
+    setGravity(x, y);       // 设置重力
+    pause();               // 暂停物理模拟
+    resume();              // 恢复物理模拟
+    update();              // 物理更新
+    checkCollisions();     // 碰撞检测
+    applyForce(entity, force); // 施加力
+}
+```
+
+### 3.2 InputSystem - 输入系统
+```javascript
+class InputSystem {
+    constructor(scene, eventBus) {
+        this.scene = scene;
+        this.eventBus = eventBus;
+        this.isDragging = false;
+        this.currentTarget = null;
+    }
+    
+    // 接口方法
+    enable();               // 启用输入
+    disable();              // 禁用输入
+    registerDragArea(area, onDragStart, onDragMove, onDragEnd); // 注册拖拽区域
+    setCursor(cursorType);  // 设置鼠标光标
+    update();              // 更新输入状态
+    handlePointerDown(pointer); // 处理按下
+    handlePointerMove(pointer); // 处理移动
+    handlePointerUp(pointer);   // 处理释放
+}
+```
+
+### 3.3 UISystem - UI系统
+```javascript
+class UISystem {
+    constructor(scene, config) {
+        this.scene = scene;
+        this.config = config;
+        this.elements = new Map();
+    }
+    
+    // 接口方法
+    createScoreDisplay(position, style); // 创建分数显示
+    createBirdQueue(position, style);    // 创建小鸟队列
+    createLevelInfo(position, style);    // 创建关卡信息
+    createPauseButton(position, callback); // 创建暂停按钮
+    createResultScreen(isWin, score, stars, callbacks); // 创建结果屏幕
+    updateScore(score);                  // 更新分数
+    updateBirdQueue(count);              // 更新小鸟队列
+    showPopup(text, position, duration); // 显示弹出文本
+    hideAll();                          // 隐藏所有UI
+}
+```
+
+### 3.4 GameStateSystem - 游戏状态系统
+```javascript
+class GameStateSystem {
+    constructor(config) {
+        this.currentState = GAME_STATES.IDLE;
+        this.currentLevel = 1;
+        this.score = 0;
+        this.stars = 0;
+        this.birdsRemaining = 0;
+        this.pigsRemaining = 0;
+    }
+    
+    // 接口方法
+    setState(state);                // 设置游戏状态
+    getState();                     // 获取当前状态
+    setLevel(levelId);              // 设置当前关卡
+    getLevelData();                 // 获取关卡数据
+    addScore(points);               // 增加分数
+    birdLaunched();                 // 小鸟发射
+    pigDestroyed();                 // 猪被消灭
+    blockDestroyed();               // 方块被破坏
+    checkWinCondition();            // 检查胜利条件
+    checkLoseCondition();           // 检查失败条件
+    calculateStars();               // 计算星数
+    reset();                        // 重置状态
+}
+```
+
+### 3.5 EntityManager - 实体管理系统
+```javascript
+class EntityManager {
+    constructor(scene, physicsSystem) {
+        this.scene = scene;
+        this.physicsSystem = physicsSystem;
+        this.entities = {
+            birds: [],
+            pigs: [],
+            blocks: [],
+            projectiles: []
+        };
+    }
+    
+    // 接口方法
+    createBird(type, x, y);         // 创建小鸟
+    createPig(x, y, radius);        // 创建猪
+    createBlock(material, x, y, width, height); // 创建方块
+    removeEntity(entity);           // 移除实体
+    getEntityById(id);              // 通过ID获取实体
+    getEntitiesByType(type);        // 通过类型获取实体列表
+    updateAll();                    // 更新所有实体
+    clearAll();                     // 清空所有实体
+    spawnBirdAtSlingshot();         // 在弹弓处生成小鸟
+}
+```
+
+### 3.6 RenderSystem - 渲染系统
+```javascript
+class RenderSystem {
+    constructor(scene, config) {
+        this.scene = scene;
+        this.config = config;
+        this.layers = new Map();
+    }
+    
+    // 接口方法
+    createLayer(name, depth);       // 创建渲染层
+    renderBackground();             // 渲染背景
+    renderGround();                 // 渲染地面
+    renderTrajectory(points);       // 渲染弹道轨迹
+    renderParticles(effect, position, count); // 渲染粒子效果
+    renderShadow(entity);           // 渲染实体阴影
+    updateCamera(position);         // 更新摄像机位置
+    applyPostEffect(effect);        // 应用后期效果
+    clearLayer(layerName);          // 清空渲染层
+}
+```
+
+### 3.7 EventSystem - 事件系统
+```javascript
+class EventSystem {
+    constructor() {
+        this.events = new Phaser.Events.EventEmitter();
+        this.eventTypes = {
+            BIRD_LAUNCHED: 'bird-launched',
+            PIG_DESTROYED: 'pig-destroyed',
+            BLOCK_DESTROYED: 'block-destroyed',
+            SCORE_CHANGED: 'score-changed',
+            GAME_STATE_CHANGED: 'game-state-changed',
+            LEVEL_COMPLETE: 'level-complete',
+            GAME_OVER: 'game-over'
+        };
+    }
+    
+    // 接口方法
+    emit(event, data);              // 发射事件
+    on(event, callback, context);   // 监听事件
+    once(event, callback, context); // 监听一次事件
+    off(event, callback, context);  // 移除事件监听
+    clear();                        // 清空所有监听
+}
+```
+
+## 4. Phaser 3 + Matter.js集成模块化方案
+
+### 4.1 集成架构
+```
+GameScene (协调者)
+    ├── PhysicsSystem (封装Matter.js)
+    ├── EntityManager (管理物理实体)
+    ├── InputSystem (处理Phaser输入)
+    ├── UISystem (使用Phaser显示对象)
+    ├── RenderSystem (管理Phaser渲染)
+    ├── GameStateSystem (游戏逻辑)
+    └── EventSystem (事件通信)
+```
+
+### 4.2 集成要点：
+1. **PhysicsSystem封装Matter.js**：
+   - 提供统一的物理接口
+   - 处理Matter.js事件到游戏事件的转换
+   - 管理物理世界的生命周期
+
+2. **EntityManager与PhysicsSystem协同**：
+   - EntityManager负责逻辑创建
+   - PhysicsSystem负责物理体创建
+   - 双向引用保持同步
+
+3. **RenderSystem与Phaser集成**：
+   - 使用Phaser的Graphics和Text对象
+   - 管理渲染顺序和深度
+   - 处理视觉特效
+
+4. **事件驱动通信**：
+   - 所有系统通过EventSystem通信
+   - 避免直接依赖，降低耦合度
+
+## 5. 重构风险和缓解策略
+
+### 5.1 主要风险：
+1. **破坏现有功能**：重构可能导致游戏功能失效
+2. **性能下降**：过度模块化可能引入额外开销
+3. **集成复杂度**：多个系统间的协作复杂性
+4. **测试覆盖不足**：难以保证所有功能正常工作
+
+### 5.2 缓解策略：
+1. **增量重构**：
+   - 阶段1：提取PhysicsSystem和EventSystem
+   - 阶段2：提取InputSystem和UISystem
+   - 阶段3：提取EntityManager和GameStateSystem
+   - 阶段4：提取RenderSystem，完成重构
+
+2. **测试策略**：
+   - 保持现有端到端测试
+   - 为每个新系统添加单元测试
+   - 创建集成测试验证系统协作
+
+3. **回滚计划**：
+   - 每个阶段完成后进行完整测试
+   - 保留重构前的代码备份
+   - 使用Git分支管理重构过程
+
+## 6. 迁移计划
+
+### 阶段1：基础架构（1-2天）
+1. 创建EventSystem和PhysicsSystem
+2. 修改GameScene使用新系统
+3. 测试物理和事件功能
+
+### 阶段2：输入和UI（1-2天）
+1. 创建InputSystem和UISystem
+2. 迁移弹弓拖拽逻辑到InputSystem
+3. 迁移UI元素到UISystem
+
+### 阶段3：实体管理（1天）
+1. 创建EntityManager
+2. 迁移小鸟、猪、方块管理逻辑
+3. 更新创建和更新逻辑
+
+### 阶段4：状态和渲染（1-2天）
+1. 创建GameStateSystem和RenderSystem
+2. 迁移游戏状态管理逻辑
+3. 迁移背景渲染逻辑
+
+### 阶段5：集成测试（1天）
+1. 测试所有功能
+2. 性能优化
+3. 文档更新
+
+## 7. 架构图
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    GameScene (Coordinator)               │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │
+│  │ PhysicsSystem│ │ InputSystem  │ │  UISystem    │    │
+│  │              │ │              │ │              │    │
+│  └───────┬──────┘ └───────┬──────┘ └───────┬──────┘    │
+│          │                │                 │           │
+│  ┌───────▼──────┐ ┌───────▼──────┐ ┌───────▼──────┐    │
+│  │EntityManager │ │GameStateSystem│ │RenderSystem  │    │
+│  │              │ │               │ │              │    │
+│  └───────┬──────┘ └───────┬──────┘ └───────┬──────┘    │
+│          │                │                 │           │
+└──────────┼────────────────┼─────────────────┼───────────┘
+           │                │                 │
+    ┌──────▼────────────────▼─────────────────▼──────┐
+    │              EventSystem (Bus)                  │
+    │  ┌──────────────────────────────────────────┐  │
+    │  │ BIRD_LAUNCHED, PIG_DESTROYED, etc.       │  │
+    │  └──────────────────────────────────────────┘  │
+    └─────────────────────────────────────────────────┘
+```
+
+## 8. 预期的改进效果
+
+1. **代码可维护性**：每个系统<200行代码，职责清晰
+2. **可测试性**：每个系统可独立单元测试
+3. **可扩展性**：添加新功能只需扩展相应系统
+4. **团队协作**：不同开发者可并行开发不同系统
+5. **代码复用**：系统可在其他Phaser项目中复用
+
+这个架构方案将把425行的GameScene.js分解为7个专注的模块，每个模块约50-100行代码，显著提高项目的可维护性和可扩展性。
+Duration: 117255 ms
+Tool calls: 10
+Token usage: 57716

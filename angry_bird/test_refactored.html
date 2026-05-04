@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>愤怒的小鸟 - 重构版本测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #87CEEB;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="status">重构版本测试 - GameScene_refactored.js</div>
+    <div id="game-container"></div>
+    <script type="module" src="/src/main_refactored.js"></script>
+</body>
+</html>

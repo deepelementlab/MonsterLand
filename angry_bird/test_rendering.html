@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Rendering Test</title>
+    <style>
+        body { margin: 0; background: #87CEEB; overflow: hidden; touch-action: none; }
+        #game-container { width: 100vw; height: 100vh; position: relative; }
+        #debug-overlay { position: fixed; top: 0; right: 0; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font: 12px monospace; z-index: 9999; max-width: 300px; }
+    </style>
+</head>
+<body>
+<div id="game-container"></div>
+<div id="debug-overlay">Loading...</div>
+<script type="module">
+    import Phaser from 'phaser';
+    import { SCENE_KEYS, COLORS } from './src/utils/constants.js';
+    import { GameConfig } from './src/config/game.config.js';
+    import { BootScene } from './src/scenes/BootScene.js';
+    import { PreloadScene } from './src/scenes/PreloadScene.js';
+    import { MenuScene } from './src/scenes/MenuScene.js';
+    import { GameScene } from './src/scenes/GameScene.js';
+
+    const overlay = document.getElementById('debug-overlay');
+    let log = '';
+
+    function addLine(msg) {
+        log += msg + '\n';
+        overlay.textContent = log;
+    }
+
+    addLine('Starting game...');
+
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: {
+            default: 'matter',
+            matter: { gravity: GameConfig.physics.gravity, debug: GameConfig.physics.debug }
+        },
+        scene: [BootScene, PreloadScene, MenuScene, GameScene],
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        }
+    };
+
+    const game = new Phaser.Game(config);
+
+    // Monitor scene transitions
+    game.events.on('ready', () => {
+        addLine('Game READY');
+
+        // Check scene states every 500ms
+        let checks = 0;
+        const interval = setInterval(() => {
+            checks++;
+            const scenes = game.scene.getScenes(true);
+            const activeScenes = scenes.map(s => {
+                const key = s.scene.key;
+                return `${key}:${game.scene.isActive(key) ? 'ACTIVE' : 'INACTIVE'}`;
+            });
+            addLine(`[${checks}] Scenes: ${activeScenes.join(', ')}`);
+
+            // After menu is active, check display list
+            if (game.scene.isActive(SCENE_KEYS.MENU)) {
+                const menuScene = game.scene.getScene(SCENE_KEYS.MENU);
+                const displayList = menuScene.children;
+                addLine(`[${checks}] Menu children: ${displayList.length}`);
+
+                // Check canvas
+                const canvas = document.querySelector('#game-container canvas');
+                if (canvas) {
+                    addLine(`[${checks}] Canvas: ${canvas.width}x${canvas.height}, display: ${canvas.getBoundingClientRect().width}x${canvas.getBoundingClientRect().height}`);
+                }
+
+                if (checks >= 5) clearInterval(interval);
+            }
+
+            if (checks >= 10) clearInterval(interval);
+        }, 500);
+    });
+</script>
+</body>
+</html>

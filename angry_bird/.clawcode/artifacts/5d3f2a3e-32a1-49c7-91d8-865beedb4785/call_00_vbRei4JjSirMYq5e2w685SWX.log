@@ -1,0 +1,380 @@
+/**
+ * UI系统模块
+ * 处理所有UI界面逻辑，包括游戏界面、结果界面、分数弹窗和UI状态更新
+ */
+import { COLORS, POSITIONS, TEXT_STYLES, GAME_STATES } from '../utils/constants.js';
+
+export class UISystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.gameState = GAME_STATES.PLAYING;
+        this.score = 0;
+        this.currentLevel = 1;
+        this.levelData = null;
+        
+        // UI元素引用
+        this.scoreText = null;
+        this.birdQueueText = null;
+        this.pauseButton = null;
+        this.levelText = null;
+        
+        // 结果界面元素
+        this.resultOverlay = null;
+        this.resultTitle = null;
+        this.resultScoreText = null;
+        this.resultStarsText = null;
+        this.resultButtons = [];
+        
+        // 弹窗元素
+        this.scorePopups = [];
+    }
+    
+    /**
+     * 初始化UI系统
+     * @param {Object} config - 配置参数
+     */
+    init(config = {}) {
+        if (config.level) this.currentLevel = config.level;
+        if (config.levelData) this.levelData = config.levelData;
+        if (config.score) this.score = config.score;
+        if (config.gameState) this.gameState = config.gameState;
+    }
+    
+    /**
+     * 创建游戏主界面
+     */
+    createGameUI() {
+        const width = this.scene.cameras.main.width;
+        const height = this.scene.cameras.main.height;
+        
+        // 暂停按钮
+        this.pauseButton = this.scene.add.text(
+            POSITIONS.PAUSE_BUTTON_X, 
+            POSITIONS.PAUSE_BUTTON_Y, 
+            '⏸', 
+            TEXT_STYLES.PAUSE_BUTTON
+        )
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.onPause());
+        
+        // 关卡标题
+        this.levelText = this.scene.add.text(
+            width / 2, 
+            POSITIONS.LEVEL_TEXT_Y, 
+            `关卡 ${this.currentLevel}`, 
+            TEXT_STYLES.LEVEL_TITLE
+        ).setOrigin(0.5);
+        
+        // 分数显示
+        this.scoreText = this.scene.add.text(
+            POSITIONS.SCORE_TEXT_X, 
+            POSITIONS.SCORE_TEXT_Y, 
+            `⭐ 0`, 
+            TEXT_STYLES.SCORE
+        ).setOrigin(0.5);
+        
+        // 小鸟队列显示
+        this.updateBirdQueue();
+    }
+    
+    /**
+     * 更新分数显示
+     * @param {number} score - 新分数
+     */
+    updateScore(score) {
+        this.score = score;
+        if (this.scoreText) {
+            this.scoreText.setText(`⭐ ${this.score}`);
+        }
+    }
+    
+    /**
+     * 更新小鸟队列显示
+     * @param {number} count - 剩余小鸟数量
+     */
+    updateBirdQueue(count = null) {
+        // 如果未传入数量，使用默认逻辑
+        let displayCount = count;
+        if (displayCount === null) {
+            // 默认显示队列剩余小鸟
+            const remaining = 1; // 这里需要根据游戏状态计算
+            displayCount = remaining;
+        }
+        
+        // 销毁旧的队列文本
+        if (this.birdQueueText) {
+            this.birdQueueText.destroy();
+        }
+        
+        // 创建新的队列文本
+        this.birdQueueText = this.scene.add.text(
+            POSITIONS.BIRD_QUEUE_X, 
+            POSITIONS.BIRD_QUEUE_Y, 
+            `🐦 x ${displayCount}`, 
+            TEXT_STYLES.BIRD_QUEUE
+        );
+    }
+    
+    /**
+     * 显示得分弹窗
+     * @param {number} points - 得分点数
+     * @param {number} x - 弹窗X坐标
+     * @param {number} y - 弹窗Y坐标
+     */
+    showScorePopup(points, x, y) {
+        const popup = this.scene.add.text(x, y, `+${points}`, TEXT_STYLES.SCORE_POPUP)
+            .setOrigin(0.5);
+        
+        // 弹窗动画
+        this.scene.tweens.add({
+            targets: popup,
+            y: y - 50,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => popup.destroy()
+        });
+        
+        // 保存弹窗引用
+        this.scorePopups.push(popup);
+    }
+    
+    /**
+     * 显示结果界面
+     * @param {string} resultType - 结果类型: 'win' 或 'fail'
+     * @param {number} score - 最终得分
+     * @param {number} stars - 星级评分（可选）
+     */
+    showResult(resultType, score, stars = null) {
+        const width = this.scene.cameras.main.width;
+        const height = this.scene.cameras.main.height;
+        
+        // 清理可能存在的旧界面
+        this.clearResultUI();
+        
+        // 创建半透明覆盖层
+        this.resultOverlay = this.scene.add.rectangle(
+            width / 2, 
+            height / 2, 
+            width, 
+            height, 
+            0x000000, 
+            0.5
+        );
+        
+        // 更新游戏状态
+        this.gameState = resultType === 'win' ? GAME_STATES.WIN : GAME_STATES.LOSE;
+        this.score = score;
+        
+        // 结果标题
+        const titleText = resultType === 'win' ? '🎉 关卡完成！🎉' : '😢 关卡失败 😢';
+        const titleColor = resultType === 'win' ? '#FFD700' : '#FF6B6B';
+        
+        this.resultTitle = this.scene.add.text(
+            width / 2, 
+            height / 2 + POSITIONS.RESULT_TITLE_Y_OFFSET, 
+            titleText,
+            { ...TEXT_STYLES.RESULT_TITLE, color: titleColor }
+        ).setOrigin(0.5);
+        
+        // 得分显示
+        this.resultScoreText = this.scene.add.text(
+            width / 2, 
+            height / 2 + POSITIONS.RESULT_SCORE_Y_OFFSET, 
+            `得分: ${score}`,
+            TEXT_STYLES.RESULT_SCORE
+        ).setOrigin(0.5);
+        
+        // 星级显示（仅在胜利时）
+        if (resultType === 'win' && stars) {
+            this.resultStarsText = this.scene.add.text(
+                width / 2, 
+                height / 2 + POSITIONS.RESULT_STARS_Y_OFFSET, 
+                '⭐'.repeat(stars),
+                TEXT_STYLES.RESULT_STARS
+            ).setOrigin(0.5);
+        }
+        
+        // 创建结果按钮
+        this.createResultButtons(width / 2, height / 2, resultType);
+    }
+    
+    /**
+     * 创建结果按钮
+     * @param {number} centerX - 中心X坐标
+     * @param {number} centerY - 中心Y坐标
+     * @param {string} resultType - 结果类型
+     */
+    createResultButtons(centerX, centerY, resultType) {
+        const buttons = [];
+        
+        // 重玩按钮
+        buttons.push({
+            text: '重玩',
+            yOffset: POSITIONS.RESULT_BUTTON_Y_START,
+            callback: () => this.onRestartLevel()
+        });
+        
+        // 下一关按钮（仅在胜利时）
+        if (resultType === 'win') {
+            buttons.push({
+                text: '下一关',
+                yOffset: POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING,
+                callback: () => this.onNextLevel()
+            });
+        }
+        
+        // 主菜单按钮
+        const menuYOffset = resultType === 'win' 
+            ? POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING * 2
+            : POSITIONS.RESULT_BUTTON_Y_START + POSITIONS.RESULT_BUTTON_SPACING;
+        
+        buttons.push({
+            text: '主菜单',
+            yOffset: menuYOffset,
+            callback: () => this.onMainMenu()
+        });
+        
+        // 创建按钮
+        buttons.forEach(button => {
+            const btn = this.createButton(
+                button.text,
+                centerX,
+                centerY + button.yOffset,
+                button.callback
+            );
+            this.resultButtons.push(btn);
+        });
+    }
+    
+    /**
+     * 创建可复用的按钮
+     * @param {string} text - 按钮文本
+     * @param {number} x - X坐标
+     * @param {number} y - Y坐标
+     * @param {Function} callback - 点击回调
+     * @returns {Phaser.GameObjects.Text} 按钮对象
+     */
+    createButton(text, x, y, callback) {
+        const button = this.scene.add.text(x, y, text, TEXT_STYLES.RESULT_BUTTON)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+        
+        button.on('pointerdown', callback);
+        
+        // 添加按钮交互效果
+        button.on('pointerover', () => {
+            button.setBackgroundColor('#45a049');
+        });
+        
+        button.on('pointerout', () => {
+            button.setBackgroundColor('#4CAF50');
+        });
+        
+        return button;
+    }
+    
+    /**
+     * 清理结果界面
+     */
+    clearResultUI() {
+        if (this.resultOverlay) this.resultOverlay.destroy();
+        if (this.resultTitle) this.resultTitle.destroy();
+        if (this.resultScoreText) this.resultScoreText.destroy();
+        if (this.resultStarsText) this.resultStarsText.destroy();
+        
+        this.resultButtons.forEach(button => {
+            if (button) button.destroy();
+        });
+        
+        this.resultButtons = [];
+        this.resultOverlay = null;
+        this.resultTitle = null;
+        this.resultScoreText = null;
+        this.resultStarsText = null;
+    }
+    
+    /**
+     * 清理所有UI元素
+     */
+    clearAllUI() {
+        // 清理游戏UI
+        if (this.pauseButton) this.pauseButton.destroy();
+        if (this.levelText) this.levelText.destroy();
+        if (this.scoreText) this.scoreText.destroy();
+        if (this.birdQueueText) this.birdQueueText.destroy();
+        
+        // 清理弹窗
+        this.scorePopups.forEach(popup => {
+            if (popup && popup.destroy) popup.destroy();
+        });
+        this.scorePopups = [];
+        
+        // 清理结果界面
+        this.clearResultUI();
+    }
+    
+    /**
+     * 暂停按钮点击回调
+     */
+    onPause() {
+        // 触发暂停事件，具体实现由游戏场景处理
+        if (this.scene.onPause) {
+            this.scene.onPause();
+        }
+    }
+    
+    /**
+     * 重玩关卡回调
+     */
+    onRestartLevel() {
+        // 触发重玩事件
+        if (this.scene.onRestartLevel) {
+            this.scene.onRestartLevel(this.currentLevel);
+        }
+    }
+    
+    /**
+     * 下一关回调
+     */
+    onNextLevel() {
+        // 触发下一关事件
+        if (this.scene.onNextLevel) {
+            this.scene.onNextLevel(this.currentLevel + 1);
+        }
+    }
+    
+    /**
+     * 主菜单回调
+     */
+    onMainMenu() {
+        // 触发主菜单事件
+        if (this.scene.onMainMenu) {
+            this.scene.onMainMenu();
+        }
+    }
+    
+    /**
+     * 更新UI状态
+     * @param {Object} state - 状态对象
+     */
+    updateState(state) {
+        if (state.gameState !== undefined) this.gameState = state.gameState;
+        if (state.score !== undefined) this.updateScore(state.score);
+        if (state.currentLevel !== undefined) this.currentLevel = state.currentLevel;
+        if (state.levelData !== undefined) this.levelData = state.levelData;
+        
+        // 更新关卡标题
+        if (state.currentLevel !== undefined && this.levelText) {
+            this.levelText.setText(`关卡 ${this.currentLevel}`);
+        }
+    }
+    
+    /**
+     * 销毁UI系统
+     */
+    destroy() {
+        this.clearAllUI();
+    }
+}

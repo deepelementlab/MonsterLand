@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Simple Phaser Test</title></head>
+<body style="margin:0;background:#333;">
+<div id="game-container"></div>
+<script type="module">
+import Phaser from 'phaser';
+
+class TestScene extends Phaser.Scene {
+    create() {
+        document.title = 'SCENE LOADED';
+        this.add.text(640, 360, 'WORKS!', { fontSize: '48px', color: '#ff0000' }).setOrigin(0.5);
+        this.add.circle(640, 250, 40, 0xff385c);
+    }
+}
+
+const game = new Phaser.Game({
+    type: Phaser.AUTO,
+    width: 1280,
+    height: 720,
+    parent: 'game-container',
+    backgroundColor: '#87CEEB',
+    scene: [TestScene],
+    physics: {
+        default: 'matter',
+        matter: { gravity: { x: 0, y: 1 }, debug: false }
+    }
+});
+</script>
+</body></html>

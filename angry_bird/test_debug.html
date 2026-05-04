@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Test</title>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="log" style="position:fixed;top:0;left:0;background:#000;color:#0f0;padding:10px;font-size:12px;z-index:9999;max-height:100vh;overflow:auto;white-space:pre-wrap;width:100%;"></div>
+    <script type="module">
+        import Phaser from 'phaser';
+        const logEl = document.getElementById('log');
+
+        function appendLog(level, args) {
+            const msg = args.map(a => {
+                if (a instanceof Error) return a.message + '\n' + a.stack;
+                if (typeof a === 'object') try { return JSON.stringify(a); } catch(e) { return String(a); }
+                return String(a);
+            }).join(' ');
+            logEl.textContent += '[' + level + '] ' + msg + '\n';
+        }
+
+        window.onerror = function(msg, url, line, col, err) {
+            appendLog('UNCAUGHT', [msg + ' at line ' + line + ':' + col]);
+        };
+
+        logEl.textContent += 'Phaser version: ' + Phaser.VERSION + '\n';
+
+        import { GameConfig } from './src/config/game.config.js';
+        import { SCENE_KEYS } from './src/utils/constants.js';
+        import { BootScene } from './src/scenes/BootScene.js';
+        import { PreloadScene } from './src/scenes/PreloadScene.js';
+        import { MenuScene } from './src/scenes/MenuScene.js';
+        import { GameScene } from './src/scenes/GameScene.js';
+
+        logEl.textContent += 'All modules imported OK\n';
+
+        const config = {
+            type: Phaser.AUTO,
+            width: GameConfig.width,
+            height: GameConfig.height,
+            parent: 'game-container',
+            backgroundColor: '#87CEEB',
+            physics: {
+                default: 'matter',
+                matter: { gravity: GameConfig.physics.gravity, debug: false }
+            },
+            scene: [BootScene, PreloadScene, MenuScene, GameScene],
+            scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+        };
+
+        try {
+            const game = new Phaser.Game(config);
+            logEl.textContent += 'Game created OK\n';
+            setTimeout(() => {
+                const scenes = game.scene.getScenes(true);
+                logEl.textContent += 'Scenes: ' + scenes.map(s => s.scene.key + ':status=' + s.scene.status).join(', ') + '\n';
+            }, 3000);
+        } catch(e) {
+            logEl.textContent += 'FATAL: ' + e.message + '\n' + e.stack + '\n';
+        }
+    </script>
+</body>
+</html>

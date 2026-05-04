@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test - Click Simulation</title>
+    <style>
+        body { margin: 0; background: #111; color: #eee; font-family: monospace; }
+        #log { position: fixed; top: 0; right: 0; z-index: 999; background: rgba(0,0,0,0.9); padding: 10px; max-height: 50vh; overflow-y: auto; width: 400px; font-size: 13px; }
+        .ok { color: #00a699; } .err { color: #ff5a5f; } .warn { color: #ffb400; }
+        #game-container { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+<div id="log"></div>
+<div id="game-container"></div>
+<script>
+    const logEl = document.getElementById('log');
+    const addLog = (msg, cls) => {
+        const d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = msg;
+        logEl.appendChild(d);
+        logEl.scrollTop = logEl.scrollHeight;
+        console.log(msg);
+    };
+    window.onerror = (msg, url, line) => { addLog('ERR: ' + msg + ' L' + line, 'err'); };
+    window.addEventListener('unhandledrejection', e => { addLog('PROMISE: ' + (e.reason?.message || e.reason), 'err'); });
+    
+    // Auto-test function
+    window.runClickTest = function() {
+        const canvas = document.querySelector('#game-container canvas');
+        if (!canvas) { addLog('No canvas found!', 'err'); return; }
+        
+        const rect = canvas.getBoundingClientRect();
+        addLog('Canvas rect: ' + JSON.stringify({w: rect.width.toFixed(0), h: rect.height.toFixed(0), x: rect.x.toFixed(0), y: rect.y.toFixed(0)}));
+        
+        // Game is 1280x720. Bird at (200, 450).
+        // Scale: canvas may be different size
+        const scaleX = rect.width / 1280;
+        const scaleY = rect.height / 720;
+        const birdCanvasX = rect.x + 200 * scaleX;
+        const birdCanvasY = rect.y + 450 * scaleY;
+        
+        addLog('Clicking at canvas pos: (' + birdCanvasX.toFixed(0) + ', ' + birdCanvasY.toFixed(0) + ')');
+        
+        // Dispatch pointerdown
+        const pd = new PointerEvent('pointerdown', {
+            clientX: birdCanvasX,
+            clientY: birdCanvasY,
+            bubbles: true
+        });
+        canvas.dispatchEvent(pd);
+        addLog('pointerdown dispatched', 'ok');
+        
+        // Wait then drag
+        setTimeout(() => {
+            const dragCanvasX = rect.x + 150 * scaleX;
+            const dragCanvasY = rect.y + 500 * scaleY;
+            const pm = new PointerEvent('pointermove', {
+                clientX: dragCanvasX,
+                clientY: dragCanvasY,
+                bubbles: true
+            });
+            canvas.dispatchEvent(pm);
+            addLog('pointermove dispatched (drag to 150,500)', 'ok');
+            
+            // Wait then release
+            setTimeout(() => {
+                const pu = new PointerEvent('pointerup', {
+                    clientX: dragCanvasX,
+                    clientY: dragCanvasY,
+                    bubbles: true
+                });
+                canvas.dispatchEvent(pu);
+                addLog('pointerup dispatched', 'ok');
+            }, 200);
+        }, 200);
+    };
+</script>
+<script type="module">
+    import Phaser from 'phaser';
+    import { GameConfig, LevelsConfig } from './src/config/game.config.js';
+    import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, SIZES, BIRD_TYPES, COLLISION } from './src/utils/constants.js';
+    import { EntityManager } from './src/systems/EntityManager.js';
+    import { GameStateSystem } from './src/systems/GameStateSystem.js';
+    import { PhysicsSystem } from './src/systems/PhysicsSystem.js';
+    import { InputSystem } from './src/systems/InputSystem.js';
+    
+    addLog('Imports OK', 'ok');
+    
+    class TestScene extends Phaser.Scene {
+        constructor() { super('test'); }
+        
+        init(data) {
+            this.stateSystem = new GameStateSystem(this);
+            this.stateSystem.init({ level: data.level || 1 });
+            addLog('State: ' + this.stateSystem.getState(), 'ok');
+        }
+        
+        create() {
+            const w = this.cameras.main.width, h = this.cameras.main.height;
+            addLog('Camera: ' + w + 'x' + h, 'ok');
+            
+            // Background
+            const sky = this.add.graphics();
+            sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F0FF, 0xE0F0FF, 1);
+            sky.fillRect(0, 0, w, h);
+            const ground = this.add.graphics();
+            ground.fillStyle(0x8B4513, 1);
+            ground.fillRect(0, 640, w, h - 640);
+            ground.fillStyle(0x4CAF50, 1);
+            ground.fillRect(0, 640, w, 15);
+            this.matter.add.rectangle(w / 2, 680, w, 80, { isStatic: true, label: 'ground' });
+            
+            // Entities
+            this.entityManager = new EntityManager(this);
+            this.entityManager.init(this.stateSystem.levelData);
+            const sl = this.entityManager.getSlingshot();
+            const bi = this.entityManager.getCurrentBird();
+            addLog('Slingshot: lp=(' + sl.launchPoint.x + ',' + sl.launchPoint.y + ')', 'ok');
+            addLog('Bird: (' + bi.x + ',' + bi.y + ') launched=' + bi.launched, 'ok');
+            
+            this.physicsSystem = new PhysicsSystem(this);
+            
+            // Input
+            this.inputSystem = new InputSystem(this);
+            this.inputSystem.init({
+                getSlingshot: () => this.entityManager.getSlingshot(),
+                getCurrentBird: () => this.entityManager.getCurrentBird(),
+                getGameState: () => this.stateSystem.getState(),
+                onLaunch: (bird) => {
+                    addLog('LAUNCHED! vx=' + bird.body.velocity.x.toFixed(2) + ' vy=' + bird.body.velocity.y.toFixed(2), 'ok');
+                },
+                onRoundEnd: () => {
+                    addLog('ROUND END', 'warn');
+                }
+            });
+            this.inputSystem.setup();
+            addLog('Input ready, enabled=' + this.inputSystem.enabled, 'ok');
+            
+            // Hook into pointer events for logging
+            const origDown = this.inputSystem.handlePointerDown.bind(this.inputSystem);
+            this.inputSystem.handlePointerDown = (pointer) => {
+                addLog('handlePointerDown: (' + pointer.x.toFixed(0) + ',' + pointer.y.toFixed(0) + ')', 'warn');
+                origDown(pointer);
+                addLog('isDragging=' + this.inputSystem.isDragging, this.inputSystem.isDragging ? 'ok' : 'err');
+            };
+            
+            const origUp = this.inputSystem.handlePointerUp.bind(this.inputSystem);
+            this.inputSystem.handlePointerUp = () => {
+                addLog('handlePointerUp', 'warn');
+                origUp();
+            };
+            
+            // Run auto test after a delay
+            addLog('Will auto-test in 2 seconds...', 'warn');
+            setTimeout(() => {
+                window.runClickTest();
+            }, 2000);
+        }
+        
+        update() {
+            if (this.entityManager) this.entityManager.update();
+        }
+    }
+    
+    const config = {
+        type: Phaser.AUTO,
+        width: GameConfig.width,
+        height: GameConfig.height,
+        parent: 'game-container',
+        backgroundColor: '#87CEEB',
+        physics: { default: 'matter', matter: { gravity: GameConfig.physics.gravity, debug: false } },
+        scene: [TestScene],
+        scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+    };
+    
+    new Phaser.Game(config);
+    addLog('Game created', 'ok');
+</script>
+</body>
+</html>

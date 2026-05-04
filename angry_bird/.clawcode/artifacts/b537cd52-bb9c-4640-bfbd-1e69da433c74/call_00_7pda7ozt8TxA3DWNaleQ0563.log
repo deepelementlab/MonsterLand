@@ -1,0 +1,231 @@
+     1	/**
+     2	 * 游戏主场景
+     3	 * 职责：场景生命周期管理 + 各子系统协调
+     4	 * 所有具体逻辑委托给系统模块处理
+     5	 */
+     6	import { SCENE_KEYS, COLORS, GAME_STATES, POSITIONS, TEXT_STYLES, COLLISION } from '../utils/constants.js';
+     7	import { GameConfig, LevelsConfig } from '../config/game.config.js';
+     8	import { PhysicsSystem } from '../systems/PhysicsSystem.js';
+     9	import { InputSystem } from '../systems/InputSystem.js';
+    10	import { UISystem } from '../systems/UISystem.js';
+    11	import { GameStateSystem } from '../systems/GameStateSystem.js';
+    12	import { EntityManager } from '../systems/EntityManager.js';
+    13	
+    14	export class GameScene extends Phaser.Scene {
+    15	    constructor() {
+    16	        super({ key: SCENE_KEYS.GAME });
+    17	    }
+    18	
+    19	    init(data) {
+    20	        // 初始化系统模块
+    21	        this.stateSystem = new GameStateSystem(this);
+    22	        this.stateSystem.init({
+    23	            level: data.level || 1,
+    24	            onWin: (score, stars) => this.onGameWin(score, stars),
+    25	            onLose: (score) => this.onGameLose(score)
+    26	        });
+    27	    }
+    28	
+    29	    create() {
+    30	        // 创建渲染环境
+    31	        this.createBackground();
+    32	        this.createGround();
+    33	        
+    34	        // 初始化实体管理器（创建关卡内容）
+    35	        this.entityManager = new EntityManager(this);
+    36	        this.entityManager.init(this.stateSystem.levelData);
+    37	        
+    38	        // 初始化物理系统
+    39	        this.physicsSystem = new PhysicsSystem(this);
+    40	        this.physicsSystem.onCollision((bodyA, bodyB, impactForce) => {
+    41	            this.handleCollision(bodyA, bodyB, impactForce);
+    42	        });
+    43	        
+    44	        // 初始化UI系统
+    45	        this.uiSystem = new UISystem(this);
+    46	        this.uiSystem.init({
+    47	            level: this.stateSystem.currentLevel,
+    48	            levelData: this.stateSystem.levelData
+    49	        });
+    50	        this.uiSystem.createGameUI();
+    51	        
+    52	        // 初始化输入系统
+    53	        this.inputSystem = new InputSystem(this);
+    54	        this.inputSystem.init({
+    55	            getSlingshot: () => this.entityManager.getSlingshot(),
+    56	            getCurrentBird: () => this.entityManager.getCurrentBird(),
+    57	            getGameState: () => this.stateSystem.getState(),
+    58	            onLaunch: (bird) => this.onBirdLaunched(bird),
+    59	            onRoundEnd: () => this.checkRoundEnd()
+    60	        });
+    61	        this.inputSystem.setup();
+    62	    }
+    63	    
+    64	    // ==================== 渲染相关 ====================
+    65	    
+    66	    createBackground() {
+    67	        const width = this.cameras.main.width;
+    68	        const height = this.cameras.main.height;
+    69	        
+    70	        const sky = this.add.graphics();
+    71	        sky.fillGradientStyle(COLORS.SKY_TOP, COLORS.SKY_TOP, COLORS.SKY_BOTTOM, COLORS.SKY_BOTTOM, 1);
+    72	        sky.fillRect(0, 0, width, height);
+    73	        
+    74	        // 远景山丘
+    75	        const hills = this.add.graphics();
+    76	        hills.fillStyle(0x6B8E23, 0.5);
+    77	        hills.fillCircle(200, 640, 150);
+    78	        hills.fillCircle(600, 640, 200);
+    79	        hills.fillCircle(1000, 640, 180);
+    80	        
+    81	        // 云朵
+    82	        for (let i = 0; i < 4; i++) {
+    83	            const cx = Phaser.Math.Between(100, 1100);
+    84	            const cy = Phaser.Math.Between(50, 200);
+    85	            this.createCloud(cx, cy);
+    86	        }
+    87	    }
+    88	    
+    89	    createCloud(x, y) {
+    90	        const cloud = this.add.graphics();
+    91	        cloud.fillStyle(0xFFFFFF, 0.8);
+    92	        cloud.fillCircle(x, y, 25);
+    93	        cloud.fillCircle(x + 20, y - 5, 35);
+    94	        cloud.fillCircle(x + 45, y, 25);
+    95	    }
+    96	    
+    97	    createGround() {
+    98	        const width = this.cameras.main.width;
+    99	        const height = this.cameras.main.height;
+   100	        
+   101	        // 草地
+   102	        const ground = this.add.graphics();
+   103	        ground.fillStyle(COLORS.GROUND, 1);
+   104	        ground.fillRect(0, 640, width, height - 640);
+   105	        
+   106	        // 草地顶部装饰
+   107	        ground.fillStyle(COLORS.GRASS, 1);
+   108	        ground.fillRect(0, 640, width, 15);
+   109	        
+   110	        // 物理地面（不可见的静态体）
+   111	        this.matter.add.rectangle(width / 2, 680, width, 80, { isStatic: true, label: 'ground' });
+   112	    }
+   113	    
+   114	    // ==================== 碰撞处理 ====================
+   115	    
+   116	    handleCollision(bodyA, bodyB, impactForce) {
+   117	        if (this.stateSystem.getState() !== GAME_STATES.PLAYING) return;
+   118	        
+   119	        // 猪被撞击
+   120	        if (bodyA.label === 'pig' || bodyB.label === 'pig') {
+   121	            const pigBody = bodyA.label === 'pig' ? bodyA : bodyB;
+   122	            if (impactForce > COLLISION.PIG_DAMAGE_THRESHOLD) {
+   123	                const pig = this.entityManager.pigs.find(p => p.body === pigBody);
+   124	                if (pig && !pig.destroyed) {
+   125	                    pig.takeDamage(impactForce * COLLISION.PIG_DAMAGE_MULTIPLIER);
+   126	                    if (pig.destroyed) {
+   127	                        const score = this.stateSystem.addScore(GameConfig.scores.pig);
+   128	                        this.uiSystem.updateScore(score);
+   129	                        this.uiSystem.showScorePopup(GameConfig.scores.pig, pig.x, pig.y);
+   130	                    }
+   131	                }
+   132	            }
+   133	        }
+   134	        
+   135	        // 方块碰撞
+   136	        if (bodyA.label === 'block' || bodyB.label === 'block') {
+   137	            const blockBody = bodyA.label === 'block' ? bodyA : bodyB;
+   138	            if (impactForce > COLLISION.BLOCK_DAMAGE_THRESHOLD) {
+   139	                const block = this.entityManager.blocks.find(b => b.body === blockBody);
+   140	                if (block && !block.destroyed) {
+   141	                    block.takeDamage(impactForce * COLLISION.BLOCK_DAMAGE_MULTIPLIER);
+   142	                    if (block.destroyed) {
+   143	                        const points = GameConfig.scores[block.material] || 100;
+   144	                        const score = this.stateSystem.addScore(points);
+   145	                        this.uiSystem.updateScore(score);
+   146	                        this.uiSystem.showScorePopup(points, block.x, block.y);
+   147	                    }
+   148	                }
+   149	            }
+   150	        }
+   151	    }
+   152	    
+   153	    // ==================== 游戏流程控制 ====================
+   154	    
+   155	    onBirdLaunched(bird) {
+   156	        // 小鸟发射后的处理
+   157	    }
+   158	    
+   159	    checkRoundEnd() {
+   160	        if (!this.stateSystem.isPlaying()) return;
+   161	        
+   162	        const allSleeping = this.entityManager.isAllSleeping();
+   163	        if (!allSleeping) {
+   164	            this.time.delayedCall(500, () => this.checkRoundEnd());
+   165	            return;
+   166	        }
+   167	        
+   168	        const result = this.stateSystem.checkGameState(
+   169	            this.entityManager.pigs,
+   170	            this.entityManager.birds
+   171	        );
+   172	        
+   173	        if (result === 'win') {
+   174	            this.onGameWin();
+   175	        } else if (result === 'lose') {
+   176	            this.onGameLose();
+   177	        } else {
+   178	            // 下一只小鸟
+   179	            this.stateSystem.advanceBird();
+   180	            if (this.entityManager.advanceToNextBird()) {
+   181	                this.uiSystem.updateBirdQueue(this.entityManager.getRemainingBirdCount());
+   182	            } else {
+   183	                this.onGameLose();
+   184	            }
+   185	        }
+   186	    }
+   187	    
+   188	    onGameWin(score, stars) {
+   189	        const result = this.stateSystem.handleWin(this.entityManager.birds.length);
+   190	        this.uiSystem.updateScore(result.score);
+   191	        this.inputSystem.disable();
+   192	        this.uiSystem.showResult('win', result.score, result.stars, {
+   193	            onRetry: () => this.scene.restart({ level: this.stateSystem.currentLevel }),
+   194	            onNext: () => this.scene.restart({ level: this.stateSystem.currentLevel + 1 }),
+   195	            onMenu: () => this.scene.start(SCENE_KEYS.MENU),
+   196	            hasNextLevel: this.stateSystem.currentLevel < LevelsConfig.length
+   197	        });
+   198	    }
+   199	    
+   200	    onGameLose(score) {
+   201	        this.stateSystem.handleLose();
+   202	        this.inputSystem.disable();
+   203	        this.uiSystem.showResult('fail', this.stateSystem.getScore(), null, {
+   204	            onRetry: () => this.scene.restart({ level: this.stateSystem.currentLevel }),
+   205	            onMenu: () => this.scene.start(SCENE_KEYS.MENU)
+   206	        });
+   207	    }
+   208	    
+   209	    // ==================== 暂停控制 ====================
+   210	    
+   211	    pauseGame() {
+   212	        const isNowPaused = this.stateSystem.togglePause();
+   213	        if (this.stateSystem.getState() === GAME_STATES.PAUSED) {
+   214	            this.uiSystem.showPauseOverlay({
+   215	                onResume: () => this.pauseGame(),
+   216	                onRetry: () => { this.uiSystem.hidePauseOverlay(); this.scene.restart({ level: this.stateSystem.currentLevel }); },
+   217	                onMenu: () => { this.uiSystem.hidePauseOverlay(); this.scene.start(SCENE_KEYS.MENU); }
+   218	            });
+   219	        } else {
+   220	            this.uiSystem.hidePauseOverlay();
+   221	        }
+   222	    }
+   223	    
+   224	    // ==================== 场景更新 ====================
+   225	    
+   226	    update() {
+   227	        if (this.entityManager) {
+   228	            this.entityManager.update();
+   229	        }
+   230	    }
+   231	}

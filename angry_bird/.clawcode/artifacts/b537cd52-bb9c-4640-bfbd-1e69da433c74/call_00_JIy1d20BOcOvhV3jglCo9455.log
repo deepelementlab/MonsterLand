@@ -1,0 +1,255 @@
+📁 .claw/
+📁 .clawcode/
+📁 dist/
+📁 docs/
+📁 src/
+📁 tests/
+📄 README.md (3524 bytes)
+📄 TESTING_STRATEGY_CN.md (11825 bytes)
+📄 index.html (842 bytes)
+📄 jest.config.js (1163 bytes)
+📄 package-lock.json (31414 bytes)
+📄 package-test.json (1265 bytes)
+📄 package.json (330 bytes)
+📄 playwright.config.js (1115 bytes)
+📄 test_refactored.html (1225 bytes)
+📄 test_system_integration.js (2686 bytes)
+📄 test_write.txt (16 bytes)
+📄 test_write2.txt (5 bytes)
+📄 test_write_new.txt (11 bytes)
+📄 vite.config.js (358 bytes)
+📁 .clawcode\artifacts/
+📁 .clawcode\claw_memory/
+📁 .clawcode\claw_metrics/
+📁 .clawcode\claw_skills/
+📁 .clawcode\code_awareness/
+📁 .clawcode\learning/
+📄 .clawcode\PROJECT_STATE.md (2496 bytes)
+📄 .clawcode\clawcode.db (11149312 bytes)
+📄 .clawcode\clawcode.db-shm (32768 bytes)
+📄 .clawcode\clawcode.db-wal (4144752 bytes)
+📄 .clawcode\input_history.json (331 bytes)
+📄 .clawcode\todos-updated.json (3313 bytes)
+📄 .clawcode\todos.json (1108 bytes)
+📄 .clawcode\claw_memory\MEMORY.md (2745 bytes)
+📄 .clawcode\claw_memory\MEMORY.meta.json (411 bytes)
+📄 .clawcode\claw_memory\USER.md (1564 bytes)
+📄 .clawcode\claw_memory\USER.meta.json (411 bytes)
+📁 .clawcode\learning\evolved/
+📁 .clawcode\learning\experience/
+📁 .clawcode\learning\instincts/
+📁 .clawcode\learning\team-experience/
+📄 .clawcode\learning\observations.jsonl (2159697 bytes)
+📁 .clawcode\learning\instincts\inherited/
+📁 .clawcode\learning\instincts\personal/
+📁 .clawcode\learning\evolved\agents/
+📁 .clawcode\learning\evolved\commands/
+📁 .clawcode\learning\evolved\skills/
+📁 .clawcode\learning\team-experience\capsules/
+📁 .clawcode\learning\team-experience\exports/
+📁 .clawcode\learning\experience\capsules/
+📁 .clawcode\learning\experience\exports/
+📄 .clawcode\code_awareness\architecture_map.json (14777 bytes)
+📁 .clawcode\artifacts\08fae3b0-8593-4973-8c6a-dfc64365f63e/
+📁 .clawcode\artifacts\20c09eeb/
+📁 .clawcode\artifacts\2e06255f-7e79-4ce0-8d85-00f370e4b08c/
+📁 .clawcode\artifacts\556aca04-fc1a-4af5-ba4a-e26495861a0f/
+📁 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785/
+📁 .clawcode\artifacts\75cb3218-dd77-414c-8b7a-44435da36d1a/
+📁 .clawcode\artifacts\786c535a-bb72-4a3d-9972-77f89dd27243/
+📁 .clawcode\artifacts\79a0d050-ea57-43d7-9325-21ae1e765de9/
+📁 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb/
+📁 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94/
+📁 .clawcode\artifacts\b7311194-fbe5-4139-95a0-960f1b4cdb93/
+📁 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126/
+📄 .clawcode\artifacts\786c535a-bb72-4a3d-9972-77f89dd27243\call_49904cb21756493dbaeb3666.log (14951 bytes)
+📄 .clawcode\artifacts\786c535a-bb72-4a3d-9972-77f89dd27243\call_d6fec36622134961a522f4fb.log (12661 bytes)
+📄 .clawcode\artifacts\786c535a-bb72-4a3d-9972-77f89dd27243\call_dfad3efbbd924a00a16f0301.log (14647 bytes)
+📄 .clawcode\artifacts\786c535a-bb72-4a3d-9972-77f89dd27243\call_e191b7b1d619459dae62fcca.log (10950 bytes)
+📄 .clawcode\artifacts\20c09eeb\call_15a627a399f943eebc4cc3d9.log (14169 bytes)
+📄 .clawcode\artifacts\20c09eeb\call_255269f62f454d5fa8db8e98.log (14167 bytes)
+📄 .clawcode\artifacts\20c09eeb\call_d4eb66bc273347fc9256931d.log (14167 bytes)
+📄 .clawcode\artifacts\556aca04-fc1a-4af5-ba4a-e26495861a0f\call_00_U12WHfoGTWmHl8QgZ813FCCg.log (8320 bytes)
+📄 .clawcode\artifacts\556aca04-fc1a-4af5-ba4a-e26495861a0f\call_00_aJVZJ5b6dMOISP7p8E4iQ7bo.log (8320 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_AdQlaTWOEgvFcMIfTuyD7HGn.log (8725 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_CkOgNu7fT5QMt8wp32ZpJhZ6.log (8320 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_EuNYLJnV03i5lQCACmPW2wOJ.log (5756621 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_N3eZitooXmR2MAOPwJBEnRXn.log (15172 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_NDF8UXFzSHEKOMA2GXZPGZvb.log (15172 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_P2n4UOgtn1XwFmETKhOifx58.log (15172 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_QhtiPtVDlm6mv7WJjL6Amdom.log (15172 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_c0uefJxT7KSKImOkOU0UDLjg.log (15172 bytes)
+📄 .clawcode\artifacts\a7b30e2d-a2c9-44e2-961c-d34bdbec1a94\call_00_t2cuEe9BK0g3PZOdr0F5HRD0.log (14435 bytes)
+📄 .clawcode\artifacts\08fae3b0-8593-4973-8c6a-dfc64365f63e\call_00_JAwKo9MJw2YLqeEY0aXxpCse.log (15172 bytes)
+📄 .clawcode\artifacts\79a0d050-ea57-43d7-9325-21ae1e765de9\call_00_7iEMcTfbrfLEusxpfpDaLF7h.log (1304884 bytes)
+📄 .clawcode\artifacts\79a0d050-ea57-43d7-9325-21ae1e765de9\call_00_J2wXIXmKLpnAKesgrkhxm6Xy.log (14167 bytes)
+📄 .clawcode\artifacts\79a0d050-ea57-43d7-9325-21ae1e765de9\call_00_yFGV7vMuUgUFtMtYPYxf0Oro.log (14167 bytes)
+📄 .clawcode\artifacts\75cb3218-dd77-414c-8b7a-44435da36d1a\call_00_0BNrB3jgVbyBKE7BgItAf5v0.log (15958 bytes)
+📄 .clawcode\artifacts\75cb3218-dd77-414c-8b7a-44435da36d1a\call_00_aa5PCRCaPrKy2FXaQ3K7Vtfl.log (15172 bytes)
+📄 .clawcode\artifacts\75cb3218-dd77-414c-8b7a-44435da36d1a\call_00_hHTgTfVjRXtdpupIxEeZrmiH.log (14167 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_08OrjAc9tpPaCRDi4Sx9w2fa.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_5E09RVooDUSxuWAypNr3ECRa.log (9316 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_7ZkqOHDetOJ4PJCMQS0YxUtM.log (13020 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_9aIZWtPgOMrXfpb8AEBZYDGa.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_9sCOlLwi6ROJOoYpmCA9BQ8X.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_Aay9d4L0tI2eDJwrycaFMe7G.log (31661 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_Dg641y1vsKtpUK1JciamBeoW.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_DiyBDM4MTKrEE0mNJzN3WYOI.log (9316 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_Dqg166lLqLzEEevk4SAm2R5V.log (25811 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_JK33mtyJAOyYnLdn6ky6zFmq.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_Lew2Y4hjKD6ZQOAXQ8h2OdSw.log (29457 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_SEMbPYUmOabWzmjzBDMatqyF.log (14167 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_ZrDqb34VLAZB34xeENc5qLeh.log (9316 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_ewh6YMzjbtubGiu1Z056GOas.log (25811 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_gnIkuy6m00Ik3aqlDElQne6a.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_hpSHypFgnggqwmXCbznC9UjT.log (9316 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_lX7Qk75YMcXH7mfzlaBu35aI.log (11428 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_oqfkT6bZLlGRE0oJfk3oT50l.log (11428 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_s7XNvHOL0Hw5bL1kfyddlfb7.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_t1UMFw6U5wANHxq2ncHxjT2q.log (15172 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_tqPpVJiiFNKZ5qtAXJj7a9gb.log (10985 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_vbRei4JjSirMYq5e2w685SWX.log (11537 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00_zyHeAa43RPmjuGV4djVWdjUf.log (10477 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_00aed428b1c74be29b043597.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_05e56e14dfbe424bbd9742e7.log (9578 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_0b3fd3c422dc4ccc823438ce.log (9150 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_0b6f4aa6d9644dcfb4d72158.log (8984 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_1040d055487f4b00bbe4aaaa.log (11238 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_115466666dae4e8694549846.log (9233 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_14d3edc92ba64aa3b46e7cb1.log (9251 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_15bc72f6ff2248ba8741636a.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_19ebb7033fb84cb789891cff.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_1cb4c2628ad74cbd944216c1.log (9921 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_206bdfbadc9d4aea84553b2d.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_210c64f277654547a05f9d3a.log (8984 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_2259978314174ca0a5e02592.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_24f13a5c6629461ab1e8204d.log (12235 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_26aa200543034b148eb10295.log (18411 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_27dbe6e1e2304f768d0d0d23.log (10177 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_2e935e044c2d42abb59e14ce.log (8554 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_346b3b54804f4d0e9741e362.log (9921 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_357c1e70cfee4a48b6164d63.log (9152 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_3a5da1ae9cc745aaa065f92e.log (8800 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_3ce8af126f214ea5bf53b5b9.log (9150 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_45612846ee30472390a90535.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_464ea1769e8d46d599aa803d.log (8974 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_46fc94722bf64540ba5c4fdd.log (18032 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_480e9c2b7a6246d59c5aa509.log (18032 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_485c1bc260e74f8cb62e2f64.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_4a63f1c7959044fda21e64fb.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_4a68887ad9cb40d28fdfbc36.log (18411 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_4e86de35b00a454e9bd96c92.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_51f3f4988ca84d949176ab4a.log (9150 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_5468e43efd6049c7a75db2ae.log (9150 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_63c49825d284485fab774367.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_70ca2d333bf34b35abc5b8bd.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_71b9b3b6c7e748ee86b53588.log (10985 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_782e706f41f94dfca403a4e0.log (8537 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_78c712dabcbd4778b052f973.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_7a61acf493c643f9882603d9.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_7b1a674e4bc94c24b94ff3db.log (9921 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_83dd97f934cb4c8fa9e4d788.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_84c46ba6b9f24ef986d17c97.log (10985 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_85b9baef0ba94005ad0192fd.log (9095 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_8ad65f382e6a41a4a54972ed.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_8b59ef884aa44759b3ed11ad.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_8c7e702f97514580bc83aa9c.log (9148 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_909ddfb3f92e48468d1f9114.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_93b3dadb05cc425285962485.log (9921 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_943a1497442644fb88d20f45.log (8974 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_95c1f5fd5bff4b578aeab510.log (13158 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_96b5b7c0ce9e40f5afd3367f.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_987393884d564739a9534aeb.log (10985 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_98b437b7815a4a35b68bbdb6.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_9fe33a4b67584dc780e56306.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_a55d06af87884fb7bc53c561.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_a661331c34ac43fc88a33af3.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_a871bfd08ce24d5bb9b8f035.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_a8a3dce0776a4b6688457c11.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_adf31cd8727e4376921187d7.log (10020 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_af2712d18dd3464aaf288877.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_af8d105eb32042908b063d79.log (9268 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_b1992c8d6d5a4557bf054ac3.log (10985 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_b4847321ba8448d4aaddc617.log (9921 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_b65c3fd4f5e247ba9928ddca.log (9152 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_b7f9a45cb22a490095872334.log (8984 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_bb86c087b1354ac3bcfd5468.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_bfa43d4ab57a42ae97384c6e.log (8974 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_c9c216d9ad354488b28c44e0.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_cc18044a58e5475c86e7d3ac.log (18032 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_cc6bddea6c7d4a33ac21dea6.log (8883 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_d14c7f932d194e6cae226d99.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_d22f2681c11f41f4ad9b0efd.log (9231 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_d5b5121b7cdf4b7684c012d8.log (14776 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_d61e88b7f4aa407394801ac4.log (8976 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_d8f5c2eff37e42d3988ffdee.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_dac9e91f25754d329390adc3.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_db5052f884544c52853410b4.log (8974 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_de622c0514ad4f06b596d30c.log (10023 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_e379ee95cd0945eda7a34c88.log (10025 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_e8a79daa1be44697a0c9d2cc.log (8880 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_e8c707260b424b1c84c6c3ce.log (9576 bytes)
+📄 .clawcode\artifacts\5d3f2a3e-32a1-49c7-91d8-865beedb4785\call_e9ab79dc9986422694268b7c.log (9231 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_0c42e30ad1284217a1b88595.log (15172 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_1bd9551e09004469bc946fd7.log (16413 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_8041e2be65024a4c9b2c9dd0.log (31641 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_821f2284697c43ba8c3c9256.log (15488 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_9f290cf50023440aa79b5db8.log (12668 bytes)
+📄 .clawcode\artifacts\be45ee24-1642-4b12-a9d5-9ce93770e126\call_b23d75d90c0d478abaa0250b.log (15488 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_3644b2694e6742408af6844f.log (8883 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_797102bffb51435092558806.log (15079 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_d271e675d5b740d287665719.log (10317 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_d539f1f74f3c4ea9bb184a8a.log (9008 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_d9d19600f42c40d0bd9e6c8d.log (9576 bytes)
+📄 .clawcode\artifacts\a2176db6-3c82-4839-a315-f39fc94b1abb\call_e4c58a340bf84d37a2353ab0.log (10023 bytes)
+📄 .clawcode\artifacts\b7311194-fbe5-4139-95a0-960f1b4cdb93\call_00_TcC3pjgAsGlNDjJn4uDE1aeC.log (9576 bytes)
+📄 .clawcode\artifacts\2e06255f-7e79-4ce0-8d85-00f370e4b08c\call_00_9B2DLP7SbKESpsj7F3pKQqO5.log (10317 bytes)
+📄 .clawcode\artifacts\2e06255f-7e79-4ce0-8d85-00f370e4b08c\call_00_OvUR9mojulvQ4IiDHNNnoqDj.log (9576 bytes)
+📄 .clawcode\artifacts\2e06255f-7e79-4ce0-8d85-00f370e4b08c\call_00_q3TJRtfA3by8dRtQVYzkyCwD.log (16104 bytes)
+📄 .clawcode\artifacts\2e06255f-7e79-4ce0-8d85-00f370e4b08c\call_39f2081cff114d60a5397aff.log (10317 bytes)
+📄 .clawcode\claw_metrics\events.jsonl (94580 bytes)
+📁 .claw\marketplaces/
+📁 .claw\plans/
+📁 .claw\plugins/
+📁 .claw\plugins\cache/
+📄 docs\architecture-refactor-plan.md (8058 bytes)
+📄 docs\architecture.md (13834 bytes)
+📄 docs\ui-ux-design.md (13073 bytes)
+📁 src\config/
+📁 src\objects/
+📁 src\scenes/
+📁 src\systems/
+📁 src\ui/
+📁 src\utils/
+📄 src\main.js (977 bytes)
+📄 src\main_refactored.js (987 bytes)
+📄 src\config\fix.py (1184 bytes)
+📄 src\config\game.config.js (9793 bytes)
+📄 src\utils\constants-airbnb.js (1969 bytes)
+📄 src\utils\constants-expanded.js (3091 bytes)
+📄 src\utils\constants-new.js (3358 bytes)
+📄 src\utils\constants.js (8735 bytes)
+📄 src\scenes\BootScene.js (434 bytes)
+📄 src\scenes\GameScene.js (8654 bytes)
+📄 src\scenes\GameScene.js.backup (14036 bytes)
+📄 src\scenes\GameScene_refactored.js (10667 bytes)
+📄 src\scenes\MenuScene.js (12264 bytes)
+📄 src\scenes\PreloadScene.js (1264 bytes)
+📄 src\scenes\test_write.txt (5 bytes)
+📄 src\objects\Bird.js (4053 bytes)
+📄 src\objects\Block.js (5499 bytes)
+📄 src\objects\Pig.js (3990 bytes)
+📄 src\objects\Slingshot.js (2335 bytes)
+📄 src\systems\EntityManager.js (4825 bytes)
+📄 src\systems\GameStateSystem.js (5491 bytes)
+📄 src\systems\InputSystem.js (6580 bytes)
+📄 src\systems\PhysicsSystem.js (4343 bytes)
+📄 src\systems\UISystem.js (14220 bytes)
+📁 dist\assets/
+📄 dist\index.html (942 bytes)
+📄 dist\assets\index-BUGJdV3y.js (40207 bytes)
+📄 dist\assets\phaser-0RJB29YE.js (1478585 bytes)
+📁 tests\unit/
+📄 tests\README.md (3517 bytes)
+📁 tests\unit\objects/
+📄 tests\unit\objects\Bird.test.js (6083 bytes)
