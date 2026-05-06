@@ -5,7 +5,7 @@ A collection of innovative games and tools developed with our ClawCode tool — 
 
 # Overview
 
-This document compares **racing / car games**, **monster / combat games**, and **Tetris-style block puzzlers** across creative direction and engineering considerations—useful for scoping, staffing, and technical risk assessment.
+The project provides game and tool case studies independently developed by <a href="https://github.com/deepelementlab/clawcode">Clawcode</a>, including but not limited to the following:
 
 | | Working title / genre | Creative pillar | Core loop | Key engineering systems | Typical tech stack | Performance focus | Testability | Natural extensions |
 |---|---------------------|----------------|----------|---------------------------|--------------------|------------------|-------------|---------------------|
